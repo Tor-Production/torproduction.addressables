@@ -1,4 +1,5 @@
 using UnityEditor;
+using TorProduction.Addressables.Editor;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
     internal static class UpdateGroupsMenu {
@@ -6,7 +7,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
         [MenuItem(MENU_PATH)]
         static void UpdateFromFolderButtonClick() {
-            if (!PhaseZeroWorkflowGate.TryBegin("Addressables group synchronization")) {
+            if (!AddressablesAutomationWorkflowGate.TryBegin("Addressables group synchronization", AutomationScope.Groups)) {
                 return;
             }
 
@@ -14,6 +15,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
         }
 
         [MenuItem(MENU_PATH, true)]
-        private static bool ValidateUpdateFromFolder() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+        private static bool ValidateUpdateFromFolder() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.Groups);
     }
 }

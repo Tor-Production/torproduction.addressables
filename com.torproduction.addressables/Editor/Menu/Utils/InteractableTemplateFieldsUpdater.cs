@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEngine.AddressableAssets;
 using RuntimeAddressables = UnityEngine.AddressableAssets.Addressables;
 using TorProduction.AddressablesToolpack.Data;
+using TorProduction.Addressables.Editor;
 
 // This is a temporary script with is used only when we need to update fields in the
 // existing components so I would keep it in project until the whole transition is done.
@@ -17,7 +18,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		[MenuItem(MENU_PATH, priority = 200)]
 		public static void UpdateFields() {
-			if (!PhaseZeroWorkflowGate.TryBegin("Interactable config migration")) {
+			if (!AddressablesAutomationWorkflowGate.TryBegin("Interactable config migration", AutomationScope.All)) {
 				return;
 			}
 
@@ -93,6 +94,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		[MenuItem(MENU_PATH, true)]
-		private static bool ValidateUpdateFields() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+		private static bool ValidateUpdateFields() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All);
 	}
 }

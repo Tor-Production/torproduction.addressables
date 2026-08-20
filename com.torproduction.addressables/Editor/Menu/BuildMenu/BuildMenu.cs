@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using TorProduction.Addressables.Editor;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
 	internal static class BuildMenu {
@@ -12,7 +13,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		[MenuItem(BUILD_IOS_PATH)]
 		private static void BuildiOSButtonClick() {
-			if (!PhaseZeroWorkflowGate.TryBegin("Addressables iOS build")) {
+			if (!AddressablesAutomationWorkflowGate.TryBegin("Addressables iOS build", AutomationScope.All)) {
 				return;
 			}
 
@@ -22,11 +23,11 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		[MenuItem(BUILD_IOS_PATH, true)]
-		private static bool ValidateBuildiOS() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+		private static bool ValidateBuildiOS() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All);
 
 		[MenuItem(BUILD_ANDROID_PATH)]
 		private static void BuildAndroidButtonClick() {
-			if (!PhaseZeroWorkflowGate.TryBegin("Addressables Android build")) {
+			if (!AddressablesAutomationWorkflowGate.TryBegin("Addressables Android build", AutomationScope.All)) {
 				return;
 			}
 
@@ -36,11 +37,11 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		[MenuItem(BUILD_ANDROID_PATH, true)]
-		private static bool ValidateBuildAndroid() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+		private static bool ValidateBuildAndroid() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All);
 
 		[MenuItem(BUILD_EDITOR_PATH)]
 		private static void BuildEditorButtonClick() {
-			if (!PhaseZeroWorkflowGate.TryBegin("Addressables editor build")) {
+			if (!AddressablesAutomationWorkflowGate.TryBegin("Addressables editor build", AutomationScope.All)) {
 				return;
 			}
 
@@ -63,11 +64,11 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		[MenuItem(BUILD_EDITOR_PATH, true)]
-		private static bool ValidateBuildEditor() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+		private static bool ValidateBuildEditor() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All);
 
 		[MenuItem(BUILD_ALL_PATH)]
 		internal static void BuildAllButtonClick() {
-			if (!PhaseZeroWorkflowGate.TryBegin("Addressables multi-platform build")) {
+			if (!AddressablesAutomationWorkflowGate.TryBegin("Addressables multi-platform build", AutomationScope.All)) {
 				return;
 			}
 
@@ -77,7 +78,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		[MenuItem(BUILD_ALL_PATH, true)]
-		private static bool ValidateBuildAll() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+		private static bool ValidateBuildAll() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All);
 
 	}
 }

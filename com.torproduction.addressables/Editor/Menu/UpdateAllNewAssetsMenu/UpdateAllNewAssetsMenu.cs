@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEditor.AddressableAssets;
+using TorProduction.Addressables.Editor;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
 	internal static class UpdateAllNewAssetsMenu {
@@ -8,7 +9,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		[MenuItem(UPDATE_ALL_PATH, priority = 0)]
 		internal static void UpdateAllNewAssetsButtonClick() {
-			if (!PhaseZeroWorkflowGate.TryBegin("Update All New Assets")) {
+			if (!AddressablesAutomationWorkflowGate.TryBegin("Update All New Assets", AutomationScope.All)) {
 				return;
 			}
 
@@ -16,11 +17,11 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		[MenuItem(UPDATE_ALL_PATH, true)]
-		private static bool ValidateUpdateAll() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+		private static bool ValidateUpdateAll() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All);
 
 		[MenuItem(UPDATE_AND_BUILD_PATH, priority = 0)]
 		internal static void UpdateAllNewAssetsAndBuildButtonClick() {
-			if (!PhaseZeroWorkflowGate.TryBegin("Update All New Assets and Build")) {
+			if (!AddressablesAutomationWorkflowGate.TryBegin("Update All New Assets and Build", AutomationScope.All)) {
 				return;
 			}
 
@@ -29,6 +30,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		[MenuItem(UPDATE_AND_BUILD_PATH, true)]
-		private static bool ValidateUpdateAllAndBuild() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+		private static bool ValidateUpdateAllAndBuild() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All);
 	}
 }

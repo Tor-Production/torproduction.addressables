@@ -4,22 +4,24 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using TorProduction.AddressablesToolpack.Data;
+using TorProduction.Addressables.Editor;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
 	public class ScenesListMapper : AssetPostprocessor {
 		static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths) {
-			if (!PhaseZeroWorkflowGate.AutomaticSceneProcessingEnabled) {
+			var context = AddressablesAutomationContextProvider.ResolveAutomatic(AutomationScope.Scenes);
+			if (!context.IsReady ||
+			    !AddressablesAutomationWorkflowGate.AutomaticSceneReconciliationImplemented) {
 				return;
 			}
 
-#if TOR_PRODUCTION_ENABLE_LEGACY_SCENE_BINDER
-			var configScenesPath = ProjectConfigPathsManager.GetConfigPath(ConfigsEnum.Scenes);
-			var configScenes = AssetDatabase.LoadAssetAtPath<ScenesListConfig>(configScenesPath);
+#if false // Legacy scene mutation is permanently retired; Phase 3 will replace this file.
+			// Retained only as unreachable historical context until the Phase 3 mapper replacement.
+			ScenesListConfig configScenes = null;
 			string worldScenesFolderPath = AssetDatabase.GetAssetPath(configScenes.m_ScenesLocation);
 			string uiScenesFolderPath = AssetDatabase.GetAssetPath(configScenes.m_UIScenesLocation);
 			
-			var configAppStatesPath = ProjectConfigPathsManager.GetConfigPath(ConfigsEnum.AppStates);
-			var configAppStates = AssetDatabase.LoadAssetAtPath<AppStateConfig>(configAppStatesPath);
+			ScriptableObject configAppStates = null;
 
 			var previousWorldScenes = configScenes.m_ScenesConfig.GetSceneNames();
 			var previousWorldSceneInfos = configScenes.m_ScenesConfig.GetSceneInfos().ToList();
@@ -209,7 +211,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			return sameGuidFound;
 		}
 		
-		public static void AddBuildSettingsScene(string scenePath) {
+		private static void AddBuildSettingsScene(string scenePath) {
 			// Find valid Scene paths and make a list of EditorBuildSettingsScene
 			var editorBuildSettingsScenes = EditorBuildSettings.scenes.ToList();
 			var alreadyContains = editorBuildSettingsScenes.Any(s => s.guid == AssetDatabase.GUIDFromAssetPath(scenePath));
@@ -221,7 +223,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			EditorBuildSettings.scenes = editorBuildSettingsScenes.ToArray();
 		}
 		
-		public static void RemoveBuildSettingsScene(string scenePath) {
+		private static void RemoveBuildSettingsScene(string scenePath) {
 			// Find valid Scene paths and make a list of EditorBuildSettingsScene
 			var editorBuildSettingsScenes = EditorBuildSettings.scenes.ToList();
 			if (!string.IsNullOrEmpty(scenePath)) {

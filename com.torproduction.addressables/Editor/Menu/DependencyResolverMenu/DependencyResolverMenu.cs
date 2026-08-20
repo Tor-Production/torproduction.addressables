@@ -1,4 +1,5 @@
 using UnityEditor;
+using TorProduction.Addressables.Editor;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
     internal static class DependencyResolverMenu {
@@ -6,7 +7,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
         [MenuItem(MENU_PATH)]
         internal static void FixPrefabPathsButtonClick() {
-            if (!PhaseZeroWorkflowGate.TryBegin("Addressables duplicate-dependency resolution")) {
+            if (!AddressablesAutomationWorkflowGate.TryBegin("Addressables duplicate-dependency resolution", AutomationScope.Dependencies)) {
                 return;
             }
 
@@ -14,6 +15,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
         }
 
         [MenuItem(MENU_PATH, true)]
-        private static bool ValidateResolveDependencies() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+        private static bool ValidateResolveDependencies() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.Dependencies);
     }
 }

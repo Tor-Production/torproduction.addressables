@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using TorProduction.Addressables.Editor;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
 	internal static class PrefabsFixerMenu {
@@ -7,7 +8,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		[MenuItem(MENU_PATH)]
 		internal static void FixPrefabPathsButtonClick() {
-			if (!PhaseZeroWorkflowGate.TryBegin("Interactable prefab path migration")) {
+			if (!AddressablesAutomationWorkflowGate.TryBegin("Interactable prefab path migration", AutomationScope.All)) {
 				return;
 			}
 
@@ -16,6 +17,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		[MenuItem(MENU_PATH, true)]
-		private static bool ValidateFixPrefabPaths() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
+		private static bool ValidateFixPrefabPaths() => AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All);
 	}
 }

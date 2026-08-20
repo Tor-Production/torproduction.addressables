@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using TorProduction.Addressables.Editor;
 using TorProduction.AddressablesToolpack.Editor;
 using TorProduction.AddressablesToolpack.Editor.Menu;
 using UnityEditor;
@@ -14,80 +15,40 @@ using PackageManagerPackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace TorProduction.AddressablesToolpack.Editor.Tests {
 	internal sealed class PhaseZeroSafetyTests {
-		private string m_testDirectory;
-
-		[SetUp]
-		public void SetUp() {
-			m_testDirectory = Path.GetFullPath(Path.Combine(
-				"Library",
-				"TorProduction.Addressables.Tests",
-				Guid.NewGuid().ToString("N")));
-			Directory.CreateDirectory(m_testDirectory);
-		}
-
-		[TearDown]
-		public void TearDown() {
-			if (!Directory.Exists(m_testDirectory)) {
-				return;
-			}
-
-			foreach (var file in Directory.EnumerateFiles(m_testDirectory)) {
-				File.Delete(file);
-			}
-
-			Directory.Delete(m_testDirectory);
-		}
-
 		[Test]
-		public void MissingConfigurationRead_IsInert() {
-			var missingPath = Path.Combine(m_testDirectory, "missing-project-config.json");
-
-			foreach (ConfigsEnum configType in Enum.GetValues(typeof(ConfigsEnum))) {
-				Assert.That(
-					ProjectConfigPathsManager.TryGetConfigPath(configType, missingPath, out var configPath),
-					Is.False);
-				Assert.That(configPath, Is.Empty);
-			}
-
-			Assert.That(File.Exists(missingPath), Is.False, "A configuration read must not create a file.");
-		}
-
-		[Test]
-		public void InvalidConfigurationRead_DoesNotRewriteInput() {
-			var configPath = Path.Combine(m_testDirectory, "invalid-project-config.json");
-			const string invalidConfiguration =
-				"{\"m_ScenesListConfigGUID\":\"missing\",\"m_AddressableAssetsConfigGUID\":\"missing\",\"m_AppStatesConfigGUID\":\"missing\"}";
-			File.WriteAllText(configPath, invalidConfiguration);
-
-			foreach (ConfigsEnum configType in Enum.GetValues(typeof(ConfigsEnum))) {
-				Assert.That(
-					ProjectConfigPathsManager.TryGetConfigPath(configType, configPath, out var resolvedPath),
-					Is.False);
-				Assert.That(resolvedPath, Is.Empty);
-			}
-
-			Assert.That(File.ReadAllText(configPath), Is.EqualTo(invalidConfiguration));
-		}
-
-		[Test]
-		public void ConfigurationReads_DoNotMutateAddressablesOrBuildSettings() {
+		public void ConfigurationReads_DoNotCreateOrMutateProjectState() {
 			var configExisted = File.Exists("ProjectSettings/ProjectConfig.json");
 			var configContents = configExisted ? File.ReadAllText("ProjectSettings/ProjectConfig.json") : null;
-			var addressablesSettings = AddressableAssetSettingsDefaultObject.GetSettings(false);
+			var settingsExisted = File.Exists(AddressablesAutomationProjectSettingsStore.SettingsPath);
+			var settingsContents = settingsExisted
+				? File.ReadAllText(AddressablesAutomationProjectSettingsStore.SettingsPath)
+				: null;
+			var addressablesSettings = AddressableAssetSettingsDefaultObject.SettingsExists
+				? AddressableAssetSettingsDefaultObject.GetSettings(false)
+				: null;
 			var buildSettings = EditorBuildSettings.scenes
 				.Select(scene => $"{scene.guid}|{scene.path}|{scene.enabled}")
 				.ToArray();
 
-			foreach (ConfigsEnum configType in Enum.GetValues(typeof(ConfigsEnum))) {
-				ProjectConfigPathsManager.GetConfigPath(configType);
-			}
+			AddressablesAutomationProjectSettingsStore.Read();
+			AddressablesAutomationContextProvider.ResolveManual(AutomationScope.All);
 
 			Assert.That(File.Exists("ProjectSettings/ProjectConfig.json"), Is.EqualTo(configExisted));
 			if (configExisted) {
 				Assert.That(File.ReadAllText("ProjectSettings/ProjectConfig.json"), Is.EqualTo(configContents));
 			}
+			Assert.That(File.Exists(AddressablesAutomationProjectSettingsStore.SettingsPath), Is.EqualTo(settingsExisted));
+			if (settingsExisted) {
+				Assert.That(
+					File.ReadAllText(AddressablesAutomationProjectSettingsStore.SettingsPath),
+					Is.EqualTo(settingsContents));
+			}
 
-			Assert.That(AddressableAssetSettingsDefaultObject.GetSettings(false), Is.SameAs(addressablesSettings));
+			Assert.That(
+				AddressableAssetSettingsDefaultObject.SettingsExists
+					? AddressableAssetSettingsDefaultObject.GetSettings(false)
+					: null,
+				Is.SameAs(addressablesSettings));
 			Assert.That(
 				EditorBuildSettings.scenes.Select(scene => $"{scene.guid}|{scene.path}|{scene.enabled}").ToArray(),
 				Is.EqualTo(buildSettings));
@@ -96,14 +57,22 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 		[Test]
 		[Category("CleanInstall")]
 		public void CleanInstall_HasNoGeneratedConfigurationOrAddressablesState() {
-			Assume.That(
+			if (!Environment.GetCommandLineArgs().Contains("-torCleanInstall")) {
+				Assert.Pass("The clean-install invariants run only in the marked isolated harness.");
+			}
+
+			Assert.That(
 				File.Exists("ProjectSettings/ProjectConfig.json"),
 				Is.False,
-				"This assertion runs only in the isolated clean-install lane.");
-			Assume.That(
-				AddressableAssetSettingsDefaultObject.GetSettings(false),
-				Is.Null,
-				"This assertion runs only in the isolated clean-install lane.");
+				"The isolated project must not contain legacy configuration state.");
+			Assert.That(
+				File.Exists(AddressablesAutomationProjectSettingsStore.SettingsPath),
+				Is.False,
+				"The isolated project must not contain generated automation settings.");
+			Assert.That(
+				AddressableAssetSettingsDefaultObject.SettingsExists,
+				Is.False,
+				"The isolated project must not contain Addressables settings.");
 
 			Assert.That(Directory.Exists("Assets/AddressableAssetsData"), Is.False);
 			Assert.That(EditorBuildSettings.scenes, Is.Empty);
@@ -111,11 +80,14 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 
 		[Test]
 		public void IncompleteAndAutomaticWorkflows_AreFailClosed() {
-			Assert.That(PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled, Is.False);
-			Assert.That(PhaseZeroWorkflowGate.AutomaticSceneProcessingEnabled, Is.False);
+			Assert.That(AddressablesAutomationWorkflowGate.IncompleteWorkflowsEnabled, Is.False);
+			Assert.That(AddressablesAutomationWorkflowGate.AutomaticSceneReconciliationImplemented, Is.False);
+			Assert.That(AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All), Is.False);
 
-			LogAssert.Expect(LogType.Warning, $"Test workflow: {PhaseZeroWorkflowGate.DisabledReason}");
-			Assert.That(PhaseZeroWorkflowGate.TryBegin("Test workflow"), Is.False);
+			LogAssert.Expect(LogType.Warning, new Regex("^Test workflow:"));
+			Assert.That(
+				AddressablesAutomationWorkflowGate.TryBegin("Test workflow", AutomationScope.All),
+				Is.False);
 
 			var migrationReportPath = Path.Combine(
 				UnityEngine.AddressableAssets.Addressables.LibraryPath,
@@ -123,9 +95,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			var migrationReportExisted = File.Exists(migrationReportPath);
 			var migrationReportContents = migrationReportExisted ? File.ReadAllText(migrationReportPath) : null;
 
-			LogAssert.Expect(
-				LogType.Warning,
-				$"Interactable config migration: {PhaseZeroWorkflowGate.DisabledReason}");
+			LogAssert.Expect(LogType.Warning, new Regex("^Interactable config migration:"));
 			InteractableTemplateFieldsUpdater.UpdateFields();
 
 			Assert.That(File.Exists(migrationReportPath), Is.EqualTo(migrationReportExisted));
@@ -153,7 +123,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 		public void ProductionAssemblies_AreReferencedWithoutSamplesOrTests() {
 			Assert.That(typeof(InteractableFactoryId).Assembly.GetName().Name, Is.EqualTo("TorProduction.AddressablesToolpack"));
 			Assert.That(typeof(AssetTypes).Assembly.GetName().Name, Is.EqualTo("TorProduction.AddressablesService.Editor"));
-			Assert.That(typeof(ProjectConfigPathsManager).Assembly.GetName().Name, Is.EqualTo("TorProduction.AddressablesToolpack.Editor.Menu"));
+			Assert.That(typeof(AddressablesAutomationSettingsProvider).Assembly.GetName().Name, Is.EqualTo("TorProduction.AddressablesToolpack.Editor.Menu"));
 
 			var editorAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Editor);
 			var productionAssemblyNames = new[] {

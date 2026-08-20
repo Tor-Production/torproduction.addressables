@@ -1,0 +1,24 @@
+{
+  "name": "com.torproduction.addressables",
+  "displayName": "Tor Production - Addressables Toolpack",
+  "version": "0.0.1-preview",
+  "unity": "2019.3",
+  "description": "Addressables toolpack by Tor Production.",
+  "dependencies": {
+    "com.stansassets.foundation": "1.0.2",
+    "com.unity.addressables": "2.6.0"
+  },
+  "keywords": [
+    "Addressables",
+    "Tor Production",
+    "Toolpack"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Tor Production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yurii-Tor/tor-production-addressables.git"
+  }
+}

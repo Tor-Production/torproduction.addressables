@@ -350,6 +350,51 @@ namespace TorProduction.Addressables.Editor {
 			return TryRecover(new UnityProjectSettingsBackend(), out recoveryPath, out error);
 		}
 
+		internal static bool TryMigrate(out string recoveryPath, out string error) {
+			return TryMigrate(new UnityProjectSettingsBackend(), out recoveryPath, out error);
+		}
+
+		internal static bool TryMigrate(
+			IAddressablesAutomationProjectSettingsBackend backend,
+			out string recoveryPath,
+			out string error) {
+			var current = Read(backend);
+			if (current.Status != ProjectSettingsReadStatus.MigrationRequired) {
+				recoveryPath = string.Empty;
+				error = "Project settings do not have a supported pending schema migration.";
+				return false;
+			}
+
+			if (current.Snapshot.SchemaVersion != 0) {
+				recoveryPath = string.Empty;
+				error = $"Project settings schema {current.Snapshot.SchemaVersion} has no supported migration to {CurrentSchemaVersion}.";
+				return false;
+			}
+
+			var selectedGuid = current.Snapshot.SelectedConfigGuid;
+			if (!string.IsNullOrEmpty(selectedGuid) && !IsGuid(selectedGuid)) {
+				recoveryPath = string.Empty;
+				error = "The older project state contains a malformed config GUID. Use explicit backup-and-reset recovery instead.";
+				return false;
+			}
+
+			if (!backend.TryBackup(out recoveryPath, out error)) {
+				return false;
+			}
+
+			return TryMutateAndSave(
+				backend,
+				() => {
+					backend.Magic = ExpectedMagic;
+					backend.SchemaVersion = CurrentSchemaVersion;
+					backend.SelectedConfigGuid = selectedGuid?.ToLowerInvariant() ?? string.Empty;
+					backend.AutomationEnabled = false;
+					backend.AutomaticScopes = AutomationScope.None;
+				},
+				"migrate project settings",
+				out error);
+		}
+
 		internal static bool TryRecover(
 			IAddressablesAutomationProjectSettingsBackend backend,
 			out string recoveryPath,

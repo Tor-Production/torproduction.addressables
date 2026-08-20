@@ -14,6 +14,7 @@ namespace TorProduction.Addressables.Editor {
 
 	public enum ConfigurationDiagnosticCode {
 		ConfigurationMissing,
+		ConfigurationIsAddressable,
 		ScopeInvalid,
 		ConfigSchemaMigrationRequired,
 		ConfigSchemaUnsupported,
@@ -114,6 +115,7 @@ namespace TorProduction.Addressables.Editor {
 		bool TryGetGroupGuid(string groupName, out string groupGuid);
 		bool HasGroupName(string groupName);
 		bool HasLabel(string label);
+		bool HasAssetEntry(string assetGuid);
 	}
 
 	internal sealed class AddressablesSettingsView : IAddressablesSettingsView {
@@ -162,6 +164,10 @@ namespace TorProduction.Addressables.Editor {
 
 		public bool HasLabel(string label) {
 			return m_settings != null && m_settings.GetLabels().Contains(label);
+		}
+
+		public bool HasAssetEntry(string assetGuid) {
+			return m_settings != null && m_settings.FindAssetEntry(assetGuid, true) != null;
 		}
 	}
 
@@ -346,13 +352,29 @@ namespace TorProduction.Addressables.Editor {
 						location,
 						addressables,
 						report);
-				} else if (!string.IsNullOrWhiteSpace(rule.DestinationGroupGuid) ||
-				           !string.IsNullOrWhiteSpace(rule.DestinationGroupName)) {
-					report.Add(
-						ConfigurationDiagnosticCode.UnexpectedSceneGroup,
-						ConfigurationDiagnosticSeverity.Error,
-						location,
-						"Local Build Settings scene rules must not specify an Addressables group.");
+				} else {
+					if (!string.IsNullOrWhiteSpace(rule.DestinationGroupGuid) ||
+					    !string.IsNullOrWhiteSpace(rule.DestinationGroupName)) {
+						report.Add(
+							ConfigurationDiagnosticCode.UnexpectedSceneGroup,
+							ConfigurationDiagnosticSeverity.Error,
+							location,
+							"Local Build Settings scene rules must not specify an Addressables group.");
+					}
+					if (rule.AddressPolicy != SceneAddressPolicy.RelativePath) {
+						report.Add(
+							ConfigurationDiagnosticCode.AddressPolicyInvalid,
+							ConfigurationDiagnosticSeverity.Error,
+							location,
+							"Local Build Settings scene rules must use the neutral Relative Path policy.");
+					}
+					if (!string.IsNullOrEmpty(rule.AddressPrefix)) {
+						report.Add(
+							ConfigurationDiagnosticCode.AddressPrefixInvalid,
+							ConfigurationDiagnosticSeverity.Error,
+							location,
+							"Local Build Settings scene rules must not specify an Addressables prefix.");
+					}
 				}
 			}
 		}
@@ -446,8 +468,24 @@ namespace TorProduction.Addressables.Editor {
 					continue;
 				}
 
-				var excludedPath = resolver.GuidToAssetPath(guid);
-				if (string.IsNullOrEmpty(excludedPath) || !resolver.IsValidFolder(excludedPath)) {
+				string excludedPath;
+				try {
+					excludedPath = resolver.GuidToAssetPath(guid);
+					if (!string.IsNullOrEmpty(excludedPath) && resolver.IsValidFolder(excludedPath)) {
+						// Continue with normalized containment checks below.
+					} else {
+						excludedPath = string.Empty;
+					}
+				} catch (Exception exception) {
+					report.Add(
+						ConfigurationDiagnosticCode.ExcludedFolderMissing,
+						ConfigurationDiagnosticSeverity.Error,
+						excludedLocation,
+						$"Excluded folder GUID '{guid}' could not be resolved: {exception.Message}");
+					continue;
+				}
+
+				if (string.IsNullOrEmpty(excludedPath)) {
 					report.Add(
 						ConfigurationDiagnosticCode.ExcludedFolderMissing,
 						ConfigurationDiagnosticSeverity.Error,
@@ -501,6 +539,15 @@ namespace TorProduction.Addressables.Editor {
 						location,
 						$"Destination group was renamed from '{groupName}' to '{resolvedName}'. The GUID remains valid.");
 				}
+				return;
+			}
+
+			if (!string.IsNullOrWhiteSpace(groupGuid) && string.IsNullOrWhiteSpace(groupName)) {
+				report.Add(
+					ConfigurationDiagnosticCode.DestinationGroupNotFound,
+					ConfigurationDiagnosticSeverity.Error,
+					location,
+					$"Destination group GUID '{groupGuid}' does not resolve and has no fallback group name.");
 				return;
 			}
 

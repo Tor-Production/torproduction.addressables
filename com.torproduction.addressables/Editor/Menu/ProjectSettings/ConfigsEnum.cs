@@ -1,5 +1,6 @@
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
-	public enum ConfigsEnum {
+	internal enum LegacyConfigurationKind {
+		ProjectSettings,
 		Scenes,
 		AddressableAssets,
 		AppStates

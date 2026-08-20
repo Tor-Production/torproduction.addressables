@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using UnityEditor;
 
 namespace TorProduction.Addressables.Editor {
 	internal enum ConfigurationStatus {
@@ -12,6 +13,7 @@ namespace TorProduction.Addressables.Editor {
 		WrongConfigType,
 		ConfigOutsideAssets,
 		ConfigOutsideEditorFolder,
+		ConfigInResources,
 		ConfigMigrationRequired,
 		UnsupportedConfigSchema,
 		AddressablesSettingsMissing,
@@ -180,12 +182,29 @@ namespace TorProduction.Addressables.Editor {
 					config,
 					null);
 			}
+			if (normalizedConfigPath.IndexOf("/Resources/", StringComparison.Ordinal) >= 0) {
+				return new ConfigurationResolution(
+					ConfigurationStatus.ConfigInResources,
+					"Configuration assets must not live in a Resources folder.",
+					snapshot,
+					configPath,
+					config,
+					null);
+			}
 
+			var addressables = addressablesFactory();
 			var validation = AddressablesAutomationValidator.Validate(
 				config,
 				resolver,
-				addressablesFactory(),
+				addressables,
 				scope);
+			if (addressables.Exists && addressables.HasAssetEntry(snapshot.SelectedConfigGuid)) {
+				validation.Add(
+					ConfigurationDiagnosticCode.ConfigurationIsAddressable,
+					ConfigurationDiagnosticSeverity.Error,
+					"Configuration",
+					"The configuration asset itself must not be an Addressables entry.");
+			}
 			if (!validation.IsValid) {
 				var status = DetermineInvalidStatus(validation);
 				var firstError = validation.Diagnostics.First(item =>
@@ -213,6 +232,7 @@ namespace TorProduction.Addressables.Editor {
 				configGuid,
 				new UnityProjectSettingsBackend(),
 				UnityConfigurationAssetResolver.Instance,
+				new AddressablesSettingsView(),
 				out error);
 		}
 
@@ -221,30 +241,51 @@ namespace TorProduction.Addressables.Editor {
 			IAddressablesAutomationProjectSettingsBackend backend,
 			IConfigurationAssetResolver resolver,
 			out string error) {
+			return TrySelectConfig(
+				configGuid,
+				backend,
+				resolver,
+				new AddressablesSettingsView(),
+				out error);
+		}
+
+		internal static bool TrySelectConfig(
+			string configGuid,
+			IAddressablesAutomationProjectSettingsBackend backend,
+			IConfigurationAssetResolver resolver,
+			IAddressablesSettingsView addressables,
+			out string error) {
 			if (!AddressablesAutomationProjectSettingsStore.IsGuid(configGuid)) {
 				error = "Select a persistent AddressablesAutomationConfig asset with a valid Unity GUID.";
 				return false;
 			}
 
 			var path = resolver.GuidToAssetPath(configGuid)?.Replace('\\', '/');
-			if (string.IsNullOrEmpty(path) || !path.StartsWith("Assets/", StringComparison.Ordinal)) {
-				error = "The selected configuration must be a persistent asset under the project Assets folder.";
-				return false;
-			}
-
-			if (!IsEditorOnlyAssetPath(path)) {
-				error = "The selected configuration must live in an Editor folder so it cannot enter player data.";
-				return false;
-			}
-
-			if (!(resolver.LoadMainAssetAtPath(path) is AddressablesAutomationConfig)) {
-				error = $"The selected asset at '{path}' is not an AddressablesAutomationConfig.";
+			if (!TryValidateLoadedConfig(
+				    configGuid,
+				    path,
+				    string.IsNullOrEmpty(path) ? null : resolver.LoadMainAssetAtPath(path),
+				    addressables,
+				    out error)) {
 				return false;
 			}
 
 			return AddressablesAutomationProjectSettingsStore.TryPersistSelection(
 				configGuid,
 				backend,
+				out error);
+		}
+
+		internal static bool TryValidateConfigCandidate(
+			AddressablesAutomationConfig config,
+			out string error) {
+			var path = (AssetDatabase.GetAssetPath(config) ?? string.Empty).Replace('\\', '/');
+			var guid = string.IsNullOrEmpty(path) ? string.Empty : AssetDatabase.AssetPathToGUID(path);
+			return TryValidateLoadedConfig(
+				guid,
+				path,
+				config,
+				new AddressablesSettingsView(),
 				out error);
 		}
 
@@ -288,6 +329,40 @@ namespace TorProduction.Addressables.Editor {
 		private static bool IsEditorOnlyAssetPath(string path) {
 			return path.StartsWith("Assets/Editor/", StringComparison.Ordinal) ||
 			       path.IndexOf("/Editor/", StringComparison.Ordinal) >= 0;
+		}
+
+		private static bool TryValidateLoadedConfig(
+			string configGuid,
+			string path,
+			object mainAsset,
+			IAddressablesSettingsView addressables,
+			out string error) {
+			if (string.IsNullOrEmpty(path) || !path.StartsWith("Assets/", StringComparison.Ordinal)) {
+				error = "The selected configuration must be a persistent asset under the project Assets folder.";
+				return false;
+			}
+
+			if (!IsEditorOnlyAssetPath(path)) {
+				error = "The selected configuration must live in an Editor folder so it cannot enter player data.";
+				return false;
+			}
+			if (path.IndexOf("/Resources/", StringComparison.Ordinal) >= 0) {
+				error = "The selected configuration must not live in a Resources folder.";
+				return false;
+			}
+
+			if (!(mainAsset is AddressablesAutomationConfig)) {
+				error = $"The selected asset at '{path}' is not an AddressablesAutomationConfig.";
+				return false;
+			}
+
+			if (addressables.Exists && addressables.HasAssetEntry(configGuid)) {
+				error = "The configuration asset itself must not be an explicit or implicit Addressables entry.";
+				return false;
+			}
+
+			error = string.Empty;
+			return true;
 		}
 
 		private static ConfigurationStatus DetermineInvalidStatus(

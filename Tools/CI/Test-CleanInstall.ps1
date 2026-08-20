@@ -92,8 +92,12 @@ try {
         '-runTests',
         '-testPlatform', 'EditMode',
         '-testResults', $resultsPath,
-        '-logFile', $logPath
+        '-logFile', $logPath,
+        '-torCleanInstall'
     )
+    if ($ExcludeSamples) {
+        $arguments += '-torSamplesExcluded'
+    }
     $startProcessParameters = @{
         FilePath = $resolvedUnityPath
         ArgumentList = $arguments
@@ -112,18 +116,27 @@ try {
     }
     Copy-Item -Force -LiteralPath $logPath -Destination $resolvedArtifactsPath
 
+    if (Test-Path -LiteralPath $resultsPath) {
+        Copy-Item -Force -LiteralPath $resultsPath -Destination $resolvedArtifactsPath
+    }
+
     if ($process.ExitCode -ne 0) {
         throw "Unity exited with code $($process.ExitCode). See $resolvedArtifactsPath"
     }
     if (-not (Test-Path -LiteralPath $resultsPath)) {
         throw 'Unity did not produce EditMode test results.'
     }
-    Copy-Item -Force -LiteralPath $resultsPath -Destination $resolvedArtifactsPath
 
     [xml]$results = Get-Content -Raw -LiteralPath $resultsPath
     $testRun = $results.'test-run'
-    if ($testRun.result -ne 'Passed' -or [int]$testRun.failed -ne 0) {
-        throw "EditMode tests failed: total=$($testRun.total), failed=$($testRun.failed)"
+    $expectedTestCount = 33
+    if ($testRun.result -ne 'Passed' -or
+        [int]$testRun.total -ne $expectedTestCount -or
+        [int]$testRun.passed -ne $expectedTestCount -or
+        [int]$testRun.failed -ne 0 -or
+        [int]$testRun.inconclusive -ne 0 -or
+        [int]$testRun.skipped -ne 0) {
+        throw "Unexpected EditMode result: total=$($testRun.total), passed=$($testRun.passed), failed=$($testRun.failed), inconclusive=$($testRun.inconclusive), skipped=$($testRun.skipped)"
     }
 
     & (Join-Path $PSScriptRoot 'Assert-InertProject.ps1') -ProjectPath $temporaryProjectPath

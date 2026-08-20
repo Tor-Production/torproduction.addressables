@@ -158,5 +158,23 @@ namespace TorProduction.Addressables.Editor {
 			m_groupRules = groupRules ?? Array.Empty<GroupSyncRule>();
 			m_sceneRules = sceneRules ?? Array.Empty<SceneFolderRule>();
 		}
+
+		internal bool TryMigrateToCurrentSchema(out string error) {
+			if (m_schemaVersion == CurrentSchemaVersion) {
+				error = "Configuration already uses the current schema.";
+				return false;
+			}
+
+			if (m_schemaVersion != 0) {
+				error = $"Configuration schema {m_schemaVersion} has no supported migration to {CurrentSchemaVersion}.";
+				return false;
+			}
+
+			m_groupRules = m_groupRules ?? Array.Empty<GroupSyncRule>();
+			m_sceneRules = m_sceneRules ?? Array.Empty<SceneFolderRule>();
+			m_schemaVersion = CurrentSchemaVersion;
+			error = string.Empty;
+			return true;
+		}
 	}
 }

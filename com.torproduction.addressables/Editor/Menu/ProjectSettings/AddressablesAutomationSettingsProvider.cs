@@ -12,7 +12,9 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		private AddressablesAutomationConfig m_pendingConfig;
 		private ConfigurationResolution m_resolution;
+		private ConfigurationResolution m_sceneResolution;
 		private ConfigurationValidationReport m_analysis;
+		private LegacyMigrationPreview m_legacyPreview;
 		private bool m_pendingAutomaticScenes;
 		private bool m_loaded;
 		private string m_message = string.Empty;
@@ -51,6 +53,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			DrawConfiguration();
 			EditorGUILayout.Space();
 			DrawAnalysis();
+			EditorGUILayout.Space();
+			DrawLegacyMigration();
 			EditorGUILayout.Space();
 			DrawAutomation();
 			EditorGUILayout.Space();
@@ -101,11 +105,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			EditorGUILayout.LabelField("Analysis", EditorStyles.boldLabel);
 			EditorGUI.BeginDisabledGroup(m_pendingConfig == null && m_resolution.Config == null);
 			if (GUILayout.Button("Analyze (No Changes)")) {
-				var config = m_pendingConfig != null ? m_pendingConfig : m_resolution.Config;
-				m_analysis = AddressablesAutomationValidator.Validate(config, AutomationScope.All);
-				SetMessage(
-					m_analysis.IsValid ? "Analysis completed without blocking diagnostics." : "Analysis found blocking diagnostics.",
-					m_analysis.IsValid ? MessageType.Info : MessageType.Warning);
+				Analyze();
 			}
 			EditorGUI.EndDisabledGroup();
 
@@ -125,6 +125,49 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			}
 		}
 
+		private void DrawLegacyMigration() {
+			EditorGUILayout.LabelField("Legacy migration", EditorStyles.boldLabel);
+			EditorGUILayout.HelpBox(
+				"Preview is a read-only, one-shot analysis of ProjectSettings/ProjectConfig.json and its referenced legacy assets. " +
+				"It never rewrites or deletes legacy data.",
+				MessageType.Info);
+			if (GUILayout.Button("Preview Legacy Migration (No Changes)")) {
+				m_legacyPreview = LegacyConfigurationMigration.Preview();
+				SetMessage(
+					m_legacyPreview.HasBlockingErrors
+						? "Legacy preview completed with blocking diagnostics. No files were changed."
+						: "Legacy preview completed. No files were changed.",
+					m_legacyPreview.HasBlockingErrors ? MessageType.Warning : MessageType.Info);
+			}
+
+			if (m_legacyPreview == null) {
+				return;
+			}
+
+			EditorGUILayout.LabelField("Mapped group rules", m_legacyPreview.GroupRules.Length.ToString());
+			EditorGUILayout.LabelField("Mapped scene rules", m_legacyPreview.SceneRules.Length.ToString());
+			foreach (var diagnostic in m_legacyPreview.Diagnostics) {
+				var type = diagnostic.Severity == ConfigurationDiagnosticSeverity.Error
+					? MessageType.Error
+					: diagnostic.Severity == ConfigurationDiagnosticSeverity.Warning
+						? MessageType.Warning
+						: MessageType.Info;
+				EditorGUILayout.HelpBox(
+					$"[{diagnostic.Code}] {diagnostic.Kind}/{diagnostic.Location}: {diagnostic.Message}", type);
+			}
+
+			EditorGUI.BeginDisabledGroup(!m_legacyPreview.HasLegacyState);
+			if (GUILayout.Button("Create Migrated Configuration...")) {
+				CreateMigratedConfig();
+			}
+			EditorGUI.EndDisabledGroup();
+			if (m_legacyPreview.HasBlockingErrors) {
+				EditorGUILayout.HelpBox(
+					"A migrated asset may still be created to preserve intent, but it remains invalid and automation stays off until every blocking diagnostic is resolved.",
+					MessageType.Warning);
+			}
+		}
+
 		private void DrawAutomation() {
 			EditorGUILayout.LabelField("Automatic scene processing", EditorStyles.boldLabel);
 			m_pendingAutomaticScenes = EditorGUILayout.Toggle(
@@ -132,6 +175,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			EditorGUILayout.HelpBox(
 				"This pending toggle is saved only by Apply. Scene reconciliation remains gated until Phase 3; automatic group and dependency processing is unsupported.",
 				MessageType.Info);
+			var canApply = CanApplyAutomaticSceneSetting(m_sceneResolution, m_pendingAutomaticScenes);
+			EditorGUI.BeginDisabledGroup(!canApply);
 			if (GUILayout.Button("Apply Automatic-Scene Setting")) {
 				if (AddressablesAutomationContextProvider.TryApplyAutomaticSceneProcessing(
 					    m_pendingAutomaticScenes, out var error)) {
@@ -140,6 +185,10 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				} else {
 					SetMessage(error, MessageType.Error);
 				}
+			}
+			EditorGUI.EndDisabledGroup();
+			if (m_pendingAutomaticScenes && !m_sceneResolution.IsReady) {
+				EditorGUILayout.HelpBox(m_sceneResolution.Message, MessageType.Warning);
 			}
 		}
 
@@ -159,12 +208,21 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			EditorGUI.EndDisabledGroup();
 			EditorGUILayout.EndHorizontal();
 
-			if (m_resolution.Status == ConfigurationStatus.CorruptProjectState ||
-			    m_resolution.Status == ConfigurationStatus.ProjectStateMigrationRequired ||
-			    m_resolution.Status == ConfigurationStatus.UnsupportedProjectStateSchema) {
+			if (m_resolution.Status == ConfigurationStatus.ProjectStateMigrationRequired) {
+				if (GUILayout.Button("Back Up and Migrate Project State...")) {
+					MigrateProjectState();
+				}
+			} else if (m_resolution.Status == ConfigurationStatus.CorruptProjectState ||
+			           m_resolution.Status == ConfigurationStatus.UnsupportedProjectStateSchema) {
 				if (GUILayout.Button("Back Up and Reset Project State...")) {
 					Recover();
 				}
+			}
+
+			if (m_resolution.Status == ConfigurationStatus.ConfigMigrationRequired &&
+			    m_resolution.Config != null &&
+			    GUILayout.Button("Back Up and Migrate Configuration Asset...")) {
+				MigrateConfiguration();
 			}
 		}
 
@@ -176,16 +234,34 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				return;
 			}
 
+			CreateConfigAsset(Array.Empty<GroupSyncRule>(), Array.Empty<SceneFolderRule>());
+		}
+
+		private void CreateMigratedConfig() {
+			var warning = m_legacyPreview.HasBlockingErrors
+				? "The preview has blocking diagnostics. Create the asset anyway to preserve the mapped values? Automation will remain off."
+				: "Create a new configuration from this preview?";
+			if (!EditorUtility.DisplayDialog(
+				    "Create Migrated Addressables Configuration",
+				    warning + " Legacy JSON and assets will remain untouched.",
+				    "Create", "Cancel")) {
+				return;
+			}
+			CreateConfigAsset(m_legacyPreview.GroupRules, m_legacyPreview.SceneRules);
+		}
+
+		private void CreateConfigAsset(GroupSyncRule[] groupRules, SceneFolderRule[] sceneRules) {
 			try {
 				EnsureFolder(DefaultFolder);
 				var path = AssetDatabase.GenerateUniqueAssetPath(DefaultPath);
 				var config = ScriptableObject.CreateInstance<AddressablesAutomationConfig>();
+				config.ReplaceWithCurrentSchema(groupRules, sceneRules);
 				AssetDatabase.CreateAsset(config, path);
 				AssetDatabase.SaveAssets();
 				m_pendingConfig = config;
 				if (AddressablesAutomationContextProvider.TrySelectConfig(
 					    AssetDatabase.AssetPathToGUID(path), out var error)) {
-					SetMessage($"Created and selected '{path}'.", MessageType.Info);
+					SetMessage($"Created and selected '{path}'. Legacy data was unchanged.", MessageType.Info);
 					Reload();
 				} else {
 					SetMessage($"Created '{path}', but selection failed: {error}. The asset was retained.", MessageType.Error);
@@ -204,6 +280,20 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			} else {
 				SetMessage(error, MessageType.Error);
 			}
+		}
+
+		private void Analyze() {
+			var config = m_pendingConfig != null ? m_pendingConfig : m_resolution.Config;
+			if (!AddressablesAutomationContextProvider.TryValidateConfigCandidate(config, out var candidateError)) {
+				m_analysis = null;
+				SetMessage(candidateError, MessageType.Error);
+				return;
+			}
+
+			m_analysis = AddressablesAutomationValidator.Validate(config, AutomationScope.All);
+			SetMessage(
+				m_analysis.IsValid ? "Analysis completed without blocking diagnostics." : "Analysis found blocking diagnostics.",
+				m_analysis.IsValid ? MessageType.Info : MessageType.Warning);
 		}
 
 		private void Detach() {
@@ -238,6 +328,38 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			}
 		}
 
+		private void MigrateProjectState() {
+			if (!EditorUtility.DisplayDialog(
+				    "Migrate Addressables Automation Project State",
+				    "Back up the raw settings under Library, preserve the selected config GUID, upgrade the schema, and turn automatic processing off?",
+				    "Back Up and Migrate", "Cancel")) {
+				return;
+			}
+			if (AddressablesAutomationProjectSettingsStore.TryMigrate(
+				    out var recoveryPath, out var error)) {
+				SetMessage($"Project state migrated. Backup: {recoveryPath}", MessageType.Info);
+				Reload();
+			} else {
+				SetMessage(error, MessageType.Error);
+			}
+		}
+
+		private void MigrateConfiguration() {
+			if (!EditorUtility.DisplayDialog(
+				    "Migrate Addressables Automation Configuration",
+				    "Write a JSON backup under Library, normalize existing rule collections, and upgrade this asset to the current schema?",
+				    "Back Up and Migrate", "Cancel")) {
+				return;
+			}
+			if (AddressablesAutomationSchemaMigration.TryMigrateConfig(
+				    m_resolution.Config, out var recoveryPath, out var error)) {
+				SetMessage($"Configuration migrated. Backup: {recoveryPath}", MessageType.Info);
+				Reload();
+			} else {
+				SetMessage(error, MessageType.Error);
+			}
+		}
+
 		private void OpenAddressablesGroups() {
 			if (EditorUtility.DisplayDialog(
 				    "Open Addressables Groups",
@@ -250,13 +372,20 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		private void Reload() {
 			m_resolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.All);
-			if (m_resolution.Config != null) {
-				m_pendingConfig = m_resolution.Config;
-			}
+			m_sceneResolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.Scenes);
+			m_pendingConfig = m_resolution.Config;
 			m_pendingAutomaticScenes = m_resolution.ProjectSettings.AutomationEnabled &&
 				(m_resolution.ProjectSettings.AutomaticScopes & AutomationScope.Scenes) != 0;
 			m_analysis = null;
 			m_loaded = true;
+		}
+
+		internal static bool CanApplyAutomaticSceneSetting(
+			ConfigurationResolution sceneResolution,
+			bool pendingEnabled) {
+			return pendingEnabled
+				? sceneResolution.IsReady
+				: sceneResolution.ProjectSettings.AutomationEnabled;
 		}
 
 		private static void EnsureFolder(string path) {

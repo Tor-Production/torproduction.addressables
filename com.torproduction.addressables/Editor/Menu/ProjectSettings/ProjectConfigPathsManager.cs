@@ -55,13 +55,17 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		public static bool TryGetConfigPath(ConfigsEnum configType, out string configPath) {
+			return TryGetConfigPath(configType, PROJECT_CONFIG_FILE_PATH, out configPath);
+		}
+
+		internal static bool TryGetConfigPath(ConfigsEnum configType, string projectConfigFilePath, out string configPath) {
 			configPath = string.Empty;
-			if (!File.Exists(PROJECT_CONFIG_FILE_PATH)) {
+			if (!File.Exists(projectConfigFilePath)) {
 				return false;
 			}
 
 			try {
-				var jsonData = File.ReadAllText(PROJECT_CONFIG_FILE_PATH);
+				var jsonData = File.ReadAllText(projectConfigFilePath);
 				var configData = JsonUtility.FromJson<ProjectConfigData>(jsonData);
 				var savedGuid = GetSavedGuid(configData, configType);
 				if (string.IsNullOrEmpty(savedGuid)) {

@@ -1,8 +1,13 @@
 {
-    "name": "StansAssets.PackageSample.Editor.Tests",
+    "name": "TorProduction.AddressablesToolpack.Editor.Tests",
+    "rootNamespace": "TorProduction.AddressablesToolpack.Editor.Tests",
     "references": [
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "GUID:a5d30c4d8d475d442b6f3f91d04306a1",
+        "GUID:6a4270a497015e843be16b899b29c2fb",
+        "GUID:d7d6534ed8cfdf5449425dc001ec6d7d",
+        "GUID:69448af7b92c7f342b298e06a37122aa"
     ],
     "includePlatforms": [
         "Editor"

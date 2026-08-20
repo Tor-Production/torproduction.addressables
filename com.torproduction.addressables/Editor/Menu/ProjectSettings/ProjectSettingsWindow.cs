@@ -8,7 +8,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		private string m_addressableAssetsConfigFilePath;
 		private AddressableAssetsConfig m_addressableAssetsConfig;
 		private string m_appStatesConfigFilePath;
-		private AppStateConfig m_appStatesConfig;
+		private ScriptableObject m_appStatesConfig;
 
 		[MenuItem("Tools/Tor Production/Tor Production Project setting", priority = 300)]
 		public static void ShowWindow() {
@@ -24,7 +24,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			m_addressableAssetsConfig = AssetDatabase.LoadAssetAtPath<AddressableAssetsConfig>(m_addressableAssetsConfigFilePath);
 			
 			m_appStatesConfigFilePath = ProjectConfigPathsManager.GetConfigPath(ConfigsEnum.AppStates);
-			m_appStatesConfig = AssetDatabase.LoadAssetAtPath<AppStateConfig>(m_appStatesConfigFilePath);
+			m_appStatesConfig = AssetDatabase.LoadAssetAtPath<ScriptableObject>(m_appStatesConfigFilePath);
 		}
 
 		private void OnGUI() {
@@ -44,8 +44,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				m_addressableAssetsConfigFilePath = AssetDatabase.GetAssetPath(m_addressableAssetsConfig);
 			}
 			
-			// Display a field for the user to set the AppStateConfig asset
-			m_appStatesConfig = (AppStateConfig)EditorGUILayout.ObjectField("AppStates Config", m_appStatesConfig, typeof(AppStateConfig), false);
+			// Keep the legacy reference generic so production assemblies do not depend on sample-only types.
+			m_appStatesConfig = (ScriptableObject)EditorGUILayout.ObjectField("AppStates Config", m_appStatesConfig, typeof(ScriptableObject), false);
 
 			// Update configFilePath if addressableAssetsConfig changes
 			if (m_appStatesConfig != null && AssetDatabase.GetAssetPath(m_appStatesConfig) != m_appStatesConfigFilePath) {

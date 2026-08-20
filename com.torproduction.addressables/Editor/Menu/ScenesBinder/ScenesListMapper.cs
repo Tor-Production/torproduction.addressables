@@ -12,6 +12,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				return;
 			}
 
+#if TOR_PRODUCTION_ENABLE_LEGACY_SCENE_BINDER
 			var configScenesPath = ProjectConfigPathsManager.GetConfigPath(ConfigsEnum.Scenes);
 			var configScenes = AssetDatabase.LoadAssetAtPath<ScenesListConfig>(configScenesPath);
 			string worldScenesFolderPath = AssetDatabase.GetAssetPath(configScenes.m_ScenesLocation);
@@ -171,6 +172,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				EditorUtility.SetDirty(configScenes.m_ScenesConfig);
 				AssetDatabase.SaveAssets();
 			}
+#endif
 		}
 
 		private static bool IsSceneInFolder(string assetPath, string folderPath) {

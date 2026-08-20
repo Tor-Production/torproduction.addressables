@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using RuntimeAddressables = UnityEngine.AddressableAssets.Addressables;
 using UnityEditor.AddressableAssets.Settings;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
@@ -14,7 +15,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			var totalCount = untouchedCount + changedCount;
 			
 			// File to store the updated asset paths
-			string reportPath = Path.Combine(Addressables.LibraryPath, "UpdateGroups.txt");
+			string reportPath = Path.Combine(RuntimeAddressables.LibraryPath, "UpdateGroups.txt");
 			
 			// Start the file with the current date and time
 			File.AppendAllText(reportPath, $"\n\n\tUpdate Session: {DateTime.Now}\n");

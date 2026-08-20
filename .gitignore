@@ -58,4 +58,6 @@ AddressablesProject/ProjectSettings/*
 !AddressablesProject/ProjectSettings/ProjectSettings.asset
 !AddressablesProject/ProjectSettings/ProjectVersion.txt
 !AddressablesProject/ProjectSettings/VersionControlSettings.asset
+!AddressablesProject/ProjectSettings/TorProduction/
+!AddressablesProject/ProjectSettings/TorProduction/AddressablesAutomationProjectSettings.asset
 AddressablesProject/Library

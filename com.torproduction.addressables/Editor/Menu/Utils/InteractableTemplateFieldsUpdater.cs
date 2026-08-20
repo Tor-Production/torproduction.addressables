@@ -4,6 +4,7 @@ using System.IO;
 using System;
 using System.Reflection;
 using UnityEngine.AddressableAssets;
+using RuntimeAddressables = UnityEngine.AddressableAssets.Addressables;
 using TorProduction.AddressablesToolpack.Data;
 
 // This is a temporary script with is used only when we need to update fields in the
@@ -21,7 +22,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			}
 
 			// File to store the updated asset paths
-			string reportPath = Path.Combine(Addressables.LibraryPath, "UpdatedInteractables.txt");
+			string reportPath = Path.Combine(RuntimeAddressables.LibraryPath, "UpdatedInteractables.txt");
 
 			// Start the file with the current date and time
 			File.AppendAllText(reportPath, $"\n\n\tUpdate Session: {DateTime.Now}\n");

@@ -2,6 +2,7 @@ using System.IO;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using RuntimeAddressables = UnityEngine.AddressableAssets.Addressables;
 
 namespace TorProduction.AddressablesToolpack.Editor {
 	public static class ReportUpdater {
@@ -25,7 +26,7 @@ namespace TorProduction.AddressablesToolpack.Editor {
 				return;
 			}
 			
-			var filePath = $"{Addressables.LibraryPath}{LAYOUT_FILE_NAME}";
+			var filePath = $"{RuntimeAddressables.LibraryPath}{LAYOUT_FILE_NAME}";
 			var fileFormat = ProjectConfigData.BuildLayoutReportFileFormat;
 			var extension = (fileFormat == ProjectConfigData.ReportFileFormat.JSON) ? "json" : "txt";
 			var sourseFile = $"{filePath}.{extension}";

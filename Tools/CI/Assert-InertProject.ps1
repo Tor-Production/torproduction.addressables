@@ -9,6 +9,7 @@ $ErrorActionPreference = 'Stop'
 $resolvedProjectPath = (Resolve-Path -LiteralPath $ProjectPath).Path
 $forbiddenPaths = @(
     (Join-Path $resolvedProjectPath 'ProjectSettings/ProjectConfig.json'),
+    (Join-Path $resolvedProjectPath 'ProjectSettings/TorProduction/AddressablesAutomationProjectSettings.asset'),
     (Join-Path $resolvedProjectPath 'Assets/AddressableAssetsData')
 )
 

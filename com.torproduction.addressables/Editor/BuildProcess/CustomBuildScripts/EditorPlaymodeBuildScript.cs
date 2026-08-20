@@ -7,6 +7,7 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.Initialization;
+using RuntimeAddressables = UnityEngine.AddressableAssets.Addressables;
 
 namespace TorProduction.AddressablesToolpack.Editor {
 	
@@ -47,7 +48,7 @@ namespace TorProduction.AddressablesToolpack.Editor {
 #endif
 				var platformResult = (string)methodInfo.Invoke(null, new object[] { target });
 				
-				return Addressables.LibraryPath + Addressables.StreamingAssetsSubFolder + "/" + platformResult;
+				return RuntimeAddressables.LibraryPath + RuntimeAddressables.StreamingAssetsSubFolder + "/" + platformResult;
 			}
 		}
 
@@ -88,8 +89,8 @@ namespace TorProduction.AddressablesToolpack.Editor {
 
 			//TODO: detect if the data that does exist is out of date..
 			var runtimeSettingsPath = BuildPath + "/settings.json";
-			PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, runtimeSettingsPath);
-			PlayerPrefs.SetString(Addressables.kAddressablesRuntimeBuildLogPath, buildLogsPath);
+			PlayerPrefs.SetString(RuntimeAddressables.kAddressablesRuntimeDataPath, runtimeSettingsPath);
+			PlayerPrefs.SetString(RuntimeAddressables.kAddressablesRuntimeBuildLogPath, buildLogsPath);
 			IDataBuilderResult res = new AddressablesPlayModeBuildResult() { OutputPath = settingsPath, Duration = timer.Elapsed.TotalSeconds };
 			m_dataBuilt = true;
 			return (TResult)res;

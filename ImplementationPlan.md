@@ -4,10 +4,10 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 1 — in progress; hosted Phase 0 verification remains pending
-- Current batch: Phase 1 explicit configuration — in progress
+- Current phase: Phase 1 — implementation complete; manual/hosted verification gates remain pending and Phase 2 has not started
+- Current batch: Phase 1 explicit configuration — complete; stopped at the batch boundary
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
-- Last updated: `2026-08-20`
+- Last updated: `2026-08-21`
 
 This document is the implementation source of truth. Every implementation context must read it before changing code. Work must proceed incrementally by phase and issue ID. After completing a batch, update this status and the relevant issue/phase progress before committing.
 
@@ -188,7 +188,7 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 ## Execution progress
 
 - [ ] Phase 0 — Reproducible baseline and compile/install safety (implementation complete; hosted CI verification pending)
-- [ ] Phase 1 — Explicit setup and configuration (in progress)
+- [ ] Phase 1 — Explicit setup and configuration (implementation complete; manual persistence/UI and hosted verification pending)
 - [ ] Phase 2 — Deterministic group synchronization
 - [ ] Phase 3 — GUID-based scene synchronization
 - [ ] Phase 4 — Dependency analysis and prefab removal
@@ -254,7 +254,78 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 
 **Important implementation decisions:** configuration getters never repair or write state; all incomplete legacy automation is hard-disabled behind one gate; the package retains Addressables `2.7.6` as its declared minimum while `2.9.1` is compatibility-only; no existing Unity asset GUID was regenerated; and publication remains impossible from repository workflows.
 
-**Next recommended batch:** after the hosted Phase 0 matrix is green and this batch is reviewed, begin Phase 1 with `CONFIG-002` and the remaining `CONFIG-003` work. Do not start group, scene, dependency, prefab, build, package-layout, or publication phases as part of that configuration batch.
+**Next recommended batch at this checkpoint:** after the hosted Phase 0 matrix is green and this batch is reviewed, begin Phase 1 with `CONFIG-002` and the remaining `CONFIG-003` work. That recommendation is fulfilled by the Phase 1 record below; it did not authorize group, scene, dependency, prefab, build, package-layout, or publication work.
+
+### Phase 1 explicit-configuration batch record — 2026-08-21
+
+**Status:** the `CONFIG-002` and remaining `CONFIG-003` implementation scope is complete and locally verified. Work stopped before Phase 2. No Addressables group/entry/label/schema, Build Settings, scene, prefab, dependency, build, package-layout, release, or publication behavior was implemented or enabled. The development host's ignored legacy JSON was left byte-for-byte unchanged, and no new project-settings file or Addressables settings directory was created there.
+
+**Completed issue scope:**
+
+- `CONFIG-002`: added the public editor-only, schema-versioned `AddressablesAutomationConfig` with GUID-backed group and scene-folder rules; added tracked-project `ScriptableSingleton` state containing only the selected config GUID, schema, and scene opt-in flags; resolved the GUID on every read; and added typed missing/corrupt/old/new/deleted/moved/invalid results without read-time repair or saves.
+- `CONFIG-002`: added explicit, backup-first schema `0` to `1` migrations and backup-and-reset recovery under `Library/TorProduction.Addressables/Recovery`. Save failures roll in-memory state back and return actionable errors. Newer/unknown schemas remain fail-closed.
+- `CONFIG-003`: replaced the active legacy setup surface with `Project Settings > Tor Production > Addressables Automation`. Create, Select, Analyze, Preview Legacy Migration, Create Migrated Configuration, Apply Automatic-Scene Setting, Detach, project-state migration/recovery, and config migration are separate explicit actions. Merely opening or reloading the provider is inert.
+- `CONFIG-003`: validation covers supported scopes, schema versions, Addressables-settings existence, persistent main-asset identity, editor-only config placement, `Resources`/Addressables exclusion (including implicit folder entries), source/excluded folders, rule overlap, stable Addressables group GUID plus fallback name, labels, assembly-qualified types, address/label policies, local-scene semantics, and scene-only automatic opt-in. Invalid candidates do not save, and the opt-in Apply control is disabled until the scene context is valid while an existing opt-in can still be turned off.
+- `CONFIG-003`: added an explicit read-only legacy preview that parses the three JSON references independently, inspects legacy assets through `SerializedObject` without a Samples dependency, maps exact resolvable group/folder/label/type/scene intent, retains ambiguous or unresolved values so validation fails closed, reports package-owned folders as outside host `Assets`, reports numeric app-state data as intentionally unmapped, and never rewrites/deletes legacy JSON or assets.
+- Remaining Phase 0 command gates now consume a typed configuration context. All incomplete group, update-all, dependency, prefab/interactable, build, and automatic scene-reconciliation implementations remain hard-disabled. `UpdateAllNewAssetsController` no longer reaches its destructive legacy sequence.
+- Retired the active `ProjectConfigPathsManager`, `ProjectConfigData`, and `ConfigsEnum` APIs while retaining their existing source/meta GUID owners as internal legacy format/DTO/kind identities. The legacy window retains its existing GUID as an inert redirect. Serialized legacy config types and all sample/runtime assets remain unchanged for migration and later owning phases.
+
+**Remaining/deferred issue scope:**
+
+- No Phase 2+ issue was started. `GROUP-001` through `GROUP-006`, `SCENE-001` through `SCENE-004`, `PREFAB-001`/`PREFAB-002`, `DEPS-001`/`DEPS-002`, all build issues, final package layout/API cleanup, and release/publication work remain open.
+- `AddressableAssetsConfig`, `UpdateGroupSettings`, `ScenesListConfig`, `ScenesConfig`, the sample `AppStateConfig`, and their serialized assets remain only as legacy migration carriers or later-phase inputs. Removing them now would strand MonoScript GUIDs or implement Phase 2/3/6 work prematurely.
+- The public configuration deliberately contains only the rule data whose Phase 1 semantics are defined. Dependency, build, and report defaults will require explicit future schema increments when their owning phases define those contracts.
+- Hosted Phase 0 execution, manual Phase 1 persistence/UI checks, and the release/legal gates remain open; therefore the phase checkbox is not marked fully verified and publication remains blocked.
+
+**Implementation commits:**
+
+- `bdcc3d3` — start Phase 1 configuration status.
+- `b1de659` — add versioned automation settings.
+- `c8c9271` — validate automation configuration.
+- `6da6996` — add the explicit automation SettingsProvider.
+- `c46f149` — add safe legacy configuration migration and schema recovery.
+- `0a3c64f` — gate legacy workflows on validated context.
+- `790d451` — reject GUID-ambiguous configuration subassets.
+
+**Commands and verification actually run:**
+
+- Repeated `git status --short`, `git diff --check`, focused/full diffs, history inspection, legacy-reference scans, hardcoded-path scans, workflow/publication scans, host-state checks, and ignored-file hashing. The existing ignored `AddressablesProject/ProjectSettings/ProjectConfig.json` remained SHA-256 `FD8FFB7349A8E90E58310FE563820217BB15DA051483CD7DE17CC77FE1BAD4C9` during the final audit.
+- Parsed `package.json`, the host manifest/lock, and all five asmdefs with `ConvertFrom-Json`; all eight JSON files parsed successfully. Parsed `Test-CleanInstall.ps1` with the PowerShell language parser after its final edits.
+- Ran `Tools/CI/Validate-PhaseZero.ps1` after the final code changes. It passed package/version pins, minimal dependencies, production assembly boundaries, test references, Unity asset/meta pairing, GUID uniqueness, and the no-publication invariant for Addressables `2.7.6`.
+- Ran `Tools/CI/Test-CleanInstall.ps1 -ExcludeSamples` from a new temporary project with no per-project `Library` on Unity `6000.0.78f1` and Addressables `2.7.6`: `33/33` passed, `0` failed/inconclusive/skipped; import and package removal were inert.
+- Ran the same clean no-Samples lane with Addressables `2.9.1`: `33/33` passed, `0` failed/inconclusive/skipped; import and package removal were inert.
+- Ran `Tools/CI/Test-CleanInstall.ps1` with Samples present on Unity `6000.0.78f1` and Addressables `2.7.6`: `33/33` passed, `0` failed/inconclusive/skipped. The real bundled assets resolved through all three known config GUIDs, exact sample folder/group/label/type/scene-policy mappings were preserved, migration preview was byte-equivalent/inert, and package removal was inert.
+- The harness now marks clean-install/no-Samples lanes explicitly and requires exactly `33` discovered and passed tests (`27` Phase 1 cases, `5` Phase 0 cases, and the Addressables required documentation test), with zero failures, inconclusive results, or skips. It preserves XML on a failed Unity exit.
+- Final expanded scans of all six EditMode/removal logs found no C# compiler error, compilation failure, `NullReferenceException`, `MissingReferenceException`, serialization/type-load error, unhandled exception, or fatal error. Evidence is under ignored `artifacts/phase1-2.7.6`, `artifacts/phase1-2.9.1`, and `artifacts/phase1-2.7.6-samples`.
+- Verified no temporary `TorProductionAddressables-*` project or `Assets/__TorProductionAddressablesTests_*` fixture remained, the host has no `Assets/AddressableAssetsData`, and `ProjectSettings/TorProduction/AddressablesAutomationProjectSettings.asset` was not created by reads/tests.
+
+**Failures and warnings observed:**
+
+- The first core compile exposed namespace shadowing between the new `TorProduction.Addressables.Editor` namespace and Unity's runtime `Addressables` type. The legacy call sites now use an explicit runtime alias; both compatibility lanes passed afterward.
+- The first schema-migration test attempted to change a private serialized version through `EditorJsonUtility`, which did not produce the intended old-schema fixture. It now uses `SerializedObject`; the explicit migration test passes.
+- The first no-Samples run after adding the bundled-sample test produced `32` passed plus `1` inconclusive and Unity exit code `2` because `Assume.That` is failure-like in command-line test execution. Clean-install and sample exclusion are now explicit command-line markers; clean lanes assert all sample GUIDs are absent and pass, while sample-inclusive lanes require all three assets. The harness also rejects any nonzero inconclusive/skip count.
+- Final review found that a config subasset could share its main asset's GUID and make object-field analysis/select target different objects. Candidate validation, selection UI, and schema migration now require the config object itself to be the persistent main asset; the real AssetDatabase lifecycle test covers the rejected subasset case, and all three lanes passed again.
+- Passing Unity runs retain the previously observed local licensing-refresh warning and shutdown-time `Curl error 42`; entitlement resolution completed, every final Unity/removal process exited `0`, and no product/import exception pattern was present.
+
+**Checks still requiring Unity/manual/hosted verification:**
+
+- Create/select a real config in a disposable interactive host, restart/domain-reload Unity, and confirm the physical `ScriptableSingleton` selection persists without read-time rewrites. Automated tests cover an actual AssetDatabase create/move/GUID-preservation fixture plus injected deleted-config and save/read backends, but deliberately do not create the production project-settings file.
+- Visually exercise the SettingsProvider's disabled/enabled button states, confirmations, embedded diagnostics, legacy preview, and detach/recovery flows. The state predicate and service actions are covered in EditMode; IMGUI presentation itself was not manually inspected.
+- Exercise a physically corrupt/older/read-only or VCS-locked project-settings file and a real failed disk save in a disposable project. Injected corrupt/schema/save-failure cases pass, but no user project file was intentionally damaged.
+- Run the sample-inclusive fixture on Addressables `2.9.1` if sample migration compatibility on that version is required; the required compatibility lane compiled and passed without Samples, and the exact serialized fixture ran on the declared-minimum `2.7.6` lane.
+- Configure the remote and Unity license secrets, then run the SHA-pinned GitHub Actions matrix. Local YAML/actionlint remains unavailable; the new workflow was direct-inspected and has no publication permission/path. The three pre-existing PR utility workflows still use mutable action refs and remain deferred under `CI-001`/Phase 7.
+- The machine-wide Unity package cache was warm. Player compilation, PlayMode, Package Validation Suite, packed archive, Git/tag installation, and release checks remain later-phase work and are not claimed as passed.
+
+**Important implementation decisions:**
+
+- Stable group identity uses `AddressableAssetGroup.Guid`; the display name is retained as the recovery/creation hint. Config/folder identity uses Unity asset GUIDs. A selected config must be the persistent main host asset under an `Editor` folder and must not be in `Resources` or be an explicit/implicit Addressables entry.
+- The project settings file is not an AssetDatabase asset and has no `.meta`. A newly created config is an AssetDatabase asset and receives a new GUID; every pre-existing `.meta` and GUID remains unchanged.
+- Only scene postprocessing can be opted in, and the actual reconciler remains disabled until Phase 3. Automatic group/dependency/build behavior is unsupported.
+- Legacy unresolved types and semantically unspecified extra scene folders are retained in the candidate with blocking diagnostics rather than dropped into dangerously broad rules. Numeric app-state data is reported but never migrated. No legacy file or asset is overwritten or deleted.
+- The inactive historical body in `ScenesListMapper` remains under `#if false` only until the Phase 3 replacement; restoring its old define is not supported. The later-phase `PrefabsFixerController` hardcoded path is a documented gated exception owned by `PREFAB-001`/`PREFAB-002`, not part of the active configuration system.
+- A later editor-assembly rename must add `MovedFrom`/serialization migration for `AddressablesAutomationConfig`; changing the assembly identity without that migration would strand assets. All later schema additions must remain versioned and backup-first.
+
+**Next recommended batch:** after review plus the hosted Phase 0 and manual Phase 1 gates above, begin Phase 2 with `GROUP-001` through `GROUP-006`: implement a read-only deterministic group planner and validation/report contracts first, then a separately confirmed transactional Apply. Do not begin scene reconciliation, dependency/prefab work, builds, package layout, or publication in that batch.
 
 ## D. Prioritized roadmap
 

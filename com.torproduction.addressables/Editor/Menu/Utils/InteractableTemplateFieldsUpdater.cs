@@ -12,8 +12,14 @@ using TorProduction.AddressablesToolpack.Data;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
 	internal class InteractableTemplateFieldsUpdater {
-		[MenuItem("Tools/Tor Production/Update Interactable Configs To Addressable", priority = 200)]
+		private const string MENU_PATH = "Tools/Tor Production/Update Interactable Configs To Addressable";
+
+		[MenuItem(MENU_PATH, priority = 200)]
 		public static void UpdateFields() {
+			if (!PhaseZeroWorkflowGate.TryBegin("Interactable config migration")) {
+				return;
+			}
+
 			// File to store the updated asset paths
 			string reportPath = Path.Combine(Addressables.LibraryPath, "UpdatedInteractables.txt");
 
@@ -84,5 +90,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 			Debug.Log("Interactables updated. Updated asset paths saved to " + reportPath);
 		}
+
+		[MenuItem(MENU_PATH, true)]
+		private static bool ValidateUpdateFields() => PhaseZeroWorkflowGate.IncompleteWorkflowsEnabled;
 	}
 }

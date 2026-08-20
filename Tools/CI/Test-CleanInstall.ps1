@@ -49,6 +49,16 @@ New-Item -ItemType Directory -Path `
     $temporaryArtifactsPath, `
     $resolvedArtifactsPath -Force | Out-Null
 
+foreach ($artifactName in @(
+    "editmode-$AddressablesVersion.log",
+    "editmode-$AddressablesVersion.xml",
+    "removal-$AddressablesVersion.log")) {
+    $previousArtifactPath = Join-Path $resolvedArtifactsPath $artifactName
+    if (Test-Path -LiteralPath $previousArtifactPath) {
+        Remove-Item -Force -LiteralPath $previousArtifactPath
+    }
+}
+
 try {
     Copy-Item -Recurse -LiteralPath $resolvedPackagePath -Destination $temporaryPackagePath
     Copy-Item -LiteralPath `

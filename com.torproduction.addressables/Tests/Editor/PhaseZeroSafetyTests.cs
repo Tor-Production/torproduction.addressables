@@ -116,6 +116,22 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 
 			LogAssert.Expect(LogType.Warning, $"Test workflow: {PhaseZeroWorkflowGate.DisabledReason}");
 			Assert.That(PhaseZeroWorkflowGate.TryBegin("Test workflow"), Is.False);
+
+			var migrationReportPath = Path.Combine(
+				UnityEngine.AddressableAssets.Addressables.LibraryPath,
+				"UpdatedInteractables.txt");
+			var migrationReportExisted = File.Exists(migrationReportPath);
+			var migrationReportContents = migrationReportExisted ? File.ReadAllText(migrationReportPath) : null;
+
+			LogAssert.Expect(
+				LogType.Warning,
+				$"Interactable config migration: {PhaseZeroWorkflowGate.DisabledReason}");
+			InteractableTemplateFieldsUpdater.UpdateFields();
+
+			Assert.That(File.Exists(migrationReportPath), Is.EqualTo(migrationReportExisted));
+			if (migrationReportExisted) {
+				Assert.That(File.ReadAllText(migrationReportPath), Is.EqualTo(migrationReportContents));
+			}
 		}
 
 		[Test]

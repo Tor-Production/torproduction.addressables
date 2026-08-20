@@ -96,7 +96,8 @@ $testAssembly = Get-Content -Raw -LiteralPath `
 $requiredTestReferences = @(
     'GUID:a5d30c4d8d475d442b6f3f91d04306a1',
     'GUID:6a4270a497015e843be16b899b29c2fb',
-    'GUID:d7d6534ed8cfdf5449425dc001ec6d7d'
+    'GUID:d7d6534ed8cfdf5449425dc001ec6d7d',
+    'GUID:9e24947de15b9834991c9d8411ea37cf'
 )
 foreach ($reference in $requiredTestReferences) {
     if ($testAssembly.references -notcontains $reference) {

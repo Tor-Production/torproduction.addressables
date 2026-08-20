@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 0 — implementation complete; hosted CI verification pending
-- Current batch: First implementation batch — complete
+- Current phase: Phase 1 — in progress; hosted Phase 0 verification remains pending
+- Current batch: Phase 1 explicit configuration — in progress
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-20`
 
@@ -188,7 +188,7 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 ## Execution progress
 
 - [ ] Phase 0 — Reproducible baseline and compile/install safety (implementation complete; hosted CI verification pending)
-- [ ] Phase 1 — Explicit setup and configuration
+- [ ] Phase 1 — Explicit setup and configuration (in progress)
 - [ ] Phase 2 — Deterministic group synchronization
 - [ ] Phase 3 — GUID-based scene synchronization
 - [ ] Phase 4 — Dependency analysis and prefab removal

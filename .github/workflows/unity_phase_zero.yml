@@ -1,0 +1,71 @@
+name: Unity Phase 0 validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  editmode:
+    name: Addressables ${{ matrix.addressables }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        addressables:
+          - 2.7.6
+          - 2.9.1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Select Addressables compatibility lane
+        shell: pwsh
+        run: >-
+          ./Tools/CI/Set-AddressablesVersion.ps1
+          -ProjectPath ./AddressablesProject
+          -AddressablesVersion '${{ matrix.addressables }}'
+
+      - name: Validate Phase 0 repository invariants
+        shell: pwsh
+        run: >-
+          ./Tools/CI/Validate-PhaseZero.ps1
+          -ExpectedHostAddressablesVersion '${{ matrix.addressables }}'
+
+      - name: Compile and run EditMode tests
+        id: unity-tests
+        uses: game-ci/unity-test-runner@0ff419b913a3630032cbe0de48a0099b5a9f0ed9 # v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          projectPath: AddressablesProject
+          unityVersion: 6000.0.78f1
+          testMode: editmode
+          artifactsPath: artifacts/editmode-${{ matrix.addressables }}
+
+      - name: Confirm package import remained inert
+        if: always()
+        shell: pwsh
+        run: ./Tools/CI/Assert-InertProject.ps1 -ProjectPath ./AddressablesProject
+
+      - name: Confirm Unity did not change tracked project state
+        if: always()
+        shell: pwsh
+        run: git diff --exit-code -- AddressablesProject/Assets AddressablesProject/ProjectSettings
+
+      - name: Upload Unity test artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: editmode-addressables-${{ matrix.addressables }}
+          path: artifacts/editmode-${{ matrix.addressables }}
+          if-no-files-found: warn

@@ -9,7 +9,6 @@ using UnityEngine;
 using UnityEngine.AddressableAssets.Initialization;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
-	[InitializeOnLoad]
 	internal class BuildController {
 		private const string BUILD_ADDRESSABLES_STATE_KEY = "BuildAddressables";
 		private const string PLATFORMS_LIST_TO_BUILD_STATE_KEY = "PlatformsToBuild";
@@ -34,13 +33,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		};
 
 		internal static Dictionary<TargetPlatform, BuildTarget> TargetsDictionary => m_buildTargetsDictionary; 
-		
-		// Constructor method is called after domain reload process is finished.
-		// It is used in case of unexpected Domain Reload process during platform switch which stops the code execution
-		static BuildController() {
-			OnBuildTargetSwitched();
-		}
-		
 		
 		static void OnBuildTargetSwitched() {
 			AssetDatabase.SaveAssets(); // in case of changes in serialised fields after switching a platform

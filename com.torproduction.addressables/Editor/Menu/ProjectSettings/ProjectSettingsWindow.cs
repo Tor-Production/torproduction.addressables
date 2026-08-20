@@ -52,22 +52,35 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				m_appStatesConfigFilePath = AssetDatabase.GetAssetPath(m_appStatesConfig);
 			}
 
+			var canSave = CanSave();
+			if (!canSave) {
+				EditorGUILayout.HelpBox("Select all three valid legacy configuration assets before saving.", MessageType.Info);
+			}
+
+			EditorGUI.BeginDisabledGroup(!canSave);
 			if (GUILayout.Button("Save")) {
 				SaveConfigPath();
 			}
+			EditorGUI.EndDisabledGroup();
 		}
 
 		private void SaveConfigPath() {
-			if (m_scenesListConfig != null) {
-				ProjectConfigPathsManager.SaveConfigPath(
-					AssetDatabase.GetAssetPath(m_scenesListConfig), 
-					AssetDatabase.GetAssetPath(m_addressableAssetsConfig),
-					AssetDatabase.GetAssetPath(m_appStatesConfig));
+			if (ProjectConfigPathsManager.TrySaveConfigPaths(
+				    AssetDatabase.GetAssetPath(m_scenesListConfig),
+				    AssetDatabase.GetAssetPath(m_addressableAssetsConfig),
+				    AssetDatabase.GetAssetPath(m_appStatesConfig),
+				    out var error)) {
 				Debug.Log($"{nameof(ProjectSettingsWindow)} -> {nameof(SaveConfigPath)} : Configuration file paths saved:\n" +
 				          $"Scenes: {m_sceneConfigFilePath}\nAddressable assets: {m_addressableAssetsConfigFilePath}");
 			} else {
-				Debug.LogError($"{nameof(ProjectSettingsWindow)} -> {nameof(SaveConfigPath)} : Config assets are not set.");
+				Debug.LogError($"{nameof(ProjectSettingsWindow)} -> {nameof(SaveConfigPath)} : {error}");
 			}
+		}
+
+		private bool CanSave() {
+			return m_scenesListConfig != null &&
+			       m_addressableAssetsConfig != null &&
+			       m_appStatesConfig != null;
 		}
 	}
 }

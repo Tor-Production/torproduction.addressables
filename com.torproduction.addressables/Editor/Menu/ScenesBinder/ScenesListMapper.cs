@@ -8,6 +8,10 @@ using TorProduction.AddressablesToolpack.Data;
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
 	public class ScenesListMapper : AssetPostprocessor {
 		static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths) {
+			if (!PhaseZeroWorkflowGate.AutomaticSceneProcessingEnabled) {
+				return;
+			}
+
 			var configScenesPath = ProjectConfigPathsManager.GetConfigPath(ConfigsEnum.Scenes);
 			var configScenes = AssetDatabase.LoadAssetAtPath<ScenesListConfig>(configScenesPath);
 			string worldScenesFolderPath = AssetDatabase.GetAssetPath(configScenes.m_ScenesLocation);

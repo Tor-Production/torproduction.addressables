@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using TorProduction.Addressables.Editor;
+using TorProduction.AddressablesToolpack.Editor.Menu;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,6 +20,26 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			Assert.That(result.Status, Is.EqualTo(ProjectSettingsReadStatus.Missing));
 			Assert.That(backend.ValueReadCount, Is.Zero);
 			Assert.That(backend.SaveCount, Is.Zero);
+		}
+
+		[Test]
+		public void SettingsProviderFactory_IsInertAndUsesProjectSettingsPath() {
+			var settingsExisted = System.IO.File.Exists(
+				AddressablesAutomationProjectSettingsStore.SettingsPath);
+			var settingsContents = settingsExisted
+				? System.IO.File.ReadAllText(AddressablesAutomationProjectSettingsStore.SettingsPath)
+				: null;
+
+			var provider = AddressablesAutomationSettingsProvider.CreateProvider();
+
+			Assert.That(provider.settingsPath, Is.EqualTo(AddressablesAutomationSettingsProvider.SettingsPath));
+			Assert.That(System.IO.File.Exists(AddressablesAutomationProjectSettingsStore.SettingsPath),
+				Is.EqualTo(settingsExisted));
+			if (settingsExisted) {
+				Assert.That(
+					System.IO.File.ReadAllText(AddressablesAutomationProjectSettingsStore.SettingsPath),
+					Is.EqualTo(settingsContents));
+			}
 		}
 
 		[Test]

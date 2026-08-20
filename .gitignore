@@ -51,5 +51,10 @@ AddressablesProject/obj
 AddressablesProject/Logs
 AddressablesProject/Temp
 AddressablesProject/UserSettings
-AddressablesProject/ProjectSettings
+AddressablesProject/ProjectSettings/*
+!AddressablesProject/ProjectSettings/EditorBuildSettings.asset
+!AddressablesProject/ProjectSettings/EditorSettings.asset
+!AddressablesProject/ProjectSettings/ProjectSettings.asset
+!AddressablesProject/ProjectSettings/ProjectVersion.txt
+!AddressablesProject/ProjectSettings/VersionControlSettings.asset
 AddressablesProject/Library

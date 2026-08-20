@@ -3,9 +3,9 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Not started
-- Current phase: Phase 0
-- Current batch: First implementation batch
+- Implementation: In progress
+- Current phase: Phase 0 — in progress
+- Current batch: First implementation batch — in progress
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-20`
 
@@ -187,7 +187,7 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 
 ## Execution progress
 
-- [ ] Phase 0 — Reproducible baseline and compile/install safety
+- [ ] Phase 0 — Reproducible baseline and compile/install safety (in progress)
 - [ ] Phase 1 — Explicit setup and configuration
 - [ ] Phase 2 — Deterministic group synchronization
 - [ ] Phase 3 — GUID-based scene synchronization

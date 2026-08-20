@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 0 — in progress
-- Current batch: First implementation batch — in progress
+- Current phase: Phase 0 — implementation complete; hosted CI verification pending
+- Current batch: First implementation batch — complete
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-20`
 
@@ -187,7 +187,7 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 
 ## Execution progress
 
-- [ ] Phase 0 — Reproducible baseline and compile/install safety (in progress)
+- [ ] Phase 0 — Reproducible baseline and compile/install safety (implementation complete; hosted CI verification pending)
 - [ ] Phase 1 — Explicit setup and configuration
 - [ ] Phase 2 — Deterministic group synchronization
 - [ ] Phase 3 — GUID-based scene synchronization
@@ -195,6 +195,66 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 - [ ] Phase 5 — Build pipeline and existing-build Play Mode
 - [ ] Phase 6 — Package layout and API cleanup
 - [ ] Phase 7 — Tests, documentation, CI, and release readiness
+
+### First implementation batch record — 2026-08-20
+
+**Status:** Section H implementation is complete and locally verified. Work stopped at the first-batch boundary. No package was published, no publication workflow was enabled, and the existing ignored `ProjectSettings/ProjectConfig.json` in the development checkout was left untouched.
+
+**Completed issue scope:**
+
+- `BASE-001`, `BASE-002`, and `BASE-003`: tracked the Unity `6000.0.78f1` baseline and minimum Project Settings, set the package minimum to Unity `6000.0` plus Addressables `2.7.6`, established the separate `2.9.1` compatibility lane, minimized the development manifest, removed Foundation, and removed the unrelated vendored resolver.
+- `CONFIG-001`: configuration reads are inert, invalid/missing configuration is not rewritten, automatic scene processing is fail-closed, and import no longer initializes build processing.
+- Narrow `CONFIG-003`: incomplete group, update-all, dependency, prefab/interactable migration, and build commands are visible but disabled; their invoked handlers also fail closed. The legacy settings window can save only after all three existing references are valid.
+- Narrow `PKG-001`: production source no longer imports NUnit, the production Menu assembly no longer references Samples, and clean-install compilation succeeds with the `Samples` directory physically absent. Final `Samples~` conversion remains deferred.
+- `TEST-001` and `TEST-002`: removed template/runtime-example tests and replaced them with seven package EditMode safety tests covering missing/invalid configuration, project-state immutability, clean installation, fail-closed workflows, manifest pins, and assembly boundaries.
+- Narrow `CI-001`: added reusable static/inert/clean-install scripts and a SHA-pinned GitHub Actions matrix for Unity `6000.0.78f1` with Addressables `2.7.6` and `2.9.1`.
+- Publication-disabled slice of `CI-002`: deleted `release_publish_to_npm.yml`; no archive, tag, registry, or package publication path replaced it.
+- Added `Documentation~/SAFETY.md` describing the intentionally disabled workflows and Phase 0 limitations.
+
+**Remaining/deferred issue scope:**
+
+- Full `CONFIG-003` remains open with `CONFIG-002` for the Phase 1 SettingsProvider, GUID-backed project settings, validation, and migration work.
+- Full `PKG-001` remains open for the planned `Samples~` layout and manifest declaration.
+- Full `CI-001` remains open for hosted execution evidence, Package Validation Suite, player/PlayMode coverage, sample import, archive validation, and later release gates.
+- Full `CI-002` remains open and legally blocked: a protected archive/tag release workflow must not be added or enabled until ownership, relicensing, and required attribution are confirmed.
+- All other issues explicitly excluded by Section H remain unstarted.
+
+**Implementation commits:**
+
+- `3a2e77e` — track reproducible Unity baseline.
+- `d77cb04` — minimize Unity dependency baseline.
+- `7b597be` — make package import inert.
+- `5bd329c` — add Phase 0 safety coverage.
+- `7d323a9` — add pinned Phase 0 validation and remove npm publication.
+- `719a3e6` — gate the remaining legacy interactable migration entry point and harden its regression fixture.
+
+**Commands and verification actually run:**
+
+- Repeated `git status --short`, `git diff --check`, baseline/history inspection, focused diffs, manifest/asmdef inspection, workflow scans, and the Section F `rg` audits.
+- Parsed `package.json`, the host manifest/lock, and every package asmdef with `ConvertFrom-Json`; parsed all four CI PowerShell scripts with the PowerShell language parser.
+- Ran `Tools/CI/Validate-PhaseZero.ps1` against the tracked `2.7.6` host. It passed package identity/version pins, minimal host dependencies, tracked settings, production dependency boundaries, required test references, package `.meta` pairing, GUID uniqueness, and the no-publication invariant.
+- Made a fresh local clone, ran `Set-AddressablesVersion.ps1` for `2.9.1`, then ran `Validate-PhaseZero.ps1 -ExpectedHostAddressablesVersion 2.9.1`. It passed; only the expected temporary host-manifest modification and lock deletion occurred before verified cleanup.
+- Ran `Test-CleanInstall.ps1 -ExcludeSamples` on Unity `6000.0.78f1` for Addressables `2.7.6` and `2.9.1`. Each isolated project started without a `Library`, compiled without Samples, passed `8/8` EditMode tests (`7` package tests plus the Addressables documentation stub), created no config/Addressables settings/Build Settings entries, then removed the package and compiled again without changing those states. Final logs contained no C# compiler errors, script-compilation failures, null/unhandled exceptions, or fatal errors. Generated evidence is under ignored `artifacts/clean-install-2.7.6` and `artifacts/clean-install-2.9.1`.
+- Confirmed the temporary clean-install projects and local CI clone were removed only after their resolved paths were checked to be below the system temporary directory. The user's already-open development Editor was not closed or used for batchmode.
+
+**Failures and warnings observed:**
+
+- The pre-fix import reproduced the baseline `ScenesListMapper` null-reference failure. The final isolated imports did not reproduce it.
+- The first authored test compile exposed unsupported `Assert.Multiple` usage in the bundled NUnit version and an ambiguous `PackageInfo` type; both were corrected before the first passing result.
+- The final menu audit found one direct legacy interactable migration menu that had not inherited the update-all gate. Its new regression initially exposed a missing direct `Unity.Addressables` test-assembly reference. The command and direct handler are now gated, the reference is explicit, and both compatibility lanes passed again.
+- Passing Unity runs logged a local licensing refresh warning (`Access token is unavailable`) and package-removal runs logged `Curl error 42`; Unity returned exit code `0`, produced passing results, and completed inert removal. These environment diagnostics must not be mistaken for a hosted licensing check.
+- Local YAML/actionlint validation was unavailable: PyYAML and the Node `yaml` module were absent, `actionlint` was not installed, and Docker Desktop was not running. The workflow was inspected directly, all new action references are immutable SHAs, and the workflow itself remains unexecuted externally.
+
+**Checks still requiring hosted or later-phase verification:**
+
+- Configure the repository remote and appropriate Unity licensing secrets, then run the new GitHub Actions matrix on a pull request. Do not mark Phase 0 fully verified until both hosted lanes pass and retain their artifacts.
+- The isolated projects had empty per-project `Library` directories, but the machine-wide Unity package cache was warm and was not destructively purged.
+- Player compilation, PlayMode tests, Package Validation Suite, sample import, archive/install-from-tag checks, and manual visual confirmation of disabled menu presentation remain later-phase or hosted checks; none is claimed as passed here.
+- Section F's broad stale-branding, private-reflection, project-specific type, and placeholder scans still report known later-phase files. Production NUnit and Foundation dependency scans are clean; the remaining hits stay deferred under the issue IDs already assigned in Sections D and E.
+
+**Important implementation decisions:** configuration getters never repair or write state; all incomplete legacy automation is hard-disabled behind one gate; the package retains Addressables `2.7.6` as its declared minimum while `2.9.1` is compatibility-only; no existing Unity asset GUID was regenerated; and publication remains impossible from repository workflows.
+
+**Next recommended batch:** after the hosted Phase 0 matrix is green and this batch is reviewed, begin Phase 1 with `CONFIG-002` and the remaining `CONFIG-003` work. Do not start group, scene, dependency, prefab, build, package-layout, or publication phases as part of that configuration batch.
 
 ## D. Prioritized roadmap
 

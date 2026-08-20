@@ -4,11 +4,12 @@
 
 - This repository contains a Unity Package Manager product owned and branded by Tor Production. The package is under `com.torproduction.addressables/`; `AddressablesProject/` is its development and integration-test host.
 - Do not reintroduce former-owner branding, URLs, namespaces, identifiers, or attribution unless the current task explicitly requires it and the owner has approved it for legal reasons.
+- Treat code provenance, licensing, redistribution rights, and legally required attribution as unresolved until the owner records confirmation in `ImplementationPlan.md`. Do not create a public release, publish the package, change the license, or remove legally required notices before that confirmation.
 - Read `ImplementationPlan.md` before changing code. Treat it as the source of truth for product decisions, issue IDs, phase and batch progress, and current scope.
 
 ## Safety and package boundaries
 
-- Preserve Unity `.meta` files and their GUIDs. Move or rename a retained Unity asset together with its existing `.meta` file; never regenerate GUIDs casually.
+- Preserve Unity `.meta` files and their GUIDs. Move or rename a retained Unity asset together with its existing `.meta` file; regenerate a GUID only when the current task explicitly requires a new asset identity and all serialized-reference consequences have been checked.
 - Package import, initialization, and configuration reads must be inert when setup is absent, incomplete, or invalid.
 - Never silently modify Addressables settings, groups, entries, labels, Build Settings, scenes, assets, or other host-project state.
 - Any editor command that mutates a project must be explicit, validated before mutation, scoped to package-owned/configured state, and provide clear failure reporting.

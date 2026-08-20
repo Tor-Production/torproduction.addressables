@@ -1,9 +1,7 @@
 {
     "name": "TorProduction.AddressablesToolpack",
     "rootNamespace": "",
-    "references": [
-        "GUID:db0eb1f6c1244402aa4d287a997cdb47"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

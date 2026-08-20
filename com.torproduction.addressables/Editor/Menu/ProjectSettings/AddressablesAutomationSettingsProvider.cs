@@ -272,6 +272,12 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		private void SelectPending() {
+			if (!AddressablesAutomationContextProvider.TryValidateConfigCandidate(
+				    m_pendingConfig, out var candidateError)) {
+				SetMessage(candidateError, MessageType.Error);
+				return;
+			}
+
 			var path = AssetDatabase.GetAssetPath(m_pendingConfig);
 			if (AddressablesAutomationContextProvider.TrySelectConfig(
 				    AssetDatabase.AssetPathToGUID(path), out var error)) {

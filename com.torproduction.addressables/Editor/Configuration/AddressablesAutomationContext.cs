@@ -279,12 +279,17 @@ namespace TorProduction.Addressables.Editor {
 		internal static bool TryValidateConfigCandidate(
 			AddressablesAutomationConfig config,
 			out string error) {
+			if (config == null || !AssetDatabase.IsMainAsset(config)) {
+				error = "The selected configuration must be a persistent main asset; configuration subassets cannot be represented by a Unity GUID.";
+				return false;
+			}
+
 			var path = (AssetDatabase.GetAssetPath(config) ?? string.Empty).Replace('\\', '/');
 			var guid = string.IsNullOrEmpty(path) ? string.Empty : AssetDatabase.AssetPathToGUID(path);
 			return TryValidateLoadedConfig(
 				guid,
 				path,
-				config,
+				AssetDatabase.LoadMainAssetAtPath(path),
 				new AddressablesSettingsView(),
 				out error);
 		}

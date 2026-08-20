@@ -268,9 +268,17 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 				var movedPath = root + "/Editor/MovedAutomation.asset";
 				var config = ScriptableObject.CreateInstance<AddressablesAutomationConfig>();
 				AssetDatabase.CreateAsset(config, originalPath);
+				var subassetConfig = ScriptableObject.CreateInstance<AddressablesAutomationConfig>();
+				AssetDatabase.AddObjectToAsset(subassetConfig, originalPath);
 				AssetDatabase.SaveAssets();
 				var guid = AssetDatabase.AssetPathToGUID(originalPath);
 				var backend = new FakeProjectSettingsBackend { Exists = false };
+
+				Assert.That(
+					AddressablesAutomationContextProvider.TryValidateConfigCandidate(
+						subassetConfig, out var subassetError),
+					Is.False);
+				StringAssert.Contains("subassets", subassetError);
 
 				Assert.That(
 					AddressablesAutomationContextProvider.TrySelectConfig(

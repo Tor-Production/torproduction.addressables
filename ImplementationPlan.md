@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 1 — hosted verification remains explicitly manual or tag-triggered; Phase 2 has not started
-- Current batch: Narrow `CI-001` paid-matrix trigger and concurrency correction — complete
+- Current phase: Phase 1 — the hosted matrix passed for the exact Linux correction commit; the revised SettingsProvider visual recheck remains, and Phase 2 has not started
+- Current batch: Phase 1 hosted-verification evidence and GitHub CLI tooling update — complete
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-22`
 
@@ -202,10 +202,10 @@ This protocol is the documented exception to the repository's general commit, ta
 9. Only after both lanes pass, create the annotated tag `phase-<number>-verified` targeting the exact tested phase-completion commit and push that tag. Never move or reuse a phase-verification tag for a different commit.
 10. Never create or push a `v*` tag, create a GitHub Release, publish the package, or enable publication under this protocol. Each of those actions always requires separate explicit release authorization.
 
-**Current hosted-tooling check — 2026-08-22:** GitHub's read-only API discovers `unity_phase_zero.yml` as active, and an HTTPS push dry-run confirms the stored Git credentials have repository write access. GitHub CLI is not installed or available on `PATH`, so `gh` authentication, CLI dispatch, and CLI run watching cannot currently be verified. The configured SSH `origin` reaches GitHub but rejects the available key; HTTPS is currently the verified Git transport. No workflow was dispatched and no tag was created during this documentation check.
+**Current hosted-tooling check — 2026-08-22:** GitHub CLI `2.98.0` is installed at `C:\Program Files\GitHub CLI\gh.exe` and authenticated to `github.com` as `Yurii-Tor` with HTTPS Git transport and the required `repo`/`workflow` scopes. CLI repository and workflow discovery succeed for `Yurii-Tor/torproduction.addressables` and active workflow `unity_phase_zero.yml`. The successful hosted run and both matrix jobs were verified through CLI as recorded below. No duplicate paid run, phase tag, `v*` tag, release, or publication was created.
 
-- [ ] Phase 0 — Reproducible baseline and compile/install safety (implementation complete; hosted credentials configured and matrix rerun pending)
-- [ ] Phase 1 — Explicit setup and configuration (implementation and manual-verification corrections complete; revised UI recheck and hosted verification pending)
+- [x] Phase 0 — Reproducible baseline and compile/install safety (implementation and required hosted matrix complete)
+- [ ] Phase 1 — Explicit setup and configuration (implementation, manual-verification corrections, and hosted matrix complete; revised SettingsProvider visual recheck pending)
 - [ ] Phase 2 — Deterministic group synchronization
 - [ ] Phase 3 — GUID-based scene synchronization
 - [ ] Phase 4 — Dependency analysis and prefab removal
@@ -404,7 +404,7 @@ This protocol is the documented exception to the repository's general commit, ta
 
 ### Phase 1 hosted Linux compilation correction record — 2026-08-22
 
-**Status:** the narrow `BUILD-005`/`CI-001` cross-platform Editor compilation correction is complete and locally verified. Hosted Unity credentials are now configured, but the corrected commit has not yet been rerun by GitHub Actions. Phase 2 and the planned Phase 5 build-system redesign were not started.
+**Status:** the narrow `BUILD-005`/`CI-001` cross-platform Editor compilation correction is complete and verified locally and by the hosted Linux matrix. Phase 2 and the planned Phase 5 build-system redesign were not started.
 
 **Hosted failure and root cause:**
 
@@ -426,7 +426,7 @@ This protocol is the documented exception to the repository's general commit, ta
 - Scanned all four resulting EditMode/removal logs for compiler errors, compilation failures, unreachable-code diagnostics, import failures, serialization/type-load failures, unhandled exceptions, and fatal errors; no configured pattern was present. Evidence is under ignored `artifacts/hosted-linux-fix-2.7.6` and `artifacts/hosted-linux-fix-2.9.1`.
 - Parsed the package/host manifests and all five asmdefs, parsed every CI PowerShell script, verified the existing build-script `.meta` GUID `5301850a6a9277f4fbaa6075ee00a3bc` was unchanged, and confirmed `git diff --exit-code -- AddressablesProject/Assets AddressablesProject/ProjectSettings` after both Unity lanes.
 
-**Remaining hosted check:** rerun the SHA-pinned GitHub Actions matrix now that licensing is configured. The local Windows editor exercised all three explicit host mappings and both Addressables versions, but the corrected source is not claimed as hosted-Linux verified until the `2.7.6` lane compiles and runs its tests on GitHub. Stop here and do not begin Phase 2 automatically.
+**Hosted check completed:** GitHub Actions run `32554221921` tested exact correction commit `b843fa52846406342cfb624c859b386389bb997a`; both Addressables lanes completed successfully as detailed in the evidence record below. Stop at the remaining Phase 1 visual-verification boundary and do not begin Phase 2 automatically.
 
 ### Phase 1 Unity CI cost-control correction record — 2026-08-22
 
@@ -437,7 +437,19 @@ This protocol is the documented exception to the repository's general commit, ta
 - Extended `Validate-PhaseZero.ps1` to fail if pull-request/branch triggers return, the manual or `v*` tag trigger is lost, or same-ref cancellation is disabled. The existing license preflight, two Addressables lanes, SHA-pinned actions, read-only permission, inertness checks, tracked-state check, and artifact upload remain unchanged.
 - Ran `git diff --check` and `Tools/CI/Validate-PhaseZero.ps1`; both passed. `actionlint` remains unavailable locally, so GitHub's workflow parser and the next intentional manual run remain the hosted syntax/execution checks.
 
-**Next recommended action:** review and commit this narrow workflow-policy change, then use manual dispatch when hosted Unity verification is desired. Do not create a version tag solely to test the workflow and do not begin Phase 2 automatically.
+**Completion evidence:** commit `31c14adbe997883cae41aa1994ae095e8934c917` was pushed to `origin/main`. GitHub exposes the updated workflow with only manual and `v*` tag triggers, and the post-push workflow run list contains no run for that ordinary branch push. Do not create a version tag solely to test the workflow and do not begin Phase 2 automatically.
+
+### Phase 1 hosted verification evidence record — 2026-08-22
+
+**Status:** the required hosted Linux correction check passed. This completes the Phase 0 hosted gate and the Phase 1 hosted-matrix gate. Phase 1 remains open only for the separately documented revised SettingsProvider visual recheck; no phase-verification tag was created.
+
+- GitHub Actions run [`32554221921`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32554221921) completed successfully for exact commit `b843fa52846406342cfb624c859b386389bb997a` (`fix: compile editor build path on Linux`).
+- Job `96985767565`, `Addressables 2.7.6`, completed successfully. License preflight, compatibility-lane selection, Phase 0 static validation, Unity compilation/EditMode tests, inert-import confirmation, tracked-project-state confirmation, and artifact upload all passed.
+- Job `96985767635`, `Addressables 2.9.1`, completed successfully with the same required steps passing.
+- The run began under the previous automatic branch-push policy before the cost-control correction was committed. Because it tested the exact correction commit and both required lanes passed, no duplicate paid manual run was dispatched.
+- GitHub CLI `2.98.0` confirmed the run SHA, overall conclusion, per-job conclusions, repository access, and active remote workflow. The subsequent CI-policy push `31c14adbe997883cae41aa1994ae095e8934c917` created no Unity workflow run, confirming the new ordinary-branch-push exclusion.
+
+**Next recommended action:** visually recheck the corrected SettingsProvider in the development Editor against the Phase 1 manual-verification checklist, record the result, and only then decide whether Phase 1 is complete. Do not begin Phase 2 automatically.
 
 ## D. Prioritized roadmap
 

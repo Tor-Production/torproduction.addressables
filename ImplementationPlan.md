@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 2 — local implementation and validation complete; hosted verification pending
-- Current batch: Phase 2 completion commit and hosted verification — pending
+- Current phase: Phase 2 — implementation and hosted verification complete; evidence commit and verification tag pending
+- Current batch: Phase 2 hosted evidence and `phase-2-verified` tag — in progress
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-22`
 
@@ -492,7 +492,20 @@ This protocol is the documented exception to the repository's general commit, ta
 - `Tools/CI/Validate-PhaseZero.ps1 -ExpectedHostAddressablesVersion 2.7.6` passed after restoring the tracked minimum lane. `git diff --check`, the targeted unsafe updater/default-cleanup scan, tracked `AddressablesProject/Assets`/`ProjectSettings` diff, and tracked host manifest/lock diff all passed. The development host's known ignored legacy `ProjectSettings/ProjectConfig.json` remains untouched, so the host itself is intentionally not a valid input to the clean-project-only `Assert-InertProject.ps1`; both fresh temporary lanes passed that assertion instead.
 - The complete Phase 2 diff was reviewed for scope boundaries, inert reads, GUID/meta preservation, public Runtime/Editor/Samples/Tests assembly direction, stale-plan coverage, rollback ordering, source-asset immutability, deterministic ordering, and Phase 3+ gating. No paid hosted Unity job has been dispatched yet.
 
-**Remaining completion protocol:** create and push one focused Phase 2 completion commit from this locally verified state; manually dispatch `unity_phase_zero.yml` for that exact pushed `main` commit; require both `2.7.6` and `2.9.1` jobs to pass; record the run ID/URL/SHA/per-lane results in an evidence-only commit; then create and push annotated `phase-2-verified` pointing to the exact hosted-tested completion commit. Do not create a `v*` tag, GitHub Release, package publication, or other release artifact.
+**Implementation-boundary protocol status:** the focused completion commit and its single exact-commit hosted run are complete as recorded below. The evidence-only commit/push and exact-commit `phase-2-verified` tag remain; no `v*` tag, GitHub Release, package publication, or other release artifact is authorized.
+
+### Phase 2 hosted verification evidence record — 2026-08-22
+
+**Tested completion commit:** focused Phase 2 commit `2bd0ab66ccbba60a55aecd01db37141e9462d999` (`feat: implement deterministic group synchronization`) was pushed to `origin/main`, and `git ls-remote` confirmed `refs/heads/main` at that exact SHA before dispatch.
+
+**Hosted run:** manually dispatched `unity_phase_zero.yml` once for `main`. GitHub Actions run `32591069542` ([run URL](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32591069542)) used event `workflow_dispatch`, reported head SHA `2bd0ab66ccbba60a55aecd01db37141e9462d999`, started `2026-08-22T18:33:03Z`, completed `2026-08-22T18:36:02Z`, and concluded `success`.
+
+- Addressables `2.7.6`: job `97074887730` ([job URL](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32591069542/job/97074887730)) completed successfully in approximately `2m54s`. Checkout, license preflight, lane selection, repository validation, Unity compile/EditMode tests, inert-project assertion, tracked-project-state assertion, and artifact upload all passed.
+- Addressables `2.9.1`: job `97074887736` ([job URL](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32591069542/job/97074887736)) completed successfully in approximately `2m52s`. The same required steps all passed.
+- GitHub emitted non-failing Node.js 20 deprecation annotations for the intentionally SHA-pinned checkout, artifact, and GameCI actions while executing them on Node.js 24. These annotations did not skip or fail any required step and do not change the successful lane conclusions.
+- The post-run manual-dispatch list contained only run `32591069542` for this workflow/branch/SHA, confirming no duplicate paid Phase 2 run was dispatched.
+
+**Phase decision:** every Phase 2 acceptance criterion and both required hosted lanes pass for exact completion commit `2bd0ab66ccbba60a55aecd01db37141e9462d999`. After this evidence-only record is committed and pushed, create and push annotated tag `phase-2-verified` targeting that exact tested commit. Do not target the later evidence-only commit and do not create a `v*` tag, GitHub Release, package publication, or other release artifact.
 
 ## D. Prioritized roadmap
 

@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 1 — manual-verification corrections in progress; Phase 2 has not started
-- Current batch: Phase 1 activation UX, persistence diagnostics, and Unity-license CI preflight corrections
+- Current phase: Phase 1 — corrected and locally verified; revised UI and hosted license/billing gates remain pending; Phase 2 has not started
+- Current batch: Phase 1 manual-verification corrections — complete; stopped at the corrected Phase 1 boundary
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-22`
 
@@ -188,7 +188,7 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 ## Execution progress
 
 - [ ] Phase 0 — Reproducible baseline and compile/install safety (implementation complete; hosted CI verification pending)
-- [ ] Phase 1 — Explicit setup and configuration (implementation complete; manual persistence/UI and hosted verification pending)
+- [ ] Phase 1 — Explicit setup and configuration (implementation and manual-verification corrections complete; revised UI recheck and hosted verification pending)
 - [ ] Phase 2 — Deterministic group synchronization
 - [ ] Phase 3 — GUID-based scene synchronization
 - [ ] Phase 4 — Dependency analysis and prefab removal
@@ -326,6 +326,64 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 - A later editor-assembly rename must add `MovedFrom`/serialization migration for `AddressablesAutomationConfig`; changing the assembly identity without that migration would strand assets. All later schema additions must remain versioned and backup-first.
 
 **Next recommended batch:** after review plus the hosted Phase 0 and manual Phase 1 gates above, begin Phase 2 with `GROUP-001` through `GROUP-006`: implement a read-only deterministic group planner and validation/report contracts first, then a separately confirmed transactional Apply. Do not begin scene reconciliation, dependency/prefab work, builds, package layout, or publication in that batch.
+
+### Phase 1 manual-verification correction record — 2026-08-22
+
+**Status:** the narrow `CONFIG-002`, `CONFIG-003`, and `CI-001` correction scope is implemented and locally verified. Phase 2 was not started. No Addressables content workflow, Build Settings workflow, publication path, or release workflow was added or enabled.
+
+**Manual findings received:**
+
+- Create, Analyze, Detach, explicit configuration persistence, and reopening/reloading after the explicit selection action worked in the interactive host.
+- The former `Select` label did not communicate that it persisted the active configuration. Editing the object field before selection changed only pending UI state, so the former `Reload` action restored the saved active value and appeared to detach the pending object.
+- There is intentionally no generic Apply action. `Apply Automatic-Scene Setting` remains the separate explicit scene-opt-in action; scene reconciliation itself remains disabled until Phase 3.
+- Recovery controls were not shown while stored project state was healthy. This is the intended fail-closed presentation, but the condition was not explained in the healthy UI.
+- A normal Windows read-only file attribute did not cause the attempted save-failure case. Hosted CI did not reach Unity because required license secrets were unavailable; a separate run was blocked by the GitHub account billing lock.
+- The pinned GameCI test runner emitted its Node 20 migration and `punycode` deprecation warnings when GitHub executed actions using Node 24. These warnings are upstream/tooling concerns, not Unity test failures.
+
+**Completed corrections:**
+
+- `CONFIG-003`: the provider now labels the saved selection as `Active configuration`/`Active asset` and the editable object field as `Pending configuration`/`Pending asset`. Merely changing the object field remains inert and never activates or persists it.
+- `CONFIG-003`: `Select` is now `Set Active Configuration`; `Reload` is now `Revert Pending Changes`. Concise help states that the field is pending, Set Active persists the GUID, Revert restores pending UI state from saved project state, and recovery controls appear only for damaged or incompatible stored state.
+- `CONFIG-003`: configuration creation buttons now disclose their existing create-and-activate behavior. No generic Apply action was introduced, and the existing scene-specific Apply action remains separate.
+- `CONFIG-002`: the production `ScriptableSingleton` save path and rollback behavior were not weakened. The deterministic injected-backend failure test still forces an exception, now also asserting zero successful saves and complete in-memory restoration.
+- Narrow `CI-001`: the workflow already passed `UNITY_LICENSE`, `UNITY_EMAIL`, `UNITY_PASSWORD`, and `UNITY_SERIAL` only as masked GitHub secrets to GameCI. A preflight now fails before Unity with names-only guidance unless account credentials plus either license-file or professional-serial material are configured. Static validation requires this preflight and the reviewed stable GameCI SHA, and forbids `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION`.
+
+**Windows persistence investigation:**
+
+- The exact physical project-state target is `AddressablesProject/ProjectSettings/TorProduction/AddressablesAutomationProjectSettings.asset` in this repository host, corresponding to `ProjectSettings/TorProduction/AddressablesAutomationProjectSettings.asset` relative to any consuming Unity project. It is not the selected `AddressablesAutomationConfig.asset`, the legacy `ProjectConfig.json`, or an Addressables settings asset.
+- Unity's public managed source shows `ScriptableSingleton.Save(true)` delegating to native `InternalEditorUtility.SaveToSerializedFileAndForget`; the native implementation is not published there. A one-test disposable clone probe on Windows with Unity `6000.0.78f1` compared NTFS file identities across explicit saves: each save produced a different identity. After setting the exact existing target to the ordinary `ReadOnly` attribute, the next save still succeeded, produced another identity, and the replacement file no longer carried `ReadOnly`. This locally confirms atomic replacement behavior for the tested editor/platform combination.
+- Consequently, an ordinary file attribute is inconclusive as a real failed-write simulation because it protects the replaced file rather than the writable parent-directory replacement operation. No user ACL was changed. A future physical failure check requires a disposable VCS/ACL or filesystem-denial fixture with explicit owner approval; deterministic behavior remains covered by the injected throwing store.
+
+**CI investigation and decision:**
+
+- GameCI's documented personal-license mapping is `UNITY_LICENSE` plus `UNITY_EMAIL` and `UNITY_PASSWORD`; its professional mapping is `UNITY_SERIAL` plus the same account credentials. The preflight accepts those two shapes and never prints a secret value.
+- The retained SHA `0ff419b913a3630032cbe0de48a0099b5a9f0ed9` is stable GameCI `v4.3.1` and declares the Node 20 action runtime. Upstream `main` now declares Node 24, but no stable reviewed Node 24 release was selected in this batch. The SHA was not moved to a beta or mutable ref, and no insecure Node override was added.
+- Hosted execution remains unverified until repository license secrets are configured and the external GitHub billing lock is cleared. The new preflight will distinguish an absent-secret failure before the longer Unity step without exposing values; it cannot bypass licensing or account billing.
+
+**Implementation commits:**
+
+- `d94a201` — record the manual-verification correction batch as in progress.
+- `e245c1b` — clarify active versus pending configuration UX and retain deterministic failed-save coverage.
+- `b9ce0cf` — add a non-leaking Unity license-secret preflight while retaining the stable GameCI pin.
+
+**Commands and verification actually run:**
+
+- Read `AGENTS.md` and all `896` pre-correction lines of this plan, inspected the initial Git status/history, and preserved the existing manual-verification host changes.
+- Parsed the changed PowerShell scripts with the PowerShell language parser. Exercised the preflight with missing secrets, incomplete license-file credentials, complete license-file credentials, and complete professional-serial credentials; expected failures were clear and both complete shapes passed without printing values.
+- Local `actionlint` was not installed, and Python YAML parsing was unavailable (`ModuleNotFoundError: yaml`). The workflow was inspected directly and exercised by the repository's static assertions; no hosted YAML/action execution is claimed.
+- Ran `Tools/CI/Validate-PhaseZero.ps1`; static validation passed for the tracked Addressables `2.7.6` lane, including package/version/assembly/meta/publication checks plus the new workflow preflight, stable action SHA, and insecure-Node-override guards.
+- Ran `Tools/CI/Test-CleanInstall.ps1 -ExcludeSamples` from fresh temporary projects on Unity `6000.0.78f1` for Addressables `2.7.6` and `2.9.1`. Each lane passed exactly `33/33`, with zero failed/inconclusive/skipped tests; import and package removal remained inert.
+- Ran the sample-inclusive Addressables `2.7.6` clean-install lane: exactly `33/33` passed with zero failed/inconclusive/skipped tests; the real legacy sample fixture executed, and import/removal remained inert.
+- Ran the disposable Windows `ScriptableSingleton` identity/read-only probe: `1/1` passed and produced the replacement findings above. One temporary probe edit initially had a missing brace and failed compilation; it was corrected, rerun successfully, and the entire verified disposable clone was removed. No probe code or state remains in the repository.
+- Repeated focused diffs, `git diff --check`, workflow/secret/Node/publication scans, manifest/asmdef JSON parsing, Unity-result XML checks, log failure-pattern scans, and Unity `.meta` pairing/GUID checks during final audit. Evidence is under ignored `artifacts/phase1-correction-2.7.6`, `artifacts/phase1-correction-2.9.1`, and `artifacts/phase1-correction-2.7.6-samples`.
+
+**Remaining manual/hosted checks and blockers:**
+
+- Reopen the corrected SettingsProvider interactively and visually confirm the active/pending headings, `Set Active Configuration`, `Revert Pending Changes`, explanatory help, and healthy-state recovery note. The exact labels/help and non-mutating provider factory are covered statically/EditMode, but revised IMGUI rendering is not claimed as manually viewed.
+- Configure one complete documented Unity credential shape and clear the GitHub account billing lock, then rerun the hosted matrix. The preflight itself has not been executed by GitHub and hosted Unity remains blocked.
+- The development Editor remained open with user-created manual-verification Addressables/config/project-state artifacts during this correction batch. They were preserved rather than silently deleted or committed. Close Unity before intentionally archiving/removing those artifacts and restoring the host baseline.
+
+**Next recommended action:** close the development Editor, decide whether to archive or discard the preserved manual-verification host artifacts, visually recheck the corrected SettingsProvider, then configure licensing and clear billing so the hosted matrix can run. Stop at the corrected Phase 1 boundary; do not begin Phase 2 until those gates are reviewed.
 
 ## D. Prioritized roadmap
 

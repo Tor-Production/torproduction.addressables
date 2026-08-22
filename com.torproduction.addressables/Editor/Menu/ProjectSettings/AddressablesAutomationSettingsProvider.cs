@@ -7,6 +7,13 @@ using UnityEngine;
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
 	internal sealed class AddressablesAutomationSettingsProvider : SettingsProvider {
 		internal const string SettingsPath = "Project/Tor Production/Addressables Automation";
+		internal const string SetActiveConfigurationLabel = "Set Active Configuration";
+		internal const string RevertPendingChangesLabel = "Revert Pending Changes";
+		internal const string ActivationHelpText =
+			"Changing Pending Configuration does not activate it. Set Active Configuration validates it and persists " +
+			"its GUID as the active project selection. Revert Pending Changes restores pending UI state from saved project state.";
+		internal const string RecoveryHelpText =
+			"Recovery controls appear only when damaged or incompatible stored project state is detected.";
 		private const string DefaultFolder = "Assets/Editor/TorProduction";
 		private const string DefaultPath = DefaultFolder + "/AddressablesAutomationConfig.asset";
 
@@ -39,7 +46,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		public override void OnGUI(string searchContext) {
 			if (!m_loaded) {
-				Reload();
+				LoadSavedProjectState();
 			}
 
 			EditorGUILayout.LabelField("Addressables Automation", EditorStyles.boldLabel);
@@ -66,10 +73,10 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		private void DrawSavedState() {
-			EditorGUILayout.LabelField("Saved project state", EditorStyles.boldLabel);
+			EditorGUILayout.LabelField("Active configuration", EditorStyles.boldLabel);
 			EditorGUILayout.LabelField("Status", m_resolution.Status.ToString());
 			EditorGUILayout.LabelField(
-				"Selected asset",
+				"Active asset",
 				string.IsNullOrEmpty(m_resolution.ConfigPath) ? "None" : m_resolution.ConfigPath);
 			if (!string.IsNullOrEmpty(m_resolution.Message)) {
 				EditorGUILayout.HelpBox(m_resolution.Message, MessageType.Warning);
@@ -77,17 +84,17 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		}
 
 		private void DrawConfiguration() {
-			EditorGUILayout.LabelField("Configuration asset", EditorStyles.boldLabel);
+			EditorGUILayout.LabelField("Pending configuration", EditorStyles.boldLabel);
 			m_pendingConfig = (AddressablesAutomationConfig)EditorGUILayout.ObjectField(
-				"Pending selection", m_pendingConfig, typeof(AddressablesAutomationConfig), false);
+				"Pending asset", m_pendingConfig, typeof(AddressablesAutomationConfig), false);
 
 			EditorGUILayout.BeginHorizontal();
-			if (GUILayout.Button("Create at Default Path...")) {
+			if (GUILayout.Button("Create and Set Active...")) {
 				CreateConfig();
 			}
 			EditorGUI.BeginDisabledGroup(m_pendingConfig == null);
-			if (GUILayout.Button("Select")) {
-				SelectPending();
+			if (GUILayout.Button(SetActiveConfigurationLabel)) {
+				SetActiveConfiguration();
 			}
 			if (GUILayout.Button("Show in Project")) {
 				Selection.activeObject = m_pendingConfig;
@@ -97,7 +104,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			EditorGUILayout.EndHorizontal();
 
 			EditorGUILayout.HelpBox(
-				"Changing the object field does not save. Select stores only its GUID and disables prior automatic opt-in when the selected GUID changes.",
+				ActivationHelpText,
 				MessageType.None);
 		}
 
@@ -157,7 +164,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			}
 
 			EditorGUI.BeginDisabledGroup(!m_legacyPreview.HasLegacyState);
-			if (GUILayout.Button("Create Migrated Configuration...")) {
+			if (GUILayout.Button("Create and Set Active Migrated Configuration...")) {
 				CreateMigratedConfig();
 			}
 			EditorGUI.EndDisabledGroup();
@@ -181,7 +188,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				if (AddressablesAutomationContextProvider.TryApplyAutomaticSceneProcessing(
 					    m_pendingAutomaticScenes, out var error)) {
 					SetMessage("Automatic-scene setting saved.", MessageType.Info);
-					Reload();
+					LoadSavedProjectState();
 				} else {
 					SetMessage(error, MessageType.Error);
 				}
@@ -194,9 +201,10 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		private void DrawLifecycle() {
 			EditorGUILayout.LabelField("Lifecycle", EditorStyles.boldLabel);
+			EditorGUILayout.HelpBox(RecoveryHelpText, MessageType.None);
 			EditorGUILayout.BeginHorizontal();
-			if (GUILayout.Button("Reload")) {
-				Reload();
+			if (GUILayout.Button(RevertPendingChangesLabel)) {
+				LoadSavedProjectState();
 			}
 			if (GUILayout.Button("Open Addressables Groups...")) {
 				OpenAddressablesGroups();
@@ -229,8 +237,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		private void CreateConfig() {
 			if (!EditorUtility.DisplayDialog(
 				    "Create Addressables Automation Configuration",
-				    $"Create a new configuration below '{DefaultFolder}'? Existing assets will not be overwritten.",
-				    "Create", "Cancel")) {
+				    $"Create a new configuration below '{DefaultFolder}' and set it active? Existing assets will not be overwritten.",
+				    "Create and Set Active", "Cancel")) {
 				return;
 			}
 
@@ -243,8 +251,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				: "Create a new configuration from this preview?";
 			if (!EditorUtility.DisplayDialog(
 				    "Create Migrated Addressables Configuration",
-				    warning + " Legacy JSON and assets will remain untouched.",
-				    "Create", "Cancel")) {
+				    warning + " The new asset will be set active; legacy JSON and assets will remain untouched.",
+				    "Create and Set Active", "Cancel")) {
 				return;
 			}
 			CreateConfigAsset(m_legacyPreview.GroupRules, m_legacyPreview.SceneRules);
@@ -261,8 +269,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				m_pendingConfig = config;
 				if (AddressablesAutomationContextProvider.TrySelectConfig(
 					    AssetDatabase.AssetPathToGUID(path), out var error)) {
-					SetMessage($"Created and selected '{path}'. Legacy data was unchanged.", MessageType.Info);
-					Reload();
+					SetMessage($"Created and set active '{path}'. Legacy data was unchanged.", MessageType.Info);
+					LoadSavedProjectState();
 				} else {
 					SetMessage($"Created '{path}', but selection failed: {error}. The asset was retained.", MessageType.Error);
 				}
@@ -271,7 +279,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			}
 		}
 
-		private void SelectPending() {
+		private void SetActiveConfiguration() {
 			if (!AddressablesAutomationContextProvider.TryValidateConfigCandidate(
 				    m_pendingConfig, out var candidateError)) {
 				SetMessage(candidateError, MessageType.Error);
@@ -281,8 +289,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			var path = AssetDatabase.GetAssetPath(m_pendingConfig);
 			if (AddressablesAutomationContextProvider.TrySelectConfig(
 				    AssetDatabase.AssetPathToGUID(path), out var error)) {
-				SetMessage($"Selected '{path}'.", MessageType.Info);
-				Reload();
+				SetMessage($"Set active configuration to '{path}'.", MessageType.Info);
+				LoadSavedProjectState();
 			} else {
 				SetMessage(error, MessageType.Error);
 			}
@@ -312,7 +320,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			if (AddressablesAutomationProjectSettingsStore.TryDetach(out var error)) {
 				m_pendingConfig = null;
 				SetMessage("Configuration detached. Assets were unchanged.", MessageType.Info);
-				Reload();
+				LoadSavedProjectState();
 			} else {
 				SetMessage(error, MessageType.Error);
 			}
@@ -328,7 +336,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			if (AddressablesAutomationProjectSettingsStore.TryRecover(
 				    out var recoveryPath, out var error)) {
 				SetMessage($"Project state reset. Backup: {recoveryPath}", MessageType.Info);
-				Reload();
+				LoadSavedProjectState();
 			} else {
 				SetMessage(error, MessageType.Error);
 			}
@@ -344,7 +352,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			if (AddressablesAutomationProjectSettingsStore.TryMigrate(
 				    out var recoveryPath, out var error)) {
 				SetMessage($"Project state migrated. Backup: {recoveryPath}", MessageType.Info);
-				Reload();
+				LoadSavedProjectState();
 			} else {
 				SetMessage(error, MessageType.Error);
 			}
@@ -360,7 +368,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			if (AddressablesAutomationSchemaMigration.TryMigrateConfig(
 				    m_resolution.Config, out var recoveryPath, out var error)) {
 				SetMessage($"Configuration migrated. Backup: {recoveryPath}", MessageType.Info);
-				Reload();
+				LoadSavedProjectState();
 			} else {
 				SetMessage(error, MessageType.Error);
 			}
@@ -376,7 +384,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			}
 		}
 
-		private void Reload() {
+		private void LoadSavedProjectState() {
 			m_resolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.All);
 			m_sceneResolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.Scenes);
 			m_pendingConfig = m_resolution.Config;

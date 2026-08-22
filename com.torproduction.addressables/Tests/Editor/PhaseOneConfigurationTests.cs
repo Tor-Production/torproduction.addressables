@@ -40,6 +40,16 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			var provider = AddressablesAutomationSettingsProvider.CreateProvider();
 
 			Assert.That(provider.settingsPath, Is.EqualTo(AddressablesAutomationSettingsProvider.SettingsPath));
+			Assert.That(
+				AddressablesAutomationSettingsProvider.SetActiveConfigurationLabel,
+				Is.EqualTo("Set Active Configuration"));
+			Assert.That(
+				AddressablesAutomationSettingsProvider.RevertPendingChangesLabel,
+				Is.EqualTo("Revert Pending Changes"));
+			StringAssert.Contains("does not activate", AddressablesAutomationSettingsProvider.ActivationHelpText);
+			StringAssert.Contains("persists", AddressablesAutomationSettingsProvider.ActivationHelpText);
+			StringAssert.Contains("saved project state", AddressablesAutomationSettingsProvider.ActivationHelpText);
+			StringAssert.Contains("only", AddressablesAutomationSettingsProvider.RecoveryHelpText);
 			Assert.That(System.IO.File.Exists(AddressablesAutomationProjectSettingsStore.SettingsPath),
 				Is.EqualTo(settingsExisted));
 			if (settingsExisted) {
@@ -212,6 +222,10 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 					out var error),
 				Is.False);
 			StringAssert.Contains("Could not save", error);
+			Assert.That(backend.SaveCount, Is.Zero);
+			Assert.That(backend.Magic, Is.EqualTo(AddressablesAutomationProjectSettingsStore.ExpectedMagic));
+			Assert.That(backend.SchemaVersion,
+				Is.EqualTo(AddressablesAutomationProjectSettingsStore.CurrentSchemaVersion));
 			Assert.That(backend.SelectedConfigGuid, Is.EqualTo(CONFIG_GUID));
 			Assert.That(backend.AutomationEnabled, Is.False);
 			Assert.That(backend.AutomaticScopes, Is.EqualTo(AutomationScope.None));

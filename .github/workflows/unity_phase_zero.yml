@@ -1,11 +1,14 @@
 name: Unity Phase 0 validation
 
 on:
-  pull_request:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 1 — hosted Linux Editor-compilation correction complete and locally verified; GitHub Actions rerun pending; Phase 2 has not started
-- Current batch: Narrow `BUILD-005`/`CI-001` cross-platform Editor path-selection correction — complete
+- Current phase: Phase 1 — hosted verification remains explicitly manual or tag-triggered; Phase 2 has not started
+- Current batch: Narrow `CI-001` paid-matrix trigger and concurrency correction — complete
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-22`
 
@@ -428,6 +428,17 @@ This protocol is the documented exception to the repository's general commit, ta
 
 **Remaining hosted check:** rerun the SHA-pinned GitHub Actions matrix now that licensing is configured. The local Windows editor exercised all three explicit host mappings and both Addressables versions, but the corrected source is not claimed as hosted-Linux verified until the `2.7.6` lane compiles and runs its tests on GitHub. Stop here and do not begin Phase 2 automatically.
 
+### Phase 1 Unity CI cost-control correction record — 2026-08-22
+
+**Status:** the narrow `CI-001` trigger and concurrency correction is complete. Phase 2 was not started, and no validation job, matrix lane, permission, action pin, artifact behavior, or publication path was changed.
+
+- Removed automatic Unity-matrix runs for pull requests and branch pushes. The paid Unity matrix now starts only through `workflow_dispatch` or a pushed version tag matching `v*`.
+- Added workflow-level concurrency keyed by workflow and Git ref with `cancel-in-progress: true`, so a newer manual or tag run for the same ref cancels its predecessor.
+- Extended `Validate-PhaseZero.ps1` to fail if pull-request/branch triggers return, the manual or `v*` tag trigger is lost, or same-ref cancellation is disabled. The existing license preflight, two Addressables lanes, SHA-pinned actions, read-only permission, inertness checks, tracked-state check, and artifact upload remain unchanged.
+- Ran `git diff --check` and `Tools/CI/Validate-PhaseZero.ps1`; both passed. `actionlint` remains unavailable locally, so GitHub's workflow parser and the next intentional manual run remain the hosted syntax/execution checks.
+
+**Next recommended action:** review and commit this narrow workflow-policy change, then use manual dispatch when hosted Unity verification is desired. Do not create a version tag solely to test the workflow and do not begin Phase 2 automatically.
+
 ## D. Prioritized roadmap
 
 ### Phase 0 — Reproducible baseline and compile/install safety
@@ -750,7 +761,7 @@ This protocol is the documented exception to the repository's general commit, ta
 | `TEST-002` High | `RuntimeExampleTest` | Android is included while test asserts WindowsPlayer; runtime test asm references editor runner | Delete/replace and correct test boundaries | Required lanes pass on editor and player compilation |
 | `DOC-001` High | READMEs, Documentation, changelog, notices | Stale StansAssets/template content and inaccurate installation guidance | Rewrite complete documentation set | Link/name/template scan clean; docs match UI/CLI |
 | `DOC-002` High | `LICENSE.md`, Third Party Notices | Existing copyright differs from requested ownership; notices are placeholders | Legal confirmation and accurate attribution | Release job verifies approved license/notices hashes |
-| `CI-001` Critical | `.github/workflows/*` | No Unity compilation, tests, package validation, or clean-install test | Pinned Unity CI and reusable scripts | Every PR runs required compatibility lanes |
+| `CI-001` Critical | `.github/workflows/*` | No Unity compilation, tests, package validation, or clean-install test | Pinned Unity CI and reusable scripts | Manual dispatch and `v*` tag runs execute both pinned compatibility lanes; duplicate runs for the same ref are cancelled |
 | `CI-002` Critical | `release_publish_to_npm.yml` | Literal package placeholder, old action/runtime, broad release triggers | Remove; add protected tag/archive workflow | No publish on edited release; dry-run artifact is verified first |
 | `DIST-001` Medium | `package.json`, no configured remote | Repository URL exists in metadata but Git remote and tag policy are absent | Configure/verify remote, protected tags, Git-path documentation | Install from signed tag with package subfolder succeeds |
 

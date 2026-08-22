@@ -155,6 +155,18 @@ foreach ($workflow in $workflowFiles) {
 }
 
 $unityWorkflow = Get-Content -Raw -LiteralPath (Join-Path $root '.github/workflows/unity_phase_zero.yml')
+if ($unityWorkflow -match '(?m)^\s{2}pull_request:') {
+    throw 'The paid Unity matrix must not run automatically for pull requests.'
+}
+if ($unityWorkflow -match '(?m)^\s{4}branches:') {
+    throw 'The paid Unity matrix must not run automatically for branch pushes.'
+}
+if ($unityWorkflow -notmatch "(?ms)^on:\s*\r?\n\s{2}push:\s*\r?\n\s{4}tags:\s*\r?\n\s{6}-\s+'v\*'\s*\r?\n\s{2}workflow_dispatch:\s*$") {
+    throw "The Unity workflow must run only for 'v*' tags or explicit workflow dispatch."
+}
+if ($unityWorkflow -notmatch '(?ms)^concurrency:\s*\r?\n\s{2}group:\s*\$\{\{\s*github\.workflow\s*\}\}-\$\{\{\s*github\.ref\s*\}\}\s*\r?\n\s{2}cancel-in-progress:\s*true\s*$') {
+    throw 'The Unity workflow must cancel an in-progress run for the same workflow and ref.'
+}
 if ($unityWorkflow -notmatch 'Assert-UnityLicenseEnvironment\.ps1') {
     throw 'The Unity workflow is missing its license-secret preflight.'
 }

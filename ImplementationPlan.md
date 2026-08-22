@@ -465,6 +465,8 @@ This protocol is the documented exception to the repository's general commit, ta
 
 **Phase decision:** Phase 1 is complete. The required hosted matrix already passed for exact implementation correction commit `b843fa52846406342cfb624c859b386389bb997a`, and the later tracked changes through `886305d5d479930c8967d9351cfafd5d4eada1d1` were CI-policy or documentation-only. Stop here pending review; do not begin Phase 2 automatically.
 
+**Phase-protocol completion:** documentation-only completion record commit `76e2597` was pushed to `origin/main`. Annotated tags `phase-0-verified` and `phase-1-verified` were created and pushed; both peel to exact hosted-tested commit `b843fa52846406342cfb624c859b386389bb997a`. GitHub's post-tag workflow list contained no new Unity run because the paid workflow accepts only manual dispatches and `v*` tags; successful run `32554221921` remained the newest completed verification run. No `v*` tag, GitHub Release, or publication was created.
+
 ## D. Prioritized roadmap
 
 ### Phase 0 — Reproducible baseline and compile/install safety

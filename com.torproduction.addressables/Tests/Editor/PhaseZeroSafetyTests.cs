@@ -83,6 +83,17 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			Assert.That(AddressablesAutomationWorkflowGate.IncompleteWorkflowsEnabled, Is.False);
 			Assert.That(AddressablesAutomationWorkflowGate.AutomaticSceneReconciliationImplemented, Is.False);
 			Assert.That(AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All), Is.False);
+			Assert.That(
+				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.WindowsEditor),
+				Is.EqualTo(BuildTarget.StandaloneWindows64));
+			Assert.That(
+				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.OSXEditor),
+				Is.EqualTo(BuildTarget.StandaloneOSX));
+			Assert.That(
+				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.LinuxEditor),
+				Is.EqualTo(BuildTarget.StandaloneLinux64));
+			Assert.Throws<PlatformNotSupportedException>(() =>
+				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.Android));
 
 			LogAssert.Expect(LogType.Warning, new Regex("^Test workflow:"));
 			Assert.That(

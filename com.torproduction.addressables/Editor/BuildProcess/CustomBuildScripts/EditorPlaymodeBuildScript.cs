@@ -39,16 +39,24 @@ namespace TorProduction.AddressablesToolpack.Editor {
 			get {
 				MethodInfo methodInfo = typeof(PlatformMappingService).
 					GetMethod("GetAddressablesPlatformPathInternal", BindingFlags.NonPublic | BindingFlags.Static, null, new Type[] { typeof(BuildTarget) }, null);
-#if UNITY_EDITOR_WIN
-				var target = BuildTarget.StandaloneWindows64;
-#elif UNITY_EDITOR_OSX
-				var target = BuildTarget.StandaloneOSX;
-#else
-				throw new NotImplementedException("Can't retrieve the path for current Editor platform");
-#endif
+				var target = GetEditorStandaloneTarget(Application.platform);
 				var platformResult = (string)methodInfo.Invoke(null, new object[] { target });
 				
 				return RuntimeAddressables.LibraryPath + RuntimeAddressables.StreamingAssetsSubFolder + "/" + platformResult;
+			}
+		}
+
+		internal static BuildTarget GetEditorStandaloneTarget(RuntimePlatform editorPlatform) {
+			switch (editorPlatform) {
+				case RuntimePlatform.WindowsEditor:
+					return BuildTarget.StandaloneWindows64;
+				case RuntimePlatform.OSXEditor:
+					return BuildTarget.StandaloneOSX;
+				case RuntimePlatform.LinuxEditor:
+					return BuildTarget.StandaloneLinux64;
+				default:
+					throw new PlatformNotSupportedException(
+						$"Can't retrieve an existing Editor build path for platform '{editorPlatform}'.");
 			}
 		}
 

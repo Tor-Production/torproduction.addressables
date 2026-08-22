@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 1 — corrected and locally verified; revised UI and hosted license/billing gates remain pending; Phase 2 has not started
-- Current batch: Phase 1 manual-verification corrections — complete; stopped at the corrected Phase 1 boundary
+- Current phase: Phase 1 — hosted Linux Editor-compilation correction complete and locally verified; GitHub Actions rerun pending; Phase 2 has not started
+- Current batch: Narrow `BUILD-005`/`CI-001` cross-platform Editor path-selection correction — complete
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-22`
 
@@ -187,7 +187,7 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 
 ## Execution progress
 
-- [ ] Phase 0 — Reproducible baseline and compile/install safety (implementation complete; hosted CI verification pending)
+- [ ] Phase 0 — Reproducible baseline and compile/install safety (implementation complete; hosted credentials configured and matrix rerun pending)
 - [ ] Phase 1 — Explicit setup and configuration (implementation and manual-verification corrections complete; revised UI recheck and hosted verification pending)
 - [ ] Phase 2 — Deterministic group synchronization
 - [ ] Phase 3 — GUID-based scene synchronization
@@ -384,6 +384,32 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 - The development Editor remained open with user-created manual-verification Addressables/config/project-state artifacts during this correction batch. They were preserved rather than silently deleted or committed. Close Unity before intentionally archiving/removing those artifacts and restoring the host baseline.
 
 **Next recommended action:** close the development Editor, decide whether to archive or discard the preserved manual-verification host artifacts, visually recheck the corrected SettingsProvider, then configure licensing and clear billing so the hosted matrix can run. Stop at the corrected Phase 1 boundary; do not begin Phase 2 until those gates are reviewed.
+
+### Phase 1 hosted Linux compilation correction record — 2026-08-22
+
+**Status:** the narrow `BUILD-005`/`CI-001` cross-platform Editor compilation correction is complete and locally verified. Hosted Unity credentials are now configured, but the corrected commit has not yet been rerun by GitHub Actions. Phase 2 and the planned Phase 5 build-system redesign were not started.
+
+**Hosted failure and root cause:**
+
+- The Addressables `2.7.6` GitHub Actions lane reached Unity `6000.0.78f1` compilation on Linux and failed before test discovery at `EditorPlaymodeBuildScript.cs(49,73)` with `CS0103: The name 'target' does not exist in the current context`.
+- `EditorPlaymodeBuildScript.BuildPath` declared `target` only inside `UNITY_EDITOR_WIN` and `UNITY_EDITOR_OSX` branches. A Linux editor compiled the fallback `throw`, then still compiled the post-conditional reflection call that referenced the undeclared local. The workflow platform was correct; moving CI to Windows would only have hidden the package defect.
+
+**Addressables path semantics and correction:**
+
+- Addressables `2.7.6` maps `BuildTarget.StandaloneWindows64`, `BuildTarget.StandaloneOSX`, and `BuildTarget.StandaloneLinux64` to the `Windows`, `OSX`, and `Linux` platform subfolders respectively. The retained custom script intentionally resolves the editor host's standalone content under `Addressables.LibraryPath + Addressables.StreamingAssetsSubFolder + /<platform>` instead of following `EditorUserBuildSettings.activeBuildTarget` as the public `Addressables.BuildPath` property does.
+- Replaced the compile-time partial declaration with one runtime host mapping: `WindowsEditor -> StandaloneWindows64`, `OSXEditor -> StandaloneOSX`, and `LinuxEditor -> StandaloneLinux64`. Unsupported runtime platforms throw an explicit `PlatformNotSupportedException`. There is no suppressed compiler diagnostic, unreachable fallback, or Linux-only source branch.
+- Added all three mappings plus the unsupported-platform case to the existing fail-closed EditMode test, preserving the expected `33`-case clean-install count. The custom script's private Addressables reflection and full existing-build replacement remain deferred to `BUILD-005`/Phase 5; this correction changes only host-platform selection.
+
+**Cleanup and verification actually run:**
+
+- After the user closed Unity and explicitly authorized discard, removed only the manual-verification `Assets/AddressableAssetsData`, `Assets/Editor`, related root `.meta` artifacts, and `ProjectSettings/TorProduction` state, then restored the tracked `EditorBuildSettings.asset`. Git was clean before the compilation correction began.
+- Ran `Tools/CI/Validate-PhaseZero.ps1`; static validation passed for Addressables `2.7.6`.
+- Ran isolated clean-install/EditMode/removal validation with Unity `6000.0.78f1` and Addressables `2.7.6`: exactly `33/33` passed with zero failed/inconclusive/skipped tests; clean import and package removal remained inert.
+- Ran the same isolated lane with Addressables `2.9.1`: exactly `33/33` passed with zero failed/inconclusive/skipped tests; clean import and package removal remained inert.
+- Scanned all four resulting EditMode/removal logs for compiler errors, compilation failures, unreachable-code diagnostics, import failures, serialization/type-load failures, unhandled exceptions, and fatal errors; no configured pattern was present. Evidence is under ignored `artifacts/hosted-linux-fix-2.7.6` and `artifacts/hosted-linux-fix-2.9.1`.
+- Parsed the package/host manifests and all five asmdefs, parsed every CI PowerShell script, verified the existing build-script `.meta` GUID `5301850a6a9277f4fbaa6075ee00a3bc` was unchanged, and confirmed `git diff --exit-code -- AddressablesProject/Assets AddressablesProject/ProjectSettings` after both Unity lanes.
+
+**Remaining hosted check:** rerun the SHA-pinned GitHub Actions matrix now that licensing is configured. The local Windows editor exercised all three explicit host mappings and both Addressables versions, but the corrected source is not claimed as hosted-Linux verified until the `2.7.6` lane compiles and runs its tests on GitHub. Stop here and do not begin Phase 2 automatically.
 
 ## D. Prioritized roadmap
 

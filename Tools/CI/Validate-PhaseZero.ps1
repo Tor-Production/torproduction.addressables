@@ -145,9 +145,26 @@ foreach ($item in $packageItems) {
 
 $workflowFiles = Get-ChildItem -File -LiteralPath (Join-Path $root '.github/workflows')
 foreach ($workflow in $workflowFiles) {
-    if ((Get-Content -Raw -LiteralPath $workflow.FullName) -match '(?im)^\s*[^#].*npm\s+publish|packages:\s*write') {
+    $workflowContents = Get-Content -Raw -LiteralPath $workflow.FullName
+    if ($workflowContents -match '(?im)^\s*[^#].*npm\s+publish|packages:\s*write') {
         throw "A publication-capable workflow remains: $($workflow.Name)"
     }
+    if ($workflowContents -match 'ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION') {
+        throw "A workflow suppresses the GitHub Actions Node runtime safety check: $($workflow.Name)"
+    }
+}
+
+$unityWorkflow = Get-Content -Raw -LiteralPath (Join-Path $root '.github/workflows/unity_phase_zero.yml')
+if ($unityWorkflow -notmatch 'Assert-UnityLicenseEnvironment\.ps1') {
+    throw 'The Unity workflow is missing its license-secret preflight.'
+}
+foreach ($secretName in @('UNITY_LICENSE', 'UNITY_EMAIL', 'UNITY_PASSWORD', 'UNITY_SERIAL')) {
+    if ($unityWorkflow -notmatch [regex]::Escape("secrets.$secretName")) {
+        throw "The Unity workflow does not map the $secretName secret."
+    }
+}
+if ($unityWorkflow -notmatch 'game-ci/unity-test-runner@0ff419b913a3630032cbe0de48a0099b5a9f0ed9') {
+    throw 'The Unity workflow must retain the reviewed stable GameCI test-runner pin.'
 }
 
 Write-Output "Phase 0 static validation passed for Addressables $ExpectedHostAddressablesVersion."

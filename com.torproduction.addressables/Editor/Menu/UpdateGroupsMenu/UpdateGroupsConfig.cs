@@ -1,10 +1,1 @@
-using UnityEditor;
-
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
-	internal struct UpdateGroupsConfig {
-		public DefaultAsset FolderAsset;
-		public string GroupName;
-		public string[] TypesFilter;
-		public string[] Lables;
-	}
-}
+// Replaced in Phase 2 by immutable AutomationPlan operations.

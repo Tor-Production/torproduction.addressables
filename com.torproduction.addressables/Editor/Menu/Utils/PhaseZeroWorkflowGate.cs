@@ -7,11 +7,12 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			"This workflow is disabled until its planned safe analyze/apply implementation is complete.";
 
 		internal static bool IncompleteWorkflowsEnabled => false;
+		internal static bool GroupSynchronizationImplemented => true;
 		internal static bool AutomaticSceneReconciliationImplemented => false;
 
 		internal static bool CanExecute(AutomationScope scope) {
 			var resolution = AddressablesAutomationContextProvider.ResolveManual(scope);
-			return resolution.IsReady && IncompleteWorkflowsEnabled;
+			return resolution.IsReady && scope == AutomationScope.Groups && GroupSynchronizationImplemented;
 		}
 
 		internal static bool TryBegin(string workflowName, AutomationScope scope) {
@@ -20,6 +21,9 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				Debug.LogWarning(
 					$"{workflowName}: configuration is disabled ({resolution.Status}). {resolution.Message}");
 				return false;
+			}
+			if (scope == AutomationScope.Groups && GroupSynchronizationImplemented) {
+				return true;
 			}
 
 			Debug.LogWarning($"{workflowName}: {DisabledReason}");

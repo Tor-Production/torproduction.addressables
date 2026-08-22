@@ -19,8 +19,11 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		private AddressablesAutomationConfig m_pendingConfig;
 		private ConfigurationResolution m_resolution;
+		private ConfigurationResolution m_groupResolution;
 		private ConfigurationResolution m_sceneResolution;
 		private ConfigurationValidationReport m_analysis;
+		private AutomationPlan m_groupPlan;
+		private AutomationReport m_groupReport;
 		private LegacyMigrationPreview m_legacyPreview;
 		private bool m_pendingAutomaticScenes;
 		private bool m_loaded;
@@ -52,7 +55,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			EditorGUILayout.LabelField("Addressables Automation", EditorStyles.boldLabel);
 			EditorGUILayout.HelpBox(
 				"Reads are inert. Only the explicit actions below save project state or create a configuration asset. " +
-				"All content-changing workflows remain disabled until their planned phases.",
+				"Group Analyze is read-only and group Apply always requires a reviewed preview plus confirmation. Later-phase workflows remain disabled.",
 				MessageType.Info);
 
 			DrawSavedState();
@@ -60,6 +63,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			DrawConfiguration();
 			EditorGUILayout.Space();
 			DrawAnalysis();
+			EditorGUILayout.Space();
+			DrawGroupSynchronization();
 			EditorGUILayout.Space();
 			DrawLegacyMigration();
 			EditorGUILayout.Space();
@@ -173,6 +178,87 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 					"A migrated asset may still be created to preserve intent, but it remains invalid and automation stays off until every blocking diagnostic is resolved.",
 					MessageType.Warning);
 			}
+		}
+
+		private void DrawGroupSynchronization() {
+			EditorGUILayout.LabelField("Group synchronization", EditorStyles.boldLabel);
+			EditorGUILayout.HelpBox(
+				"Analyze scans the active configuration without changes. Apply rejects stale previews, snapshots affected Addressables state under Library, and rolls back on failure.",
+				MessageType.Info);
+			EditorGUI.BeginDisabledGroup(!m_groupResolution.IsReady);
+			if (GUILayout.Button("Analyze Groups (No Changes)")) {
+				m_groupPlan = AddressablesAutomation.Analyze(m_groupResolution.Config, AutomationScope.Groups);
+				m_groupReport = null;
+			}
+			EditorGUI.EndDisabledGroup();
+
+			if (m_groupPlan != null) {
+				EditorGUILayout.LabelField("Plan hash", m_groupPlan.PlanHash);
+				EditorGUILayout.LabelField("Proposed operations", m_groupPlan.Operations.Count.ToString());
+				foreach (var diagnostic in m_groupPlan.Diagnostics) {
+					var type = diagnostic.Severity == AutomationDiagnosticSeverity.Error
+						? MessageType.Error
+						: diagnostic.Severity == AutomationDiagnosticSeverity.Warning
+							? MessageType.Warning
+							: MessageType.Info;
+					EditorGUILayout.HelpBox(
+						$"[{diagnostic.Code}] {diagnostic.Location}: {diagnostic.Message}", type);
+				}
+				for (var index = 0; index < m_groupPlan.Operations.Count; index++) {
+					EditorGUILayout.LabelField(
+						$"{index + 1}. {m_groupPlan.Operations[index].Description}",
+						EditorStyles.wordWrappedLabel);
+				}
+				if (m_groupPlan.IsValid && !m_groupPlan.HasChanges) {
+					EditorGUILayout.HelpBox("Groups already converge; Apply is unnecessary.", MessageType.Info);
+				}
+				EditorGUI.BeginDisabledGroup(!m_groupPlan.IsValid || !m_groupPlan.HasChanges);
+				if (GUILayout.Button("Apply Group Preview...")) {
+					ApplyGroupPlan();
+				}
+				EditorGUI.EndDisabledGroup();
+			}
+
+			if (GroupSyncRecovery.TryFindPending(out var recoveryPath)) {
+				EditorGUILayout.HelpBox($"Recovery required: {recoveryPath}", MessageType.Error);
+				if (GUILayout.Button("Recover Previous Group Apply...")) {
+					RecoverGroupApply(recoveryPath);
+				}
+			}
+			if (m_groupReport != null) {
+				EditorGUILayout.HelpBox(
+					m_groupReport.Succeeded
+						? $"Group operation succeeded ({m_groupReport.Operations.Count} applied operations)."
+						: $"Group operation failed. Rollback: {m_groupReport.RollbackStatus}.",
+					m_groupReport.Succeeded ? MessageType.Info : MessageType.Error);
+				foreach (var failure in m_groupReport.Failures) {
+					EditorGUILayout.HelpBox(failure, MessageType.Error);
+				}
+			}
+		}
+
+		private void ApplyGroupPlan() {
+			if (!EditorUtility.DisplayDialog(
+				    "Apply Addressables Group Plan",
+				    $"Apply the {m_groupPlan.Operations.Count} reviewed operations? A recovery snapshot is written before the first change.",
+				    "Apply Preview", "Cancel")) {
+				return;
+			}
+			m_groupReport = AddressablesAutomation.Apply(m_groupPlan);
+			if (m_groupReport.Succeeded) {
+				m_groupPlan = AddressablesAutomation.Analyze(m_groupResolution.Config, AutomationScope.Groups);
+			}
+		}
+
+		private void RecoverGroupApply(string recoveryPath) {
+			if (!EditorUtility.DisplayDialog(
+				    "Recover Addressables Group Apply",
+				    $"Restore the package-owned state recorded in '{recoveryPath}'?",
+				    "Recover", "Cancel")) {
+				return;
+			}
+			m_groupReport = AddressablesAutomation.Recover();
+			m_groupPlan = null;
 		}
 
 		private void DrawAutomation() {
@@ -386,11 +472,14 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		private void LoadSavedProjectState() {
 			m_resolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.All);
+			m_groupResolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.Groups);
 			m_sceneResolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.Scenes);
 			m_pendingConfig = m_resolution.Config;
 			m_pendingAutomaticScenes = m_resolution.ProjectSettings.AutomationEnabled &&
 				(m_resolution.ProjectSettings.AutomaticScopes & AutomationScope.Scenes) != 0;
 			m_analysis = null;
+			m_groupPlan = null;
+			m_groupReport = null;
 			m_loaded = true;
 		}
 

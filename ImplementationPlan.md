@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 1 — complete; Phase 2 has not started
-- Current batch: Phase 1 SettingsProvider visual verification — complete
+- Current phase: Phase 2 — local implementation and validation complete; hosted verification pending
+- Current batch: Phase 2 completion commit and hosted verification — pending
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-22`
 
@@ -206,7 +206,7 @@ This protocol is the documented exception to the repository's general commit, ta
 
 - [x] Phase 0 — Reproducible baseline and compile/install safety (implementation and required hosted matrix complete)
 - [x] Phase 1 — Explicit setup and configuration (implementation, manual-verification corrections, hosted matrix, and revised SettingsProvider visual recheck complete)
-- [ ] Phase 2 — Deterministic group synchronization
+- [ ] Phase 2 — Deterministic group synchronization (in progress)
 - [ ] Phase 3 — GUID-based scene synchronization
 - [ ] Phase 4 — Dependency analysis and prefab removal
 - [ ] Phase 5 — Build pipeline and existing-build Play Mode
@@ -466,6 +466,33 @@ This protocol is the documented exception to the repository's general commit, ta
 **Phase decision:** Phase 1 is complete. The required hosted matrix already passed for exact implementation correction commit `b843fa52846406342cfb624c859b386389bb997a`, and the later tracked changes through `886305d5d479930c8967d9351cfafd5d4eada1d1` were CI-policy or documentation-only. Stop here pending review; do not begin Phase 2 automatically.
 
 **Phase-protocol completion:** documentation-only completion record commit `76e2597` was pushed to `origin/main`. Annotated tags `phase-0-verified` and `phase-1-verified` were created and pushed; both peel to exact hosted-tested commit `b843fa52846406342cfb624c859b386389bb997a`. GitHub's post-tag workflow list contained no new Unity run because the paid workflow accepts only manual dispatches and `v*` tags; successful run `32554221921` remained the newest completed verification run. No `v*` tag, GitHub Release, or publication was created.
+
+### Phase 2 deterministic group synchronization implementation record — 2026-08-22
+
+**Status:** `GROUP-001` through `GROUP-006` are implemented, documented, diff-reviewed, and locally verified. Phase 2 remains in progress only for its authorized completion commit, exact-commit hosted matrix, evidence-only record commit, and `phase-2-verified` tag. No Phase 3+ workflow, automatic group processing, Update All orchestration, build, release, or publication path was enabled.
+
+**Completed issue scope and decisions:**
+
+- `GROUP-001`: replaced the ad-hoc folder window/controller with a read-only group planner shared by UI, public API, and CLI. Null filter/label collections normalize to empty; empty filters include every loadable non-folder main asset; missing settings/folders/config/rules fail closed without mutation.
+- `GROUP-002`: existing explicit entries now converge to the configured destination group, generated/preserved address, and label policy. Preserve-unrelated is the default; exact labels remain explicit. A successful state produces an empty second plan.
+- `GROUP-003`: active filters use assembly-qualified names and unresolved filters block Apply. The explicit legacy preview retains successfully loaded types after `ReflectionTypeLoadException`, reports loader exceptions, converts only uniquely resolvable simple names, and continues to read the misspelled serialized legacy `m_lables` field without rewriting legacy assets.
+- `GROUP-004`: relative-path addresses use normalized source-relative paths, remove only the final extension, and accept an optional validated prefix. Final addresses are checked against other claimed assets and unrelated explicit entries before Apply; duplicate filenames in separate subfolders remain deterministic and distinct.
+- `GROUP-005`: the active global Default Group cleanup and filename-only updater were removed while their Unity asset/meta identities were preserved as inert source placeholders. The new path never clears a group wholesale or physically moves source assets; only explicitly claimed entries can move.
+- `GROUP-006`: `AutomationPlan` is an immutable, deterministically sorted operation/diagnostic snapshot with source-state and plan hashes. Apply re-analyzes and rejects stale plans, creates/validates groups and `BundledAssetGroupSchema`/`ContentUpdateGroupSchema` before entries, batches explicit dirty/event calls, and writes `Library/TorProduction.Addressables/Recovery/group-sync-<operation-id>.json` before mutation. The default failure policy stops and rolls back through public Addressables APIs. Incomplete rollback retains the snapshot, blocks later Apply, and exposes confirmed UI plus CLI recovery.
+- Preflight additionally blocks incompatible rule claims, active-config claims, Addressable folder-entry ownership conflicts, read-only groups, invalid bundled build/load paths, and duplicate final addresses. Failed main-asset loads are reported deterministically and skipped because empty filters mean all **loadable** assets.
+- Enabled only the manual `Groups` scope in Project Settings and `Tools > Tor Production > Addressables > Synchronize Groups...`. The SettingsProvider resolves Groups independently from unimplemented scene rules. `AddressablesAutomationCli.AnalyzeGroups`, `ApplyGroups`, and `RecoverGroups` wrap the same services and emit structured JSON. `Update All`, automatic scene processing, dependencies, prefab relocation, and builds remain fail-closed.
+- Added `Documentation~/GROUP_SYNCHRONIZATION.md`, updated the offline documentation, safety notice, and changelog, and raised the clean-install harness expectation from 33 to 56 EditMode cases. No license, provenance, attribution, package version, release, or publication decision changed.
+
+**Local validation and evidence:**
+
+- Pinned Unity `6000.0.78f1` compiled the final package and ran the development-host Addressables `2.7.6` EditMode suite: `56/56` passed, zero failed/skipped/inconclusive, process exit `0` (`AddressablesProject/Logs/Phase2EditMode-2.7.6-final.xml`).
+- The temporary clean-install/removal harness passed on Addressables `2.7.6` and `2.9.1`: each lane compiled and passed `56/56`, confirmed import remained inert before and after package removal, found no targeted compilation/import exception pattern, and deleted its temporary project. Retained ignored artifacts are under `artifacts/phase2-local/final-2.7.6` and `artifacts/phase2-local/final-2.9.1`.
+- The 56-case suite includes null/empty inputs, missing settings/folders/groups, invalid filters, duplicate filenames, wrong groups/addresses/labels, preserve/exact label policies, address collisions, folder entries, schema planning, read-only/non-buildable groups, failed loads, incompatible claims, active-config protection, dry-run state hashing, immutable public plan collections, deterministic 2,500-asset planning under the five-second budget, transaction success, forced mid-apply rollback, and incomplete-rollback recovery retention.
+- Two integration cases create persisted temporary Addressables settings/assets through the public `2.7.6`/`2.9.1` APIs. One verifies actual group, schema, label, entry, and address creation; the other forces a failure after mutation and verifies the created group/entry are removed, the Default Group entry count is identical, and the recovery file is cleared after successful rollback.
+- `Tools/CI/Validate-PhaseZero.ps1 -ExpectedHostAddressablesVersion 2.7.6` passed after restoring the tracked minimum lane. `git diff --check`, the targeted unsafe updater/default-cleanup scan, tracked `AddressablesProject/Assets`/`ProjectSettings` diff, and tracked host manifest/lock diff all passed. The development host's known ignored legacy `ProjectSettings/ProjectConfig.json` remains untouched, so the host itself is intentionally not a valid input to the clean-project-only `Assert-InertProject.ps1`; both fresh temporary lanes passed that assertion instead.
+- The complete Phase 2 diff was reviewed for scope boundaries, inert reads, GUID/meta preservation, public Runtime/Editor/Samples/Tests assembly direction, stale-plan coverage, rollback ordering, source-asset immutability, deterministic ordering, and Phase 3+ gating. No paid hosted Unity job has been dispatched yet.
+
+**Remaining completion protocol:** create and push one focused Phase 2 completion commit from this locally verified state; manually dispatch `unity_phase_zero.yml` for that exact pushed `main` commit; require both `2.7.6` and `2.9.1` jobs to pass; record the run ID/URL/SHA/per-lane results in an evidence-only commit; then create and push annotated `phase-2-verified` pointing to the exact hosted-tested completion commit. Do not create a `v*` tag, GitHub Release, package publication, or other release artifact.
 
 ## D. Prioritized roadmap
 

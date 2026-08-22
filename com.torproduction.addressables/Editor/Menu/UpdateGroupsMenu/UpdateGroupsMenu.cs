@@ -3,7 +3,7 @@ using TorProduction.Addressables.Editor;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
     internal static class UpdateGroupsMenu {
-        private const string MENU_PATH = "Tools/Tor Production/Addressables/Update Group from folder";
+        private const string MENU_PATH = "Tools/Tor Production/Addressables/Synchronize Groups...";
 
         [MenuItem(MENU_PATH)]
         static void UpdateFromFolderButtonClick() {

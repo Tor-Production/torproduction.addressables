@@ -21,5 +21,5 @@
 - Inspect `git status` before editing. Preserve unrelated user changes and never overwrite or reformat them as collateral work.
 - Make focused, incremental changes tied to the active phase and stable issue IDs. Stop at the scope boundary defined by the current task and `ImplementationPlan.md`.
 - Validate changes with the relevant static checks, Unity compilation, and EditMode or PlayMode tests. Never claim an unavailable or unexecuted check passed; report exactly what could not be run and why.
-- Do not commit, tag, push, publish, or enable publication unless the current task explicitly authorizes that action.
+- Do not commit, tag, push, publish, or enable publication unless the current task explicitly authorizes it or the phase-completion protocol in `ImplementationPlan.md` applies. Publication, release creation, and `v*` tags always require separate explicit authorization.
 - After completing an implementation batch, update the plan status, execution progress, and affected phase or issue progress in `ImplementationPlan.md` before any authorized batch commit.

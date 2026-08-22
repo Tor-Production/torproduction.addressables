@@ -187,6 +187,23 @@ Any future prefab organizer should be a separate, explicitly invoked migration p
 
 ## Execution progress
 
+### Phase completion and hosted verification protocol
+
+This protocol is the documented exception to the repository's general commit, tag, and push restriction. It applies only when an entire implementation-plan phase is complete; ordinary commits and intermediate batches do not trigger the paid hosted Unity matrix.
+
+1. Run hosted Unity CI once after each complete implementation-plan phase, not after every commit. A corrective rerun is permitted only when the phase's first hosted run fails or cannot complete and an in-scope correction has been pushed.
+2. Before any hosted run, complete all available local validation and update this plan with the phase status, completed and remaining issue IDs, commands and results, manual checks, and blockers.
+3. Create the authorized phase-completion commit and push that tested commit to the current remote branch.
+4. Confirm GitHub CLI authentication and repository access, discover `.github/workflows/unity_phase_zero.yml`, then dispatch that workflow for the pushed branch with authenticated GitHub CLI, for example `gh workflow run unity_phase_zero.yml --ref <branch>`.
+5. Capture the dispatched workflow run ID and URL and watch that exact run through completion with GitHub CLI. Do not infer success from dispatch alone.
+6. Require both matrix jobs, Addressables `2.7.6` and `2.9.1`, to complete successfully for the exact pushed phase-completion commit.
+7. If either lane fails, cannot start, or cannot be verified, do not create a phase tag. Record the run ID, URL, tested commit, per-lane results, and the exact failure or access blocker in this plan, then stop unless a corrective rerun is authorized by this protocol.
+8. After a run, persist its run ID, URL, tested commit, per-lane results, and any failure in a documentation-only verification record commit and push. That evidence-only commit does not require another paid Unity run; the verification record must identify the exact phase-completion commit that was tested.
+9. Only after both lanes pass, create the annotated tag `phase-<number>-verified` targeting the exact tested phase-completion commit and push that tag. Never move or reuse a phase-verification tag for a different commit.
+10. Never create or push a `v*` tag, create a GitHub Release, publish the package, or enable publication under this protocol. Each of those actions always requires separate explicit release authorization.
+
+**Current hosted-tooling check — 2026-08-22:** GitHub's read-only API discovers `unity_phase_zero.yml` as active, and an HTTPS push dry-run confirms the stored Git credentials have repository write access. GitHub CLI is not installed or available on `PATH`, so `gh` authentication, CLI dispatch, and CLI run watching cannot currently be verified. The configured SSH `origin` reaches GitHub but rejects the available key; HTTPS is currently the verified Git transport. No workflow was dispatched and no tag was created during this documentation check.
+
 - [ ] Phase 0 — Reproducible baseline and compile/install safety (implementation complete; hosted credentials configured and matrix rerun pending)
 - [ ] Phase 1 — Explicit setup and configuration (implementation and manual-verification corrections complete; revised UI recheck and hosted verification pending)
 - [ ] Phase 2 — Deterministic group synchronization

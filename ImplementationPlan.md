@@ -4,10 +4,10 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 1 — implementation complete; manual/hosted verification gates remain pending and Phase 2 has not started
-- Current batch: Phase 1 explicit configuration — complete; stopped at the batch boundary
+- Current phase: Phase 1 — manual-verification corrections in progress; Phase 2 has not started
+- Current batch: Phase 1 activation UX, persistence diagnostics, and Unity-license CI preflight corrections
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
-- Last updated: `2026-08-21`
+- Last updated: `2026-08-22`
 
 This document is the implementation source of truth. Every implementation context must read it before changing code. Work must proceed incrementally by phase and issue ID. After completing a batch, update this status and the relevant issue/phase progress before committing.
 

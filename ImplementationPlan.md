@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 1 — the hosted matrix passed for the exact Linux correction commit; the revised SettingsProvider visual recheck remains, and Phase 2 has not started
-- Current batch: Phase 1 hosted-verification evidence and GitHub CLI tooling update — complete
+- Current phase: Phase 1 — complete; Phase 2 has not started
+- Current batch: Phase 1 SettingsProvider visual verification — complete
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-22`
 
@@ -205,7 +205,7 @@ This protocol is the documented exception to the repository's general commit, ta
 **Current hosted-tooling check — 2026-08-22:** GitHub CLI `2.98.0` is installed at `C:\Program Files\GitHub CLI\gh.exe` and authenticated to `github.com` as `Yurii-Tor` with HTTPS Git transport and the required `repo`/`workflow` scopes. CLI repository and workflow discovery succeed for `Yurii-Tor/torproduction.addressables` and active workflow `unity_phase_zero.yml`. The successful hosted run and both matrix jobs were verified through CLI as recorded below. No duplicate paid run, phase tag, `v*` tag, release, or publication was created.
 
 - [x] Phase 0 — Reproducible baseline and compile/install safety (implementation and required hosted matrix complete)
-- [ ] Phase 1 — Explicit setup and configuration (implementation, manual-verification corrections, and hosted matrix complete; revised SettingsProvider visual recheck pending)
+- [x] Phase 1 — Explicit setup and configuration (implementation, manual-verification corrections, hosted matrix, and revised SettingsProvider visual recheck complete)
 - [ ] Phase 2 — Deterministic group synchronization
 - [ ] Phase 3 — GUID-based scene synchronization
 - [ ] Phase 4 — Dependency analysis and prefab removal
@@ -450,6 +450,20 @@ This protocol is the documented exception to the repository's general commit, ta
 - GitHub CLI `2.98.0` confirmed the run SHA, overall conclusion, per-job conclusions, repository access, and active remote workflow. The subsequent CI-policy push `31c14adbe997883cae41aa1994ae095e8934c917` created no Unity workflow run, confirming the new ordinary-branch-push exclusion.
 
 **Next recommended action:** visually recheck the corrected SettingsProvider in the development Editor against the Phase 1 manual-verification checklist, record the result, and only then decide whether Phase 1 is complete. Do not begin Phase 2 automatically.
+
+### Phase 1 SettingsProvider visual verification record — 2026-08-22
+
+**Status:** passed in the development host on Unity `6000.0.78f1`. This closes the final Phase 1 gate. Phase 2 was not started, and no Addressables content, Build Settings, release, or publication operation was enabled or executed.
+
+- Began from a clean tracked worktree with no `Assets/AddressableAssetsData` directory and no `ProjectSettings/TorProduction/AddressablesAutomationProjectSettings.asset`. The ignored legacy `ProjectSettings/ProjectConfig.json` had SHA-256 `FD8FFB7349A8E90E58310FE563820217BB15DA051483CD7DE17CC77FE1BAD4C9`.
+- Opened `Tools > Tor Production > Addressables Automation Settings` in the pinned Editor and visually confirmed the corrected `Active configuration`/`Active asset` and `Pending configuration`/`Pending asset` presentation.
+- Confirmed `Set Active Configuration` is present and disabled without a pending asset, `Revert Pending Changes` is present and enabled, the pending-versus-active help explains persistence and reversion, and the healthy Lifecycle section explains that recovery controls appear only for damaged or incompatible stored state.
+- Confirmed the remaining fail-closed presentation: Analyze, migrated-configuration creation, automatic-scene Apply, and Detach were disabled in the unconfigured host; the content-workflow warning remained visible; and no generic Apply action was present.
+- Exercised `Revert Pending Changes` and `Preview Legacy Migration (No Changes)`. Revert preserved the unconfigured state. The preview rendered zero mapped rules for the host's unresolved legacy references and displayed `Legacy preview completed. No files were changed.` No migrated asset was created.
+- After both actions, the legacy JSON hash was unchanged, no Tor project-settings asset or Addressables settings directory existed, `git status --short` remained empty, and the current Editor log contained no targeted compiler, compilation, null/missing-reference, unhandled-exception, or fatal-error pattern.
+- Ignored screenshots are retained under `artifacts/phase1-settings-visual`, including the clean provider, reverted state, legacy preview, and result-message views. Unity was closed before this record was written.
+
+**Phase decision:** Phase 1 is complete. The required hosted matrix already passed for exact implementation correction commit `b843fa52846406342cfb624c859b386389bb997a`, and the later tracked changes through `886305d5d479930c8967d9351cfafd5d4eada1d1` were CI-policy or documentation-only. Stop here pending review; do not begin Phase 2 automatically.
 
 ## D. Prioritized roadmap
 

@@ -4,8 +4,8 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 2 — implementation and hosted verification complete; evidence commit and verification tag pending
-- Current batch: Phase 2 hosted evidence and `phase-2-verified` tag — in progress
+- Current phase: Phase 2 — complete and verified
+- Current batch: Phase 2 completion protocol — complete
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-22`
 
@@ -206,7 +206,7 @@ This protocol is the documented exception to the repository's general commit, ta
 
 - [x] Phase 0 — Reproducible baseline and compile/install safety (implementation and required hosted matrix complete)
 - [x] Phase 1 — Explicit setup and configuration (implementation, manual-verification corrections, hosted matrix, and revised SettingsProvider visual recheck complete)
-- [ ] Phase 2 — Deterministic group synchronization (in progress)
+- [x] Phase 2 — Deterministic group synchronization (implementation, local validation, hosted matrix, evidence record, and verification tag complete)
 - [ ] Phase 3 — GUID-based scene synchronization
 - [ ] Phase 4 — Dependency analysis and prefab removal
 - [ ] Phase 5 — Build pipeline and existing-build Play Mode
@@ -469,7 +469,7 @@ This protocol is the documented exception to the repository's general commit, ta
 
 ### Phase 2 deterministic group synchronization implementation record — 2026-08-22
 
-**Status:** `GROUP-001` through `GROUP-006` are implemented, documented, diff-reviewed, and locally verified. Phase 2 remains in progress only for its authorized completion commit, exact-commit hosted matrix, evidence-only record commit, and `phase-2-verified` tag. No Phase 3+ workflow, automatic group processing, Update All orchestration, build, release, or publication path was enabled.
+**Status:** `GROUP-001` through `GROUP-006` are implemented, documented, diff-reviewed, locally verified, and hosted-verified. The completion protocol is closed in the hosted evidence record below. No Phase 3+ workflow, automatic group processing, Update All orchestration, build, release, or publication path was enabled.
 
 **Completed issue scope and decisions:**
 
@@ -490,9 +490,9 @@ This protocol is the documented exception to the repository's general commit, ta
 - The 56-case suite includes null/empty inputs, missing settings/folders/groups, invalid filters, duplicate filenames, wrong groups/addresses/labels, preserve/exact label policies, address collisions, folder entries, schema planning, read-only/non-buildable groups, failed loads, incompatible claims, active-config protection, dry-run state hashing, immutable public plan collections, deterministic 2,500-asset planning under the five-second budget, transaction success, forced mid-apply rollback, and incomplete-rollback recovery retention.
 - Two integration cases create persisted temporary Addressables settings/assets through the public `2.7.6`/`2.9.1` APIs. One verifies actual group, schema, label, entry, and address creation; the other forces a failure after mutation and verifies the created group/entry are removed, the Default Group entry count is identical, and the recovery file is cleared after successful rollback.
 - `Tools/CI/Validate-PhaseZero.ps1 -ExpectedHostAddressablesVersion 2.7.6` passed after restoring the tracked minimum lane. `git diff --check`, the targeted unsafe updater/default-cleanup scan, tracked `AddressablesProject/Assets`/`ProjectSettings` diff, and tracked host manifest/lock diff all passed. The development host's known ignored legacy `ProjectSettings/ProjectConfig.json` remains untouched, so the host itself is intentionally not a valid input to the clean-project-only `Assert-InertProject.ps1`; both fresh temporary lanes passed that assertion instead.
-- The complete Phase 2 diff was reviewed for scope boundaries, inert reads, GUID/meta preservation, public Runtime/Editor/Samples/Tests assembly direction, stale-plan coverage, rollback ordering, source-asset immutability, deterministic ordering, and Phase 3+ gating. No paid hosted Unity job has been dispatched yet.
+- The complete Phase 2 diff was reviewed for scope boundaries, inert reads, GUID/meta preservation, public Runtime/Editor/Samples/Tests assembly direction, stale-plan coverage, rollback ordering, source-asset immutability, deterministic ordering, and Phase 3+ gating. At this implementation-boundary review, no paid hosted Unity job had been dispatched; the single later dispatch is recorded below.
 
-**Implementation-boundary protocol status:** the focused completion commit and its single exact-commit hosted run are complete as recorded below. The evidence-only commit/push and exact-commit `phase-2-verified` tag remain; no `v*` tag, GitHub Release, package publication, or other release artifact is authorized.
+**Implementation-boundary protocol status:** complete. The focused completion commit, single exact-commit hosted run, evidence-only commit/push, and exact-commit `phase-2-verified` tag are all complete as recorded below. No `v*` tag, GitHub Release, package publication, or other release artifact was created or authorized.
 
 ### Phase 2 hosted verification evidence record — 2026-08-22
 
@@ -505,7 +505,9 @@ This protocol is the documented exception to the repository's general commit, ta
 - GitHub emitted non-failing Node.js 20 deprecation annotations for the intentionally SHA-pinned checkout, artifact, and GameCI actions while executing them on Node.js 24. These annotations did not skip or fail any required step and do not change the successful lane conclusions.
 - The post-run manual-dispatch list contained only run `32591069542` for this workflow/branch/SHA, confirming no duplicate paid Phase 2 run was dispatched.
 
-**Phase decision:** every Phase 2 acceptance criterion and both required hosted lanes pass for exact completion commit `2bd0ab66ccbba60a55aecd01db37141e9462d999`. After this evidence-only record is committed and pushed, create and push annotated tag `phase-2-verified` targeting that exact tested commit. Do not target the later evidence-only commit and do not create a `v*` tag, GitHub Release, package publication, or other release artifact.
+**Phase decision:** every Phase 2 acceptance criterion and both required hosted lanes pass for exact completion commit `2bd0ab66ccbba60a55aecd01db37141e9462d999`.
+
+**Phase-protocol completion:** documentation-only hosted-evidence commit `b0b756bdf2524f9b1057d7f4095820c55e56cbdd` was pushed to `origin/main`. Annotated tag `phase-2-verified` was then created and pushed; its local and remote peeled target is the exact hosted-tested commit `2bd0ab66ccbba60a55aecd01db37141e9462d999`, not the later evidence commit. The post-tag workflow list contained no new run, and manual run `32591069542` remained the sole Phase 2 dispatch. No `v*` tag, GitHub Release, package publication, or other release artifact was created.
 
 ## D. Prioritized roadmap
 

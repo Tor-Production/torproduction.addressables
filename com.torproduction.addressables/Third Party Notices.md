@@ -1,16 +1,5 @@
-<!-- Remove File if not applicable -->
+# Third-Party Notices
 
-This package contains third-party software components governed by the license(s) indicated below:
+The original package-template notice list was placeholder content and did not identify verified components used by this package.
 
-Component Name: Semver
-
-License Type: "MIT"
-
-[SemVer License](https://github.com/myusername/semver/blob/master/License.txt)
-
-
-Component Name: MyComponent
-
-License Type: "MyLicense"
-
-[MyComponent License](https://www.mycompany.com/licenses/License.txt)
+Code provenance, redistribution rights, and any legally required third-party attribution remain unresolved. Public release is blocked until the owner records the verified notice set in `ImplementationPlan.md`. This file must not be treated as permission to remove existing copyright or license attribution.

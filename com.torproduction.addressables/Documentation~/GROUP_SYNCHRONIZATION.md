@@ -19,7 +19,7 @@ The explicit legacy-migration preview reads the misspelled serialized `Lables` f
 
 **Analyze Groups (No Changes)** scans configured folders, resolves filters, compares existing Addressables entries, and returns a sorted immutable plan. It does not create Addressables settings, groups, schemas, labels, or entries and does not dirty assets.
 
-Preflight blocks Apply for missing settings or folders, unresolved types, incompatible rule claims, duplicate final addresses, read-only or invalid bundled groups, and explicit Addressable folder entries that implicitly own a claimed descendant. Missing destination groups, `BundledAssetGroupSchema`, `ContentUpdateGroupSchema`, and required labels are proposed as operations rather than created during analysis.
+Preflight blocks Apply for missing settings or folders, unresolved types, any failed main-asset load, incompatible rule claims, duplicate final addresses, read-only or invalid bundled groups, and explicit Addressable folder entries that implicitly own a claimed descendant. A failed load is never warning-only: skipping an unreadable candidate could leave stale managed state, so complete convergence cannot be proven. Missing destination groups, `BundledAssetGroupSchema`, `ContentUpdateGroupSchema`, and required labels are proposed as operations rather than created during analysis.
 
 **Apply Group Preview** requires confirmation and verifies the source-state and plan hashes. Any config, source-asset, group, entry, address, or label change after preview makes the plan stale and requires another analysis. Apply creates or validates groups and schemas first, then converges each explicit entry's group, address, and labels. It never clears the Default Group and never moves user assets. A second analysis after a successful Apply should contain no operations.
 
@@ -27,7 +27,7 @@ Preflight blocks Apply for missing settings or folders, unresolved types, incomp
 
 Before its first mutation, Apply records affected entries, groups, schemas, and created labels under `Library/TorProduction.Addressables/Recovery/group-sync-<operation-id>.json`. The default policy stops on the first failure and restores through public Addressables APIs. A successful Apply or rollback removes the snapshot.
 
-If rollback is incomplete, the snapshot remains and further Apply operations are blocked. Use **Recover Previous Group Apply** in Project Settings or the group synchronization window. Recovery touches only identities recorded by the package snapshot; unrelated groups and entries are not cleared.
+If rollback is incomplete, throws unexpectedly, or cannot clean up its snapshot, an atomically written snapshot remains and further Apply operations are blocked. Use **Recover Previous Group Apply** in Project Settings or the group synchronization window. Recovery touches only identities recorded by the package snapshot; unrelated groups and entries are not cleared.
 
 ## API and CLI
 

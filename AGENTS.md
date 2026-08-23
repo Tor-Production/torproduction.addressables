@@ -23,3 +23,4 @@
 - Validate changes with the relevant static checks, Unity compilation, and EditMode or PlayMode tests. Never claim an unavailable or unexecuted check passed; report exactly what could not be run and why.
 - Do not commit, tag, push, publish, or enable publication unless the current task explicitly authorizes it or the phase-completion protocol in `ImplementationPlan.md` applies. Publication, release creation, and `v*` tags always require separate explicit authorization.
 - After completing an implementation batch, update the plan status, execution progress, and affected phase or issue progress in `ImplementationPlan.md` before any authorized batch commit.
+- Phase status must always name the latest completed phase, the next incomplete phase, and the active batch. After a phase passes its completion protocol, advance to the next incomplete phase without reopening completed phases for unrelated cleanup.

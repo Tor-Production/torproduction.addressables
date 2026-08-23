@@ -196,10 +196,10 @@ namespace TorProduction.Addressables.Editor {
 					if (!string.IsNullOrEmpty(asset.LoadError) || asset.AssetType == null) {
 						diagnostics.Add(new AutomationDiagnostic(
 							AutomationDiagnosticCode.AssetLoadFailed,
-							AutomationDiagnosticSeverity.Warning,
+							AutomationDiagnosticSeverity.Error,
 							asset.Path,
 							string.IsNullOrEmpty(asset.LoadError)
-								? "The main asset could not be loaded and was skipped."
+								? "The main asset could not be loaded. Apply is blocked because complete convergence cannot be proven."
 								: asset.LoadError));
 						continue;
 					}

@@ -7,6 +7,7 @@ using NUnit.Framework;
 using TorProduction.Addressables.Editor;
 using TorProduction.AddressablesToolpack.Editor;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
@@ -229,7 +230,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 		}
 
 		[Test]
-		public void Planner_FailedAssetLoadIsReportedAndSkipped() {
+		public void Planner_FailedAssetLoadBlocksApply() {
 			var state = ReadyState();
 			var rule = Rule();
 			rule.Assets.Add(new GroupSyncAssetState {
@@ -240,9 +241,10 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			var before = state.ComputeHash();
 			var plan = GroupSyncPlanner.Create(state);
 
-			Assert.That(plan.IsValid, Is.True);
+			Assert.That(plan.IsValid, Is.False);
 			Assert.That(plan.Operations, Is.Empty);
 			Assert.That(plan.Diagnostics.Single().Code, Is.EqualTo(AutomationDiagnosticCode.AssetLoadFailed));
+			Assert.That(plan.Diagnostics.Single().Severity, Is.EqualTo(AutomationDiagnosticSeverity.Error));
 			Assert.That(state.ComputeHash(), Is.EqualTo(before), "Dry-run planning must not mutate captured state.");
 		}
 
@@ -315,6 +317,68 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			Assert.That(report.RollbackStatus, Is.EqualTo(AutomationRollbackStatus.Failed));
 			Assert.That(report.RecoveryPath, Is.EqualTo(backend.Path));
 			Assert.That(report.Diagnostics.Any(item => item.Code == AutomationDiagnosticCode.RollbackFailed), Is.True);
+		}
+
+		[Test]
+		public void Transaction_RollbackBackendExceptionReturnsStructuredFailure() {
+			var backend = new FakeMutationBackend {
+				FailAtExecution = 1,
+				RollbackThrows = true,
+				Path = "Library/TorProduction.Addressables/Recovery/group-sync-throw.json"
+			};
+
+			var report = GroupSyncTransaction.Apply(TransactionPlan(2), backend);
+
+			Assert.That(report.Succeeded, Is.False);
+			Assert.That(report.RollbackStatus, Is.EqualTo(AutomationRollbackStatus.Failed));
+			Assert.That(report.RecoveryPath, Is.EqualTo(backend.Path));
+			Assert.That(report.Diagnostics.Any(item =>
+				item.Code == AutomationDiagnosticCode.RollbackFailed &&
+				item.Message.Contains("threw unexpectedly")), Is.True);
+			Assert.That(report.Failures.Count, Is.EqualTo(2));
+		}
+
+		[Test]
+		public void PublicApply_RejectsStalePlanWithoutThrowing() {
+			var config = ScriptableObject.CreateInstance<AddressablesAutomationConfig>();
+			try {
+				var plan = new AutomationPlan(
+					AutomationScope.Groups, "old-source", "old-plan",
+					new[] { new AutomationOperation(AutomationOperationKind.CreateLabel, value: "managed") },
+					Array.Empty<AutomationDiagnostic>(), config);
+
+				var report = AddressablesAutomation.Apply(plan);
+
+				Assert.That(report.Succeeded, Is.False);
+				Assert.That(report.Operations, Is.Empty);
+				Assert.That(report.Diagnostics.Any(item => item.Code == AutomationDiagnosticCode.StalePlan), Is.True);
+			} finally {
+				UnityEngine.Object.DestroyImmediate(config);
+			}
+		}
+
+		[Test]
+		public void CliAnalyzeAndApply_ReportSuccessAndThrowOnFailure() {
+			var output = new List<string>();
+			var valid = TransactionPlan(0);
+			var success = new AutomationReport(
+				true, Array.Empty<AutomationOperation>(), Array.Empty<AutomationDiagnostic>(),
+				Array.Empty<string>(), AutomationRollbackStatus.NotRequired, string.Empty);
+			Assert.DoesNotThrow(() => AddressablesAutomationCli.RunAnalyzeGroups(() => valid, output.Add));
+			Assert.DoesNotThrow(() => AddressablesAutomationCli.RunApplyGroups(() => valid, _ => success, output.Add));
+			Assert.That(output.Count, Is.EqualTo(3));
+
+			var invalid = new AutomationPlan(
+				AutomationScope.Groups, "invalid", "invalid",
+				Array.Empty<AutomationOperation>(),
+				new[] { new AutomationDiagnostic(
+					AutomationDiagnosticCode.ConfigurationInvalid,
+					AutomationDiagnosticSeverity.Error,
+					"CLI", "forced CLI failure") }, null);
+			Assert.Throws<InvalidOperationException>(() =>
+				AddressablesAutomationCli.RunAnalyzeGroups(() => invalid, _ => { }));
+			Assert.Throws<InvalidOperationException>(() =>
+				AddressablesAutomationCli.RunApplyGroups(() => invalid, _ => success, _ => { }));
 		}
 
 		[Test]
@@ -419,6 +483,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			private int m_executions;
 			internal int FailAtExecution = -1;
 			internal bool RollbackFails;
+			internal bool RollbackThrows;
 			internal string Path = "Library/FakeRecovery.json";
 			internal int State;
 			internal int BeginCount;
@@ -449,6 +514,9 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			}
 
 			public bool TryRollback(out string error) {
+				if (RollbackThrows) {
+					throw new InvalidOperationException("forced rollback exception");
+				}
 				if (RollbackFails) {
 					error = "forced rollback failure";
 					return false;
@@ -464,22 +532,44 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 		private string m_root;
 		private string m_assetGuid;
 		private AddressableAssetSettings m_settings;
+		private AddressableAssetSettings m_originalDefaultSettings;
+		private bool m_createdDefaultFolder;
 
 		[SetUp]
 		public void SetUp() {
+			m_createdDefaultFolder = false;
+			m_originalDefaultSettings = AddressableAssetSettingsDefaultObject.SettingsExists
+				? AddressableAssetSettingsDefaultObject.GetSettings(false)
+				: null;
 			m_root = "Assets/__TorProductionPhase2_" + Guid.NewGuid().ToString("N");
 			Assert.That(AssetDatabase.CreateFolder("Assets", Path.GetFileName(m_root)), Is.Not.Empty);
 			Assert.That(AssetDatabase.CreateFolder(m_root, "Content"), Is.Not.Empty);
+			Assert.That(AssetDatabase.CreateFolder(m_root, "Editor"), Is.Not.Empty);
 			var assetPath = m_root + "/Content/Fixture.asset";
 			AssetDatabase.CreateAsset(new TextAsset("phase-2"), assetPath);
 			m_assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
 			m_settings = AddressableAssetSettings.Create(
 				m_root + "/AddressableAssetsData", "AddressableAssetSettings", true, true);
 			Assert.That(m_settings, Is.Not.Null);
+			if (!AssetDatabase.IsValidFolder(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder)) {
+				m_createdDefaultFolder = true;
+				Assert.That(AssetDatabase.CreateFolder("Assets", "AddressableAssetsData"), Is.Not.Empty);
+			}
+			AddressableAssetSettingsDefaultObject.Settings = m_settings;
 		}
 
 		[TearDown]
 		public void TearDown() {
+			if (m_originalDefaultSettings != null) {
+				AddressableAssetSettingsDefaultObject.Settings = m_originalDefaultSettings;
+			} else {
+				AddressableAssetSettingsDefaultObject.Settings = null;
+				EditorBuildSettings.RemoveConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigObjectName);
+			}
+			if (m_createdDefaultFolder &&
+			    AssetDatabase.IsValidFolder(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder)) {
+				AssetDatabase.DeleteAsset(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder);
+			}
 			if (!string.IsNullOrEmpty(m_root) && AssetDatabase.IsValidFolder(m_root)) {
 				AssetDatabase.DeleteAsset(m_root);
 			}
@@ -521,6 +611,60 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			Assert.That(m_settings.FindAssetEntry(m_assetGuid), Is.Null);
 			Assert.That(m_settings.DefaultGroup.entries.Count, Is.EqualTo(defaultEntryCount));
 			Assert.That(File.Exists(unityBackend.RecoveryPath), Is.False);
+		}
+
+		[Test]
+		public void PublicAnalyzeAndApply_RepeatedRunConvergesAtIntegrationBoundary() {
+			var config = CreateConfig();
+
+			var firstPlan = AddressablesAutomation.Analyze(config, AutomationScope.Groups);
+			var firstReport = AddressablesAutomation.Apply(firstPlan);
+			var secondPlan = AddressablesAutomation.Analyze(config, AutomationScope.Groups);
+			var secondReport = AddressablesAutomation.Apply(secondPlan);
+
+			Assert.That(firstPlan.IsValid, Is.True, FormatDiagnostics(firstPlan));
+			Assert.That(firstPlan.HasChanges, Is.True);
+			Assert.That(firstReport.Succeeded, Is.True, string.Join(" | ", firstReport.Failures));
+			Assert.That(secondPlan.IsValid, Is.True, FormatDiagnostics(secondPlan));
+			Assert.That(secondPlan.Operations, Is.Empty);
+			Assert.That(secondReport.Succeeded, Is.True);
+			Assert.That(secondReport.Operations, Is.Empty);
+		}
+
+		[Test]
+		public void PublicRecovery_RestoresActualPendingRecoveryFile() {
+			var backend = new UnityGroupSyncMutationBackend(m_settings);
+			var plan = IntegrationPlan();
+			backend.Begin(plan);
+			backend.Execute(plan.Operations[0]);
+			Assert.That(File.Exists(backend.RecoveryPath), Is.True);
+			Assert.That(m_settings.FindGroup("Managed Content"), Is.Not.Null);
+
+			var report = AddressablesAutomation.Recover();
+
+			Assert.That(report.Succeeded, Is.True, string.Join(" | ", report.Failures));
+			Assert.That(report.RollbackStatus, Is.EqualTo(AutomationRollbackStatus.Succeeded));
+			Assert.That(m_settings.FindGroup("Managed Content"), Is.Null);
+			Assert.That(File.Exists(backend.RecoveryPath), Is.False);
+		}
+
+		private AddressablesAutomationConfig CreateConfig() {
+			var config = ScriptableObject.CreateInstance<AddressablesAutomationConfig>();
+			config.ReplaceWithCurrentSchema(
+				new[] { new GroupSyncRule(
+					AssetDatabase.AssetPathToGUID(m_root + "/Content"),
+					Array.Empty<string>(), string.Empty, "Managed Content", "content",
+					GroupAddressPolicy.RelativePath, ExistingLabelPolicy.PreserveUnrelated,
+					new[] { "managed" }, Array.Empty<string>()) },
+				Array.Empty<SceneFolderRule>());
+			AssetDatabase.CreateAsset(config, m_root + "/Editor/AutomationConfig.asset");
+			AssetDatabase.SaveAssets();
+			return config;
+		}
+
+		private static string FormatDiagnostics(AutomationPlan plan) {
+			return string.Join(" | ", plan.Diagnostics.Select(item =>
+				$"{item.Severity}:{item.Code}:{item.Location}:{item.Message}"));
 		}
 
 		private AutomationPlan IntegrationPlan() {

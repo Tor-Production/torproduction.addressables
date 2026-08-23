@@ -61,10 +61,15 @@ namespace TorProduction.Addressables.Editor {
 						"Apply",
 						$"Group synchronization failed: {exception.Message}")
 				};
-				if (backend.TryRollback(out var rollbackError)) {
-					return new AutomationReport(
-						false, applied, diagnostics, new[] { exception.Message },
-						AutomationRollbackStatus.Succeeded, string.Empty);
+				string rollbackError;
+				try {
+					if (backend.TryRollback(out rollbackError)) {
+						return new AutomationReport(
+							false, applied, diagnostics, new[] { exception.Message },
+							AutomationRollbackStatus.Succeeded, string.Empty);
+					}
+				} catch (Exception rollbackException) {
+					rollbackError = $"Rollback backend threw unexpectedly: {rollbackException.Message}";
 				}
 
 				diagnostics.Add(new AutomationDiagnostic(
@@ -150,21 +155,42 @@ namespace TorProduction.Addressables.Editor {
 		}
 
 		public bool TryRollback(out string error) {
-			if (m_snapshot == null) {
-				error = "No recovery snapshot was available.";
-				return false;
+			try {
+				if (m_snapshot == null) {
+					error = "No recovery snapshot was available.";
+					return false;
+				}
+				if (!TryRestore(m_settings, m_snapshot, out error)) {
+					return RetainRecoverySnapshot(error, out error);
+				}
+				try {
+					DeleteSnapshot();
+					error = string.Empty;
+					return true;
+				} catch (Exception cleanupException) {
+					return RetainRecoverySnapshot(
+						$"Rollback restored project state, but recovery cleanup failed: {cleanupException.Message}",
+						out error);
+				}
+			} catch (Exception rollbackException) {
+				return RetainRecoverySnapshot(
+					$"Rollback backend failed unexpectedly: {rollbackException.Message}",
+					out error);
 			}
-			if (TryRestore(m_settings, m_snapshot, out error)) {
-				DeleteSnapshot();
-				return true;
+		}
+
+		private bool RetainRecoverySnapshot(string failure, out string error) {
+			error = failure ?? "Rollback is incomplete.";
+			if (m_snapshot == null) {
+				return false;
 			}
 
 			m_snapshot.status = GroupSyncRecoverySnapshot.RequiresRecoveryStatus;
-			m_snapshot.lastError = error ?? string.Empty;
+			m_snapshot.lastError = error;
 			try {
 				SaveSnapshot();
 			} catch (Exception saveException) {
-				error = $"{error} The recovery snapshot also could not be updated: {saveException.Message}";
+				error = $"{error} The original recovery snapshot was retained, but its status could not be updated: {saveException.Message}";
 			}
 			return false;
 		}
@@ -214,7 +240,19 @@ namespace TorProduction.Addressables.Editor {
 
 		private void SaveSnapshot() {
 			var json = JsonUtility.ToJson(m_snapshot, true);
-			File.WriteAllText(m_recoveryPath, json, new UTF8Encoding(false));
+			var temporaryPath = m_recoveryPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+			try {
+				File.WriteAllText(temporaryPath, json, new UTF8Encoding(false));
+				if (File.Exists(m_recoveryPath)) {
+					File.Replace(temporaryPath, m_recoveryPath, null);
+				} else {
+					File.Move(temporaryPath, m_recoveryPath);
+				}
+			} finally {
+				if (File.Exists(temporaryPath)) {
+					File.Delete(temporaryPath);
+				}
+			}
 		}
 
 		private void DeleteSnapshot() {

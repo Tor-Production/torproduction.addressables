@@ -4,10 +4,12 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Current phase: Phase 2 — complete and verified
-- Current batch: Phase 2 completion protocol — complete
+- Latest completed phase: Phase 2 — complete and verified
+- Next incomplete phase: Phase 3 — GUID-based scene synchronization
+- Current active batch: pre-Phase 3 maintenance and repository-history sanitization — in progress
+- Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
-- Last updated: `2026-08-22`
+- Last updated: `2026-08-23`
 
 This document is the implementation source of truth. Every implementation context must read it before changing code. Work must proceed incrementally by phase and issue ID. After completing a batch, update this status and the relevant issue/phase progress before committing.
 
@@ -479,7 +481,7 @@ This protocol is the documented exception to the repository's general commit, ta
 - `GROUP-004`: relative-path addresses use normalized source-relative paths, remove only the final extension, and accept an optional validated prefix. Final addresses are checked against other claimed assets and unrelated explicit entries before Apply; duplicate filenames in separate subfolders remain deterministic and distinct.
 - `GROUP-005`: the active global Default Group cleanup and filename-only updater were removed while their Unity asset/meta identities were preserved as inert source placeholders. The new path never clears a group wholesale or physically moves source assets; only explicitly claimed entries can move.
 - `GROUP-006`: `AutomationPlan` is an immutable, deterministically sorted operation/diagnostic snapshot with source-state and plan hashes. Apply re-analyzes and rejects stale plans, creates/validates groups and `BundledAssetGroupSchema`/`ContentUpdateGroupSchema` before entries, batches explicit dirty/event calls, and writes `Library/TorProduction.Addressables/Recovery/group-sync-<operation-id>.json` before mutation. The default failure policy stops and rolls back through public Addressables APIs. Incomplete rollback retains the snapshot, blocks later Apply, and exposes confirmed UI plus CLI recovery.
-- Preflight additionally blocks incompatible rule claims, active-config claims, Addressable folder-entry ownership conflicts, read-only groups, invalid bundled build/load paths, and duplicate final addresses. Failed main-asset loads are reported deterministically and skipped because empty filters mean all **loadable** assets.
+- At the original Phase 2 boundary, failed main-asset loads were reported and skipped. The pre-Phase 3 maintenance review supersedes that policy: a failed load is now blocking because skipping an unreadable candidate cannot prove complete convergence.
 - Enabled only the manual `Groups` scope in Project Settings and `Tools > Tor Production > Addressables > Synchronize Groups...`. The SettingsProvider resolves Groups independently from unimplemented scene rules. `AddressablesAutomationCli.AnalyzeGroups`, `ApplyGroups`, and `RecoverGroups` wrap the same services and emit structured JSON. `Update All`, automatic scene processing, dependencies, prefab relocation, and builds remain fail-closed.
 - Added `Documentation~/GROUP_SYNCHRONIZATION.md`, updated the offline documentation, safety notice, and changelog, and raised the clean-install harness expectation from 33 to 56 EditMode cases. No license, provenance, attribution, package version, release, or publication decision changed.
 
@@ -508,6 +510,31 @@ This protocol is the documented exception to the repository's general commit, ta
 **Phase decision:** every Phase 2 acceptance criterion and both required hosted lanes pass for exact completion commit `2bd0ab66ccbba60a55aecd01db37141e9462d999`.
 
 **Phase-protocol completion:** documentation-only hosted-evidence commit `b0b756bdf2524f9b1057d7f4095820c55e56cbdd` was pushed to `origin/main`. Annotated tag `phase-2-verified` was then created and pushed; its local and remote peeled target is the exact hosted-tested commit `2bd0ab66ccbba60a55aecd01db37141e9462d999`, not the later evidence commit. The post-tag workflow list contained no new run, and manual run `32591069542` remained the sole Phase 2 dispatch. No `v*` tag, GitHub Release, package publication, or other release artifact was created.
+
+### Pre-Phase 3 maintenance and history-sanitization record — 2026-08-23
+
+**Status:** maintenance corrections are implemented and locally verified; the focused commit/push and history rewrite are pending. Starting remote and local `main` both resolved to `d4516c8f6178b73ec7af3d54ec7cad7f8549e325` after fetch/prune. The repository had only `main`; no open pull requests, forks, releases, branch protection, or rulesets; and only the owner collaborator. Existing annotated tags peeled to `b843fa52846406342cfb624c859b386389bb997a` for `phase-0-verified` and `phase-1-verified`, and `2bd0ab66ccbba60a55aecd01db37141e9462d999` for `phase-2-verified`.
+
+**Finding decisions:**
+
+1. The top-level phase state was obsolete documentation; it now distinguishes latest completed Phase 2, next Phase 3, and the active maintenance batch.
+2. Missing durable phase progression was a governance defect; `AGENTS.md` now requires advancing the next incomplete phase without reopening completed phases for unrelated cleanup.
+3. The lone current-tree former-owner token in `AGENTS.md` was obsolete wording; it is removed and covered by a non-literal static guard.
+4. The package repository URL was a metadata defect and now matches `Yurii-Tor/torproduction.addressables`.
+5. The paid workflow's Phase 0 display name was inaccurate; only its display name is made phase-neutral, while its file identity and manual/`v*` triggers remain unchanged.
+6. Public template READMEs, sample changelog entries, contribution links, placeholder notices, and initialization content were misleading defects and are rewritten now. Assembly names, example code, Samples layout, and final documentation breadth remain planned Phase 6/7 work and those phases remain open.
+7. `LICENSE.md` contains an existing Stan's Assets copyright, which may be legally required and is preserved byte-for-byte. Provenance, relicensing, redistribution rights, and the final third-party notice set remain legally blocked pending owner/legal confirmation; no release is authorized.
+8. An exception escaping `IGroupSyncMutationBackend.TryRollback` was a safety defect; Apply now returns a structured failed report and recovery path.
+9. Snapshot update/deletion exceptions in the Unity rollback backend were safety defects; snapshot writes are atomic and an unfinished cleanup retains recovery evidence and blocks later Apply.
+10. Warning-only asset-load failure was inconsistent with fail-closed convergence. It is now a blocking diagnostic; no partial-application exception remains.
+11. Missing direct coverage of public stale-plan rejection, a real pending recovery file, rollback-backend exceptions, CLI success/failure, and repeated public analyze/Apply convergence was a maintenance test defect; focused and integration coverage is added in this batch.
+12. Missing current-tree reintroduction prevention was a maintenance defect; the existing static validator now scans tracked paths and raw tracked contents case-insensitively while constructing the prohibited token only at runtime.
+
+**Intentional boundaries:** the existing legal attribution is not branding cleanup. Phase 6 owns assembly/runtime/example/sample removal; Phase 7 owns the complete documentation, CI, legal metadata, and release-readiness pass. Neither phase is marked complete. No `v*` tag, release, publication workflow, GitHub Release, or package publication is enabled by this maintenance batch.
+
+**Local maintenance verification:** Windows PowerShell parsing, JSON/asmdef parsing, `git diff --check`, current-tree prohibited-token/path scans, public-template residue scans, host tracked-state checks, Unity `.meta` pairing/GUID checks, and `Tools/CI/Validate-PhaseZero.ps1 -RepositoryRoot .` pass. Isolated Unity `6000.0.78f1` clean-install/EditMode/removal lanes passed on Addressables `2.7.6` and `2.9.1`: each discovered and passed exactly `61/61`, created no configuration/Addressables/Build Settings state on import, remained inert after package removal, and removed its verified temporary project. Evidence is under ignored `artifacts/maintenance-local-2.7.6` and `artifacts/maintenance-local-2.9.1`.
+
+The first `2.7.6` attempt stopped at test compilation because the expanded integration fixture omitted the `UnityEditor.AddressableAssets` namespace import. No tests ran and no source project state changed. The import was added and the necessary lane reran successfully; no paid hosted workflow was dispatched during local maintenance.
 
 ## D. Prioritized roadmap
 

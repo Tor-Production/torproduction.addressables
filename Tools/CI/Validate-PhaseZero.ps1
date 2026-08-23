@@ -11,6 +11,48 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path -LiteralPath $RepositoryRoot).Path
 $packageRoot = Join-Path $root 'com.torproduction.addressables'
 $projectRoot = Join-Path $root 'AddressablesProject'
+
+function Test-ContainsFormerOwnerToken([byte[]]$Bytes, [byte[]]$Token) {
+    if ($null -eq $Bytes -or $Bytes.Length -lt $Token.Length) {
+        return $false
+    }
+    for ($offset = 0; $offset -le $Bytes.Length - $Token.Length; $offset++) {
+        $matched = $true
+        for ($index = 0; $index -lt $Token.Length; $index++) {
+            $value = $Bytes[$offset + $index]
+            if ($value -ge 65 -and $value -le 90) {
+                $value += 32
+            }
+            if ($value -ne $Token[$index]) {
+                $matched = $false
+                break
+            }
+        }
+        if ($matched) {
+            return $true
+        }
+    }
+    return $false
+}
+
+$forbiddenTokenCodes = @(87, 104, 105, 109, 115, 121)
+$forbiddenToken = -join ($forbiddenTokenCodes | ForEach-Object { [char]$_ })
+$forbiddenTokenBytes = [Text.Encoding]::ASCII.GetBytes($forbiddenToken.ToLowerInvariant())
+$trackedPaths = @(& git -C $root -c core.quotepath=false ls-files)
+if ($LASTEXITCODE -ne 0) {
+    throw 'Unable to enumerate tracked files for the former-owner guard.'
+}
+foreach ($trackedPath in $trackedPaths) {
+    if ($trackedPath.IndexOf($forbiddenToken, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+        throw "A tracked path contains the forbidden former-owner token: $trackedPath"
+    }
+    $fullTrackedPath = Join-Path $root $trackedPath
+    if ((Test-Path -LiteralPath $fullTrackedPath -PathType Leaf) -and
+        (Test-ContainsFormerOwnerToken ([IO.File]::ReadAllBytes($fullTrackedPath)) $forbiddenTokenBytes)) {
+        throw "A tracked file contains the forbidden former-owner token: $trackedPath"
+    }
+}
+
 $packageManifest = Get-Content -Raw -LiteralPath (Join-Path $packageRoot 'package.json') | ConvertFrom-Json
 $hostManifest = Get-Content -Raw -LiteralPath (Join-Path $projectRoot 'Packages/manifest.json') | ConvertFrom-Json
 
@@ -25,6 +67,9 @@ if ($packageManifest.unity -ne '6000.0') {
 }
 if ($packageManifest.dependencies.'com.unity.addressables' -ne '2.7.6') {
     throw 'The package must retain Addressables 2.7.6 as its minimum dependency.'
+}
+if ($packageManifest.repository.url -ne 'git+https://github.com/Yurii-Tor/torproduction.addressables.git') {
+    throw 'The package repository URL does not match the configured GitHub repository.'
 }
 if ($hostManifest.dependencies.'com.unity.addressables' -ne $ExpectedHostAddressablesVersion) {
     throw "Host Addressables version does not match the lane: $ExpectedHostAddressablesVersion"
@@ -155,6 +200,9 @@ foreach ($workflow in $workflowFiles) {
 }
 
 $unityWorkflow = Get-Content -Raw -LiteralPath (Join-Path $root '.github/workflows/unity_phase_zero.yml')
+if ($unityWorkflow -notmatch '(?m)^name:\s*Unity compatibility validation\s*$') {
+    throw 'The paid Unity workflow must use its phase-neutral display name.'
+}
 if ($unityWorkflow -match '(?m)^\s{2}pull_request:') {
     throw 'The paid Unity matrix must not run automatically for pull requests.'
 }

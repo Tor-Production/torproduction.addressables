@@ -1,60 +1,51 @@
-# Package Sample
-<!-- Describe your package -->
+# Tor Production Addressables
 
-[![NPM Package](https://img.shields.io/npm/v/com.stansassets.package-sample)](https://www.npmjs.com/package/com.stansassets.package-sample)
-[![openupm](https://img.shields.io/npm/v/com.stansassets.package-sample?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.stansassets.package-sample/)
-[![Licence](https://img.shields.io/npm/l/com.stansassets.package-sample)](https://github.com/StansAssets/com.stansassets.package-sample/blob/master/LICENSE)
-[![Issues](https://img.shields.io/github/issues/StansAssets/com.stansassets.package-sample)](https://github.com/StansAssets/com.stansassets.package-sample/issues)
+Editor tooling for project-agnostic, previewable Addressables automation on Unity 6.
 
-<!-- Add some useful links here -->
+## Current capabilities
 
-[API Reference](https://myapi) | [Forum](https://myforum) | [Wiki](https://github.com/StansAssets/com.stansassets.package-sample/wiki)
+- Explicit GUID-backed project configuration under Project Settings.
+- Deterministic group analysis and convergence for group, address, and label state.
+- Missing group/schema planning, collision checks, stale-plan rejection, transaction snapshots, rollback, and manual recovery.
+- Project Settings, menu, public editor API, and CLI entry points that share the same planner.
+- Inert package import and configuration reads when setup is missing or invalid.
 
-### Install from NPM
-* Navigate to the `Packages` directory of your project.
-* Adjust the [project manifest file](https://docs.unity3d.com/Manual/upm-manifestPrj.html) `manifest.json` in a text editor.
-* Ensure `https://registry.npmjs.org/` is part of `scopedRegistries`.
-  * Ensure `com.stansassets` is part of `scopes`.
-  * Add `com.stansassets.package-sample` to the `dependencies`, stating the latest version.
+Scene synchronization, dependency fixing, content builds, final sample/layout cleanup, and release automation are not yet available.
 
-A minimal example ends up looking like this. Please note that the version `X.Y.Z` stated here is to be replaced with [the latest released version](https://www.npmjs.com/package/com.stansassets.foundation) which is currently [![NPM Package](https://img.shields.io/npm/v/com.stansassets.foundation)](https://www.npmjs.com/package/com.stansassets.foundation).
-  ```json
-  {
-    "scopedRegistries": [
-      {
-        "name": "npmjs",
-        "url": "https://registry.npmjs.org/",
-        "scopes": [
-          "com.stansassets"
-        ]
-      }
-    ],
-    "dependencies": {
-      "com.stansassets.package-sample": "X.Y.Z",
-      ...
-    }
+## Development installation
+
+Add the local package folder through Unity Package Manager, or reference it from a development project manifest:
+
+```json
+{
+  "dependencies": {
+    "com.torproduction.addressables": "file:../../com.torproduction.addressables"
   }
-  ```
-* Switch back to the Unity software and wait for it to finish importing the added package.
+}
+```
 
-### Install from OpenUPM
-* Install openupm-cli `npm install -g openupm-cli` or `yarn global add openupm-cli`
-* Enter your unity project folder `cd <YOUR_UNITY_PROJECT_FOLDER>`
-* Install package `openupm add com.stansassets.package-sample`
+The repository also supports Git dependencies with the package subfolder:
 
-### Install from a Git URL
-Yoy can also install this package via Git URL. To load a package from a Git URL:
+```text
+https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#<verified-tag>
+```
 
-* Open [Unity Package Manager](https://docs.unity3d.com/Manual/upm-ui.html) window.
-* Click the add **+** button in the status bar.
-* The options for adding packages appear.
-* Select Add package from git URL from the add menu. A text box and an Add button appear.
-* Enter the `https://github.com/StansAssets/com.stansassets.package-sample.git` Git URL in the text box and click Add.
-* You may also install a specific package version by using the URL with the specified version.
-  * `https://github.com/StansAssets/com.stansassets.package-sample#X.Y.X`
-  * Please note that the version `X.Y.Z` stated here is to be replaced with the version you would like to get.
-  * You can find all the available releases [here](https://github.com/StansAssets/com.stansassets.package-sample/releases).
-  * The latest available release version is [![Last Release](https://img.shields.io/github/v/release/stansassets/com.stansassets.package-sample)](https://github.com/StansAssets/com.stansassets.package-sample/releases/latest)
+There is no authorized public version release yet. Phase-verification tags record engineering evidence and are not package releases.
 
-For more information about what protocols Unity supports, see [Git URLs](https://docs.unity3d.com/Manual/upm-git.html).
+## Use
 
+Open `Project Settings > Tor Production > Addressables Automation` to create or select a configuration and analyze the supported scope. Group Apply is always explicit, rejects stale previews, and blocks when complete convergence cannot be proven.
+
+For current limitations and recovery behavior, see `Documentation~/SAFETY.md` and `Documentation~/GROUP_SYNCHRONIZATION.md`.
+
+## Compatibility
+
+- Unity `6000.0.78f1`
+- Addressables `2.7.6` minimum lane
+- Addressables `2.9.1` compatibility lane
+
+The exact verification evidence is maintained in the repository `ImplementationPlan.md`.
+
+## License and provenance
+
+The existing license and attribution files are preserved. Public release remains blocked until ownership, redistribution rights, relicensing authority, and required attribution are confirmed by the owner.

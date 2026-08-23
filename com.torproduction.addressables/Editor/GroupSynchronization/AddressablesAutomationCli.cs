@@ -5,21 +5,37 @@ using UnityEngine;
 namespace TorProduction.Addressables.Editor {
 	public static class AddressablesAutomationCli {
 		public static void AnalyzeGroups() {
-			var plan = AddressablesAutomation.AnalyzeActiveGroups();
-			Debug.Log(FormatPlan(plan));
+			RunAnalyzeGroups(AddressablesAutomation.AnalyzeActiveGroups, Debug.Log);
+		}
+
+		internal static void RunAnalyzeGroups(
+			Func<AutomationPlan> analyze,
+			Action<string> writeOutput) {
+			var plan = analyze();
+			writeOutput(FormatPlan(plan));
 			if (!plan.IsValid) {
 				throw new InvalidOperationException("Addressables group analysis found blocking diagnostics.");
 			}
 		}
 
 		public static void ApplyGroups() {
-			var plan = AddressablesAutomation.AnalyzeActiveGroups();
-			Debug.Log(FormatPlan(plan));
+			RunApplyGroups(
+				AddressablesAutomation.AnalyzeActiveGroups,
+				AddressablesAutomation.Apply,
+				Debug.Log);
+		}
+
+		internal static void RunApplyGroups(
+			Func<AutomationPlan> analyze,
+			Func<AutomationPlan, AutomationReport> apply,
+			Action<string> writeOutput) {
+			var plan = analyze();
+			writeOutput(FormatPlan(plan));
 			if (!plan.IsValid) {
 				throw new InvalidOperationException("Addressables group analysis found blocking diagnostics; Apply was not started.");
 			}
-			var report = AddressablesAutomation.Apply(plan);
-			Debug.Log(FormatReport(report));
+			var report = apply(plan);
+			writeOutput(FormatReport(report));
 			if (!report.Succeeded) {
 				throw new InvalidOperationException(
 					"Addressables group Apply failed: " + string.Join(" | ", report.Failures));
@@ -27,8 +43,14 @@ namespace TorProduction.Addressables.Editor {
 		}
 
 		public static void RecoverGroups() {
-			var report = AddressablesAutomation.Recover();
-			Debug.Log(FormatReport(report));
+			RunRecoverGroups(AddressablesAutomation.Recover, Debug.Log);
+		}
+
+		internal static void RunRecoverGroups(
+			Func<AutomationReport> recover,
+			Action<string> writeOutput) {
+			var report = recover();
+			writeOutput(FormatReport(report));
 			if (!report.Succeeded) {
 				throw new InvalidOperationException(
 					"Addressables group recovery failed: " + string.Join(" | ", report.Failures));

@@ -4,9 +4,9 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Latest completed phase: Phase 2 — complete and verified
-- Next incomplete phase: Phase 3 — GUID-based scene synchronization
-- Current active batch: Phase 3 `SCENE-001` through `SCENE-004` completion candidate — local validation passed; hosted verification pending
+- Latest completed phase: Phase 3 — GUID-based scene synchronization complete and verified
+- Next incomplete phase: Phase 4 — dependency analysis and prefab removal
+- Current active batch: Phase 3 verification evidence and tag closure; Phase 4 has not started
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-23`
@@ -209,7 +209,7 @@ This protocol is the documented exception to the repository's general commit, ta
 - [x] Phase 0 — Reproducible baseline and compile/install safety (implementation and required hosted matrix complete)
 - [x] Phase 1 — Explicit setup and configuration (implementation, manual-verification corrections, hosted matrix, and revised SettingsProvider visual recheck complete)
 - [x] Phase 2 — Deterministic group synchronization (implementation, local validation, hosted matrix, evidence record, and verification tag complete)
-- [ ] Phase 3 — GUID-based scene synchronization (in progress)
+- [x] Phase 3 — GUID-based scene synchronization (implementation, local validation, hosted matrix, and evidence record complete)
 - [ ] Phase 4 — Dependency analysis and prefab removal
 - [ ] Phase 5 — Build pipeline and existing-build Play Mode
 - [ ] Phase 6 — Package layout and API cleanup
@@ -548,7 +548,7 @@ Immediately before force-push, a fresh remote fetch still showed only `main` at 
 
 ### Phase 3 GUID-based scene synchronization implementation record — 2026-08-23
 
-**Status:** implementation and local validation complete; hosted verification pending. Phases 0–2 remain complete; their rewritten verification tags retain the exact semantic targets recorded above. Phase 2 was not reopened for unrelated polishing. This batch is limited to `SCENE-001` through `SCENE-004`; Phase 4 work remains excluded.
+**Status:** complete. Phases 0–2 remain complete; their rewritten verification tags retain the exact semantic targets recorded above. Phase 2 was not reopened for unrelated polishing. This batch is limited to `SCENE-001` through `SCENE-004`; Phase 4 work remains excluded.
 
 **Completed scope and decisions:**
 
@@ -559,9 +559,9 @@ Immediately before force-push, a fresh remote fetch still showed only `main` at 
 
 The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime state, scene catalog types, and bundled numeric-state/catalog assets were removed. `ScenesListConfig` remains only as an obsolete, inert MonoScript-GUID migration carrier with a generic object reference and initialized additional-folder array; removing that carrier before migration support is retired would strand legacy folder intent. Manual Project Settings and CLI operations use the same `AddressablesAutomation.Analyze(..., AutomationScope.Scenes)` plan as automatic processing. Recovery is scope-neutral and blocks all later Apply operations while any group or scene snapshot is pending.
 
-**Local evidence:** static repository validation and JSON/asmdef/meta checks passed. The development-host EditMode suite passed `79/79`. Fresh isolated clean-install/EditMode/removal lanes on Unity `6000.0.78f1` passed `79/79` for Addressables `2.7.6` and `79/79` for `2.9.1`; package import and removal remained inert in both lanes. Focused integration tests verify one-Apply convergence followed by an empty plan, configuration persistence/reload, stale public scene-plan rejection, recovery from an actual pending scene snapshot, preserved unrelated Build Settings, and add/rename/move/delete/mode-transition behavior. No hosted Unity job has been dispatched for Phase 3 yet.
+**Local evidence:** static repository validation and JSON/asmdef/meta checks passed. The development-host EditMode suite passed `79/79`. Fresh isolated clean-install/EditMode/removal lanes on Unity `6000.0.78f1` passed `79/79` for Addressables `2.7.6` and `79/79` for `2.9.1`; package import and removal remained inert in both lanes. Focused integration tests verify one-Apply convergence followed by an empty plan, configuration persistence/reload, stale public scene-plan rejection, recovery from an actual pending scene snapshot, preserved unrelated Build Settings, and add/rename/move/delete/mode-transition behavior.
 
-**Remaining completion step:** create and push the exact Phase 3 completion commit, dispatch the paid hosted workflow once, require both lanes to pass that SHA, record the run/job evidence in a documentation-only commit, and create annotated `phase-3-verified` at the hosted-tested commit. No version tag, release, publication, or Phase 4 work is included.
+**Hosted Phase 3 evidence:** the exact completion commit is `14b2388ac4953ba4b0cbaa236dc4b5a2723b9331`. Manual workflow dispatch occurred exactly once for that SHA. Run [`32609162009`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32609162009) used `workflow_dispatch` on `main` and completed successfully on `2026-08-23`. Addressables `2.7.6` job [`97119172438`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32609162009/job/97119172438) passed in `2m26s`; Addressables `2.9.1` job [`97119172337`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32609162009/job/97119172337) passed in `2m42s`. Both passed license preflight, lane selection, static validation, Unity compilation/EditMode tests, package-import inertness, tracked-project-state verification, and artifact upload. The authorized annotated `phase-3-verified` tag is created only after this evidence record is pushed and must peel to the exact hosted-tested completion commit above. No version tag, release, publication, or Phase 4 work is included.
 
 ## D. Prioritized roadmap
 

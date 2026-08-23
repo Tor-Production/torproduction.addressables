@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file. The format foll
 - Project Settings, editor-window, and CLI dry-run/apply surfaces.
 - GUID-based scene synchronization for Addressable and local Build Settings modes, with managed ownership records, deterministic transitions, and opt-in deferred postprocessing.
 - A static current-tree guard that rejects reintroduction of former-owner identifiers in tracked paths or contents.
+- Analyze-only duplicate-dependency reporting with exact-version capability diagnostics and a separately confirmed transactional Fix.
 
 ### Changed
 
@@ -20,6 +21,7 @@ All notable changes to this project are documented in this file. The format foll
 - Asset-load failures now block Apply because complete convergence cannot be proven.
 - Repository and package documentation now describe the implemented product and its unreleased status.
 - Numeric application-state mapping and its bundled sample were retired in favor of generic scene categories and labels.
+- Configuration schema 3 adds a generic duplicate-dependency destination group. Existing schema 0–2 assets require the explicit backup-first migration.
 
 ### Fixed
 
@@ -28,3 +30,4 @@ All notable changes to this project are documented in this file. The format foll
 - Rollback-backend and recovery-snapshot cleanup failures return structured reports while retaining recovery evidence.
 - Corrected the package repository metadata and made the Unity workflow display name phase-neutral.
 - Scene rename, move, delete, duplicate-name, stale-plan, rollback, and recursion cases now converge through the shared transaction boundary.
+- Removed the project-specific prefab/interactable organizer, migration configuration, physical asset-moving command, and private Addressables analyzer/path reflection.

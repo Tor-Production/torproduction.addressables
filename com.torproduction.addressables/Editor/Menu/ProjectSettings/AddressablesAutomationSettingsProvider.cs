@@ -21,11 +21,14 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		private ConfigurationResolution m_resolution;
 		private ConfigurationResolution m_groupResolution;
 		private ConfigurationResolution m_sceneResolution;
+		private ConfigurationResolution m_dependencyResolution;
 		private ConfigurationValidationReport m_analysis;
 		private AutomationPlan m_groupPlan;
 		private AutomationReport m_groupReport;
 		private AutomationPlan m_scenePlan;
 		private AutomationReport m_sceneReport;
+		private AutomationPlan m_dependencyPlan;
+		private AutomationReport m_dependencyReport;
 		private AutomationReport m_recoveryReport;
 		private LegacyMigrationPreview m_legacyPreview;
 		private bool m_pendingAutomaticScenes;
@@ -70,6 +73,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			DrawGroupSynchronization();
 			EditorGUILayout.Space();
 			DrawSceneSynchronization();
+			EditorGUILayout.Space();
+			DrawDependencyAnalysis();
 			EditorGUILayout.Space();
 			DrawApplyRecovery();
 			EditorGUILayout.Space();
@@ -252,6 +257,78 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			}
 		}
 
+		private void DrawDependencyAnalysis() {
+			EditorGUILayout.LabelField("Duplicate dependency analysis", EditorStyles.boldLabel);
+			EditorGUILayout.HelpBox(
+				"Analyze is read-only and uses the supported Addressables analyzer lifecycle. " +
+				"Implicit duplicates are proposed for the configured destination group. Already-explicit entries are report-only. " +
+				"Fix is a separate confirmed action and is disabled outside verified Addressables versions.",
+				MessageType.Info);
+			EditorGUI.BeginDisabledGroup(!m_dependencyResolution.IsReady);
+			if (GUILayout.Button("Analyze Duplicate Dependencies (No Changes)")) {
+				m_dependencyPlan = DependencyResolverController.Analyze(m_dependencyResolution.Config);
+				m_dependencyReport = null;
+			}
+			EditorGUI.EndDisabledGroup();
+
+			if (!m_dependencyResolution.IsReady && !string.IsNullOrEmpty(m_dependencyResolution.Message)) {
+				EditorGUILayout.HelpBox(m_dependencyResolution.Message, MessageType.Warning);
+			}
+			if (m_dependencyPlan != null) {
+				EditorGUILayout.LabelField("Plan hash", m_dependencyPlan.PlanHash);
+				EditorGUILayout.LabelField("Proposed operations", m_dependencyPlan.Operations.Count.ToString());
+				foreach (var diagnostic in m_dependencyPlan.Diagnostics) {
+					var type = diagnostic.Severity == AutomationDiagnosticSeverity.Error
+						? MessageType.Error
+						: diagnostic.Severity == AutomationDiagnosticSeverity.Warning
+							? MessageType.Warning
+							: MessageType.Info;
+					EditorGUILayout.HelpBox(
+						$"[{diagnostic.Code}] {diagnostic.Location}: {diagnostic.Message}", type);
+				}
+				for (var index = 0; index < m_dependencyPlan.Operations.Count; index++) {
+					EditorGUILayout.LabelField(
+						$"{index + 1}. {m_dependencyPlan.Operations[index].Description}",
+						EditorStyles.wordWrappedLabel);
+				}
+				if (m_dependencyPlan.IsValid && !m_dependencyPlan.HasChanges) {
+					EditorGUILayout.HelpBox(
+						"No implicit duplicate dependency requires Fix. Explicit entries, if any, remain unchanged.",
+						MessageType.Info);
+				}
+				EditorGUI.BeginDisabledGroup(!m_dependencyPlan.IsValid || !m_dependencyPlan.HasChanges);
+				if (GUILayout.Button("Fix Analyzed Duplicate Dependencies...")) {
+					FixDependencies();
+				}
+				EditorGUI.EndDisabledGroup();
+			}
+
+			if (m_dependencyReport != null) {
+				EditorGUILayout.HelpBox(
+					m_dependencyReport.Succeeded
+						? $"Dependency Fix succeeded ({m_dependencyReport.Operations.Count} applied operations)."
+						: $"Dependency Fix failed. Rollback: {m_dependencyReport.RollbackStatus}.",
+					m_dependencyReport.Succeeded ? MessageType.Info : MessageType.Error);
+				foreach (var failure in m_dependencyReport.Failures) {
+					EditorGUILayout.HelpBox(failure, MessageType.Error);
+				}
+			}
+		}
+
+		private void FixDependencies() {
+			if (!EditorUtility.DisplayDialog(
+				    "Fix Duplicate Dependencies",
+				    $"Create or validate the destination group and make the {m_dependencyPlan.Operations.Count} reviewed Addressables changes? " +
+				    "Physical assets will not move. A recovery snapshot is written before the first change.",
+				    "Fix Analyzed Dependencies", "Cancel")) {
+				return;
+			}
+			m_dependencyReport = DependencyResolverController.Fix(m_dependencyPlan, true);
+			if (m_dependencyReport.Succeeded) {
+				m_dependencyPlan = DependencyResolverController.Analyze(m_dependencyResolution.Config);
+			}
+		}
+
 		private void DrawSceneSynchronization() {
 			EditorGUILayout.LabelField("Scene synchronization", EditorStyles.boldLabel);
 			EditorGUILayout.HelpBox(
@@ -311,6 +388,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			m_recoveryReport = AddressablesAutomation.Recover();
 			m_groupPlan = null;
 			m_scenePlan = null;
+			m_dependencyPlan = null;
 		}
 
 		private void DrawAutomation() {
@@ -526,12 +604,15 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			m_resolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.All);
 			m_groupResolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.Groups);
 			m_sceneResolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.Scenes);
+			m_dependencyResolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.Dependencies);
 			m_pendingConfig = m_resolution.Config;
 			m_pendingAutomaticScenes = m_resolution.ProjectSettings.AutomationEnabled &&
 				(m_resolution.ProjectSettings.AutomaticScopes & AutomationScope.Scenes) != 0;
 			m_analysis = null;
 			m_groupPlan = null;
 			m_groupReport = null;
+			m_dependencyPlan = null;
+			m_dependencyReport = null;
 			m_loaded = true;
 		}
 

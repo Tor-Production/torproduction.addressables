@@ -44,6 +44,7 @@ namespace TorProduction.Addressables.Editor {
 		TypeFilterUnresolved,
 		SceneModeInvalid,
 		UnexpectedSceneGroup,
+		DependencySettingsMissing,
 		RuleOverlap
 	}
 
@@ -239,8 +240,32 @@ namespace TorProduction.Addressables.Editor {
 			if ((scope & AutomationScope.Scenes) != 0) {
 				ValidateSceneRules(config.SerializedSceneRules, resolver, addressables, report, folders);
 			}
+			if ((scope & AutomationScope.Dependencies) != 0) {
+				ValidateDependencySettings(config.SerializedDependencySettings, addressables, report);
+			}
 			ValidateOverlaps(folders, report);
 			return report;
+		}
+
+		private static void ValidateDependencySettings(
+			DependencyAnalysisSettings settings,
+			IAddressablesSettingsView addressables,
+			ConfigurationValidationReport report) {
+			if (settings == null) {
+				report.Add(
+					ConfigurationDiagnosticCode.DependencySettingsMissing,
+					ConfigurationDiagnosticSeverity.Error,
+					"Dependencies",
+					"Dependency analysis settings are missing. Explicitly migrate or recreate the configuration.");
+				return;
+			}
+
+			ValidateDestinationGroup(
+				settings.DestinationGroupGuid,
+				settings.DestinationGroupName,
+				"Dependencies",
+				addressables,
+				report);
 		}
 
 		private static void ValidateGroupRules(

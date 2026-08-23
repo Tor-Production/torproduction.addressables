@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Reflection;
 using UnityEditor;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
@@ -37,12 +36,22 @@ namespace TorProduction.AddressablesToolpack.Editor {
 
 		public string BuildPath {
 			get {
-				MethodInfo methodInfo = typeof(PlatformMappingService).
-					GetMethod("GetAddressablesPlatformPathInternal", BindingFlags.NonPublic | BindingFlags.Static, null, new Type[] { typeof(BuildTarget) }, null);
-				var target = GetEditorStandaloneTarget(Application.platform);
-				var platformResult = (string)methodInfo.Invoke(null, new object[] { target });
-				
+				var platformResult = GetEditorPlatformSubfolder(Application.platform);
 				return RuntimeAddressables.LibraryPath + RuntimeAddressables.StreamingAssetsSubFolder + "/" + platformResult;
+			}
+		}
+
+		internal static string GetEditorPlatformSubfolder(RuntimePlatform editorPlatform) {
+			switch (editorPlatform) {
+				case RuntimePlatform.WindowsEditor:
+					return AddressablesPlatform.Windows.ToString();
+				case RuntimePlatform.OSXEditor:
+					return AddressablesPlatform.OSX.ToString();
+				case RuntimePlatform.LinuxEditor:
+					return AddressablesPlatform.Linux.ToString();
+				default:
+					throw new PlatformNotSupportedException(
+						$"Can't retrieve an existing Editor build path for platform '{editorPlatform}'.");
 			}
 		}
 

@@ -59,7 +59,7 @@ namespace TorProduction.Addressables.Editor {
 						AutomationDiagnosticCode.ApplyFailed,
 						AutomationDiagnosticSeverity.Error,
 						"Apply",
-						$"{(plan.Scope == AutomationScope.Scenes ? "Scene" : "Group")} synchronization failed: {exception.Message}")
+						$"{OperationName(plan.Scope)} failed: {exception.Message}")
 				};
 				string rollbackError;
 				try {
@@ -81,6 +81,14 @@ namespace TorProduction.Addressables.Editor {
 					false, applied, diagnostics,
 					new[] { exception.Message, rollbackError },
 					AutomationRollbackStatus.Failed, backend.RecoveryPath);
+			}
+		}
+
+		private static string OperationName(AutomationScope scope) {
+			switch (scope) {
+				case AutomationScope.Scenes: return "Scene synchronization";
+				case AutomationScope.Dependencies: return "Dependency Fix";
+				default: return "Group synchronization";
 			}
 		}
 	}
@@ -106,7 +114,7 @@ namespace TorProduction.Addressables.Editor {
 			Directory.CreateDirectory(GroupSyncRecovery.RecoveryDirectory);
 			m_recoveryPath = Path.Combine(
 				GroupSyncRecovery.RecoveryDirectory,
-				$"{(plan.Scope == AutomationScope.Scenes ? "scene" : "group")}-sync-{m_snapshot.operationId}.json");
+				$"{RecoveryPrefix(plan.Scope)}-{m_snapshot.operationId}.json");
 			SaveSnapshot();
 		}
 
@@ -159,6 +167,14 @@ namespace TorProduction.Addressables.Editor {
 				AddressableAssetSettings.ModificationEvent.BatchModification,
 				null, true, true);
 			AssetDatabase.SaveAssets();
+		}
+
+		private static string RecoveryPrefix(AutomationScope scope) {
+			switch (scope) {
+				case AutomationScope.Scenes: return "scene-sync";
+				case AutomationScope.Dependencies: return "dependency-fix";
+				default: return "group-sync";
+			}
 		}
 
 		private void RemoveEntry(string guid) {

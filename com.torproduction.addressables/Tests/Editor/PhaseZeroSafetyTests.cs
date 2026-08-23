@@ -82,6 +82,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 		public void IncompleteAndAutomaticWorkflows_AreFailClosed() {
 			Assert.That(AddressablesAutomationWorkflowGate.IncompleteWorkflowsEnabled, Is.False);
 			Assert.That(AddressablesAutomationWorkflowGate.AutomaticSceneReconciliationImplemented, Is.True);
+			Assert.That(AddressablesAutomationWorkflowGate.DependencyAnalysisImplemented, Is.True);
 			Assert.That(AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All), Is.False);
 			Assert.That(
 				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.WindowsEditor),
@@ -94,25 +95,22 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 				Is.EqualTo(BuildTarget.StandaloneLinux64));
 			Assert.Throws<PlatformNotSupportedException>(() =>
 				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.Android));
+			Assert.That(
+				EditorPlaymodeBuildScript.GetEditorPlatformSubfolder(RuntimePlatform.WindowsEditor),
+				Is.EqualTo("Windows"));
+			Assert.That(
+				EditorPlaymodeBuildScript.GetEditorPlatformSubfolder(RuntimePlatform.OSXEditor),
+				Is.EqualTo("OSX"));
+			Assert.That(
+				EditorPlaymodeBuildScript.GetEditorPlatformSubfolder(RuntimePlatform.LinuxEditor),
+				Is.EqualTo("Linux"));
+			Assert.Throws<PlatformNotSupportedException>(() =>
+				EditorPlaymodeBuildScript.GetEditorPlatformSubfolder(RuntimePlatform.Android));
 
 			LogAssert.Expect(LogType.Warning, new Regex("^Test workflow:"));
 			Assert.That(
 				AddressablesAutomationWorkflowGate.TryBegin("Test workflow", AutomationScope.All),
 				Is.False);
-
-			var migrationReportPath = Path.Combine(
-				UnityEngine.AddressableAssets.Addressables.LibraryPath,
-				"UpdatedInteractables.txt");
-			var migrationReportExisted = File.Exists(migrationReportPath);
-			var migrationReportContents = migrationReportExisted ? File.ReadAllText(migrationReportPath) : null;
-
-			LogAssert.Expect(LogType.Warning, new Regex("^Interactable config migration:"));
-			InteractableTemplateFieldsUpdater.UpdateFields();
-
-			Assert.That(File.Exists(migrationReportPath), Is.EqualTo(migrationReportExisted));
-			if (migrationReportExisted) {
-				Assert.That(File.ReadAllText(migrationReportPath), Is.EqualTo(migrationReportContents));
-			}
 		}
 
 		[Test]

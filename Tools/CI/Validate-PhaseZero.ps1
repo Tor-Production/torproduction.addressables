@@ -121,6 +121,22 @@ foreach ($source in $productionSources) {
     if ($contents -match 'using\s+StansAssets\.Foundation|\bIdFactory\b') {
         throw "Foundation leaked into production source: $($source.FullName)"
     }
+    if ($contents -match 'BindingFlags\.NonPublic|m_ImplicitAssets|GetAddressablesPlatformPathInternal') {
+        throw "Private Addressables implementation access remains in production source: $($source.FullName)"
+    }
+    if ($contents -match 'AssetDatabase\s*\.\s*MoveAsset\s*\(') {
+        throw "A production command can still physically move a host asset: $($source.FullName)"
+    }
+}
+
+$removedPrefabMigrationPaths = @(
+    'com.torproduction.addressables/Editor/Menu/InteractablePrefabsPathFixerMenu',
+    'com.torproduction.addressables/Editor/Menu/Utils/InteractableTemplateFieldsUpdater.cs'
+)
+foreach ($relativePath in $removedPrefabMigrationPaths) {
+    if (Test-Path -LiteralPath (Join-Path $root $relativePath)) {
+        throw "Removed prefab/interactable migration code remains: $relativePath"
+    }
 }
 
 $editorSources = Get-ChildItem -Recurse -File -LiteralPath (Join-Path $packageRoot 'Editor') -Filter '*.cs'

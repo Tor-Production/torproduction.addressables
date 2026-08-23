@@ -136,6 +136,24 @@ namespace TorProduction.Addressables.Editor {
 	}
 
 	[Serializable]
+	public sealed class DependencyAnalysisSettings {
+		public const string DefaultDestinationGroupName = "Duplicate Asset Isolation";
+
+		[SerializeField] private string m_destinationGroupGuid = string.Empty;
+		[SerializeField] private string m_destinationGroupName = DefaultDestinationGroupName;
+
+		public string DestinationGroupGuid => m_destinationGroupGuid;
+		public string DestinationGroupName => m_destinationGroupName;
+
+		public DependencyAnalysisSettings() { }
+
+		internal DependencyAnalysisSettings(string destinationGroupGuid, string destinationGroupName) {
+			m_destinationGroupGuid = destinationGroupGuid ?? string.Empty;
+			m_destinationGroupName = destinationGroupName ?? string.Empty;
+		}
+	}
+
+	[Serializable]
 	public sealed class ManagedSceneRecord {
 		[SerializeField] private string m_sceneGuid = string.Empty;
 		[SerializeField] private string m_lastKnownPath = string.Empty;
@@ -176,30 +194,35 @@ namespace TorProduction.Addressables.Editor {
 		menuName = "Tor Production/Addressables Automation Config",
 		order = 30)]
 	public sealed class AddressablesAutomationConfig : ScriptableObject {
-		public const int CurrentSchemaVersion = 2;
+		public const int CurrentSchemaVersion = 3;
 
 		[SerializeField] private int m_schemaVersion = CurrentSchemaVersion;
 		[SerializeField] private GroupSyncRule[] m_groupRules = Array.Empty<GroupSyncRule>();
 		[SerializeField] private SceneFolderRule[] m_sceneRules = Array.Empty<SceneFolderRule>();
 		[SerializeField] private ManagedSceneRecord[] m_managedScenes = Array.Empty<ManagedSceneRecord>();
+		[SerializeField] private DependencyAnalysisSettings m_dependencySettings = new DependencyAnalysisSettings();
 
 		public int SchemaVersion => m_schemaVersion;
 		public IReadOnlyList<GroupSyncRule> GroupRules => m_groupRules ?? Array.Empty<GroupSyncRule>();
 		public IReadOnlyList<SceneFolderRule> SceneRules => m_sceneRules ?? Array.Empty<SceneFolderRule>();
 		public IReadOnlyList<ManagedSceneRecord> ManagedScenes => m_managedScenes ?? Array.Empty<ManagedSceneRecord>();
+		public DependencyAnalysisSettings DependencySettings => m_dependencySettings;
 
 		internal GroupSyncRule[] SerializedGroupRules => m_groupRules;
 		internal SceneFolderRule[] SerializedSceneRules => m_sceneRules;
 		internal ManagedSceneRecord[] SerializedManagedScenes => m_managedScenes;
+		internal DependencyAnalysisSettings SerializedDependencySettings => m_dependencySettings;
 
 		internal void ReplaceWithCurrentSchema(
 			GroupSyncRule[] groupRules,
 			SceneFolderRule[] sceneRules,
-			ManagedSceneRecord[] managedScenes = null) {
+			ManagedSceneRecord[] managedScenes = null,
+			DependencyAnalysisSettings dependencySettings = null) {
 			m_schemaVersion = CurrentSchemaVersion;
 			m_groupRules = groupRules ?? Array.Empty<GroupSyncRule>();
 			m_sceneRules = sceneRules ?? Array.Empty<SceneFolderRule>();
 			m_managedScenes = managedScenes ?? Array.Empty<ManagedSceneRecord>();
+			m_dependencySettings = dependencySettings ?? new DependencyAnalysisSettings();
 		}
 
 		internal void ReplaceManagedScenes(ManagedSceneRecord[] managedScenes) {
@@ -212,7 +235,7 @@ namespace TorProduction.Addressables.Editor {
 				return false;
 			}
 
-			if (m_schemaVersion != 0 && m_schemaVersion != 1) {
+			if (m_schemaVersion != 0 && m_schemaVersion != 1 && m_schemaVersion != 2) {
 				error = $"Configuration schema {m_schemaVersion} has no supported migration to {CurrentSchemaVersion}.";
 				return false;
 			}
@@ -220,6 +243,7 @@ namespace TorProduction.Addressables.Editor {
 			m_groupRules = m_groupRules ?? Array.Empty<GroupSyncRule>();
 			m_sceneRules = m_sceneRules ?? Array.Empty<SceneFolderRule>();
 			m_managedScenes = m_managedScenes ?? Array.Empty<ManagedSceneRecord>();
+			m_dependencySettings = m_dependencySettings ?? new DependencyAnalysisSettings();
 			m_schemaVersion = CurrentSchemaVersion;
 			error = string.Empty;
 			return true;

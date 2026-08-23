@@ -162,7 +162,7 @@ namespace TorProduction.Addressables.Editor {
 			}
 		}
 
-		private static bool HasBuildAndLoadPaths(
+		internal static bool HasBuildAndLoadPaths(
 			AddressableAssetSettings settings,
 			BundledAssetGroupSchema schema) {
 			try {

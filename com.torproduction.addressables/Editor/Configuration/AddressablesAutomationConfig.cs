@@ -135,28 +135,75 @@ namespace TorProduction.Addressables.Editor {
 		}
 	}
 
+	[Serializable]
+	public sealed class ManagedSceneRecord {
+		[SerializeField] private string m_sceneGuid = string.Empty;
+		[SerializeField] private string m_lastKnownPath = string.Empty;
+		[SerializeField] private SceneFolderMode m_mode;
+		[SerializeField] private string m_managedAddress = string.Empty;
+		[SerializeField] private string m_destinationGroupGuid = string.Empty;
+		[SerializeField] private string m_destinationGroupName = string.Empty;
+		[SerializeField] private string[] m_managedLabels = Array.Empty<string>();
+
+		public string SceneGuid => m_sceneGuid;
+		public string LastKnownPath => m_lastKnownPath;
+		public SceneFolderMode Mode => m_mode;
+		public string ManagedAddress => m_managedAddress;
+		public string DestinationGroupGuid => m_destinationGroupGuid;
+		public string DestinationGroupName => m_destinationGroupName;
+		public IReadOnlyList<string> ManagedLabels => m_managedLabels ?? Array.Empty<string>();
+
+		internal ManagedSceneRecord(
+			string sceneGuid,
+			string lastKnownPath,
+			SceneFolderMode mode,
+			string managedAddress,
+			string destinationGroupGuid,
+			string destinationGroupName,
+			string[] managedLabels) {
+			m_sceneGuid = sceneGuid ?? string.Empty;
+			m_lastKnownPath = lastKnownPath ?? string.Empty;
+			m_mode = mode;
+			m_managedAddress = managedAddress ?? string.Empty;
+			m_destinationGroupGuid = destinationGroupGuid ?? string.Empty;
+			m_destinationGroupName = destinationGroupName ?? string.Empty;
+			m_managedLabels = managedLabels ?? Array.Empty<string>();
+		}
+	}
+
 	[CreateAssetMenu(
 		fileName = "AddressablesAutomationConfig",
 		menuName = "Tor Production/Addressables Automation Config",
 		order = 30)]
 	public sealed class AddressablesAutomationConfig : ScriptableObject {
-		public const int CurrentSchemaVersion = 1;
+		public const int CurrentSchemaVersion = 2;
 
 		[SerializeField] private int m_schemaVersion = CurrentSchemaVersion;
 		[SerializeField] private GroupSyncRule[] m_groupRules = Array.Empty<GroupSyncRule>();
 		[SerializeField] private SceneFolderRule[] m_sceneRules = Array.Empty<SceneFolderRule>();
+		[SerializeField] private ManagedSceneRecord[] m_managedScenes = Array.Empty<ManagedSceneRecord>();
 
 		public int SchemaVersion => m_schemaVersion;
 		public IReadOnlyList<GroupSyncRule> GroupRules => m_groupRules ?? Array.Empty<GroupSyncRule>();
 		public IReadOnlyList<SceneFolderRule> SceneRules => m_sceneRules ?? Array.Empty<SceneFolderRule>();
+		public IReadOnlyList<ManagedSceneRecord> ManagedScenes => m_managedScenes ?? Array.Empty<ManagedSceneRecord>();
 
 		internal GroupSyncRule[] SerializedGroupRules => m_groupRules;
 		internal SceneFolderRule[] SerializedSceneRules => m_sceneRules;
+		internal ManagedSceneRecord[] SerializedManagedScenes => m_managedScenes;
 
-		internal void ReplaceWithCurrentSchema(GroupSyncRule[] groupRules, SceneFolderRule[] sceneRules) {
+		internal void ReplaceWithCurrentSchema(
+			GroupSyncRule[] groupRules,
+			SceneFolderRule[] sceneRules,
+			ManagedSceneRecord[] managedScenes = null) {
 			m_schemaVersion = CurrentSchemaVersion;
 			m_groupRules = groupRules ?? Array.Empty<GroupSyncRule>();
 			m_sceneRules = sceneRules ?? Array.Empty<SceneFolderRule>();
+			m_managedScenes = managedScenes ?? Array.Empty<ManagedSceneRecord>();
+		}
+
+		internal void ReplaceManagedScenes(ManagedSceneRecord[] managedScenes) {
+			m_managedScenes = managedScenes ?? Array.Empty<ManagedSceneRecord>();
 		}
 
 		internal bool TryMigrateToCurrentSchema(out string error) {
@@ -165,13 +212,14 @@ namespace TorProduction.Addressables.Editor {
 				return false;
 			}
 
-			if (m_schemaVersion != 0) {
+			if (m_schemaVersion != 0 && m_schemaVersion != 1) {
 				error = $"Configuration schema {m_schemaVersion} has no supported migration to {CurrentSchemaVersion}.";
 				return false;
 			}
 
 			m_groupRules = m_groupRules ?? Array.Empty<GroupSyncRule>();
 			m_sceneRules = m_sceneRules ?? Array.Empty<SceneFolderRule>();
+			m_managedScenes = m_managedScenes ?? Array.Empty<ManagedSceneRecord>();
 			m_schemaVersion = CurrentSchemaVersion;
 			error = string.Empty;
 			return true;

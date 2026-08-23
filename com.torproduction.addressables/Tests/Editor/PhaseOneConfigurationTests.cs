@@ -792,7 +792,10 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 
 			Assert.That(addressablesPath, Is.Not.Empty, "The sample-inclusive lane must import the legacy Addressables config.");
 			Assert.That(scenesPath, Is.Not.Empty, "The sample-inclusive lane must import the legacy scenes config.");
-			Assert.That(appStatesPath, Is.Not.Empty, "The sample-inclusive lane must import the legacy app-state config.");
+			Assert.That(
+				string.IsNullOrEmpty(appStatesPath) || AssetDatabase.LoadMainAssetAtPath(appStatesPath) == null,
+				Is.True,
+				"Numeric application-state samples are retired; migration reports an unresolved legacy GUID without recreating game-specific state.");
 			var addressablesAsset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(addressablesPath);
 			var scenesAsset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(scenesPath);
 			var addressablesBefore = EditorJsonUtility.ToJson(addressablesAsset);

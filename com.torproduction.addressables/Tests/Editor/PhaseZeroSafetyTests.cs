@@ -81,7 +81,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 		[Test]
 		public void IncompleteAndAutomaticWorkflows_AreFailClosed() {
 			Assert.That(AddressablesAutomationWorkflowGate.IncompleteWorkflowsEnabled, Is.False);
-			Assert.That(AddressablesAutomationWorkflowGate.AutomaticSceneReconciliationImplemented, Is.False);
+			Assert.That(AddressablesAutomationWorkflowGate.AutomaticSceneReconciliationImplemented, Is.True);
 			Assert.That(AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All), Is.False);
 			Assert.That(
 				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.WindowsEditor),

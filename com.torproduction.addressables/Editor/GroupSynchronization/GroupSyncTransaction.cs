@@ -59,7 +59,7 @@ namespace TorProduction.Addressables.Editor {
 						AutomationDiagnosticCode.ApplyFailed,
 						AutomationDiagnosticSeverity.Error,
 						"Apply",
-						$"Group synchronization failed: {exception.Message}")
+						$"{(plan.Scope == AutomationScope.Scenes ? "Scene" : "Group")} synchronization failed: {exception.Message}")
 				};
 				string rollbackError;
 				try {
@@ -88,6 +88,7 @@ namespace TorProduction.Addressables.Editor {
 	internal sealed class UnityGroupSyncMutationBackend : IGroupSyncMutationBackend {
 		private readonly AddressableAssetSettings m_settings;
 		private GroupSyncRecoverySnapshot m_snapshot;
+		private AutomationPlan m_plan;
 		private string m_recoveryPath = string.Empty;
 
 		internal UnityGroupSyncMutationBackend(AddressableAssetSettings settings) {
@@ -100,11 +101,12 @@ namespace TorProduction.Addressables.Editor {
 			if (m_snapshot != null) {
 				throw new InvalidOperationException("This mutation backend has already started a transaction.");
 			}
+			m_plan = plan ?? throw new ArgumentNullException(nameof(plan));
 			m_snapshot = CaptureSnapshot(m_settings, plan);
 			Directory.CreateDirectory(GroupSyncRecovery.RecoveryDirectory);
 			m_recoveryPath = Path.Combine(
 				GroupSyncRecovery.RecoveryDirectory,
-				$"group-sync-{m_snapshot.operationId}.json");
+				$"{(plan.Scope == AutomationScope.Scenes ? "scene" : "group")}-sync-{m_snapshot.operationId}.json");
 			SaveSnapshot();
 		}
 
@@ -138,6 +140,15 @@ namespace TorProduction.Addressables.Editor {
 				case AutomationOperationKind.RemoveLabel:
 					RequireEntry(operation.AssetGuid).SetLabel(operation.Value, false, false, false);
 					break;
+				case AutomationOperationKind.RemoveEntry:
+					RemoveEntry(operation.AssetGuid);
+					break;
+				case AutomationOperationKind.UpdateBuildSettings:
+					UpdateBuildSettings();
+					break;
+				case AutomationOperationKind.UpdateManagedScenes:
+					UpdateManagedScenes();
+					break;
 				default:
 					throw new InvalidOperationException($"Unsupported group operation '{operation.Kind}'.");
 			}
@@ -148,6 +159,31 @@ namespace TorProduction.Addressables.Editor {
 				AddressableAssetSettings.ModificationEvent.BatchModification,
 				null, true, true);
 			AssetDatabase.SaveAssets();
+		}
+
+		private void RemoveEntry(string guid) {
+			var entry = m_settings.FindAssetEntry(guid);
+			entry?.parentGroup.RemoveAssetEntry(entry, false);
+		}
+
+		private void UpdateBuildSettings() {
+			if (m_plan?.SceneMutation == null) throw new InvalidOperationException("Scene mutation data is unavailable; re-analyze before Apply.");
+			EditorBuildSettings.scenes = m_plan.SceneMutation.BuildScenes.Select(item => new EditorBuildSettingsScene(item.Path, item.Enabled)).ToArray();
+		}
+
+		private void UpdateManagedScenes() {
+			if (m_plan?.SceneMutation == null || m_plan.Config == null) throw new InvalidOperationException("Scene mutation data or configuration is unavailable; re-analyze before Apply.");
+			var normalized = m_plan.SceneMutation.ManagedScenes.Select(item => {
+				if (item.Mode != SceneFolderMode.Addressable || !string.IsNullOrEmpty(item.DestinationGroupGuid)) return item;
+				var group = FindGroup(m_settings, string.Empty, item.DestinationGroupName);
+				return group == null
+					? item
+					: new ManagedSceneRecord(
+						item.SceneGuid, item.LastKnownPath, item.Mode, item.ManagedAddress,
+						group.Guid, group.Name, item.ManagedLabels.ToArray());
+			}).ToArray();
+			m_plan.Config.ReplaceManagedScenes(normalized);
+			EditorUtility.SetDirty(m_plan.Config);
 		}
 
 		public void Complete() {
@@ -288,7 +324,15 @@ namespace TorProduction.Addressables.Editor {
 					.Select(item => item.Value)
 					.Distinct(StringComparer.Ordinal)
 					.OrderBy(item => item, StringComparer.Ordinal)
-					.ToList()
+					.ToList(),
+				buildScenes = (EditorBuildSettings.scenes ?? Array.Empty<EditorBuildSettingsScene>())
+					.Select(item => new SceneBuildState {
+						Guid = string.IsNullOrEmpty(item.path) ? string.Empty : AssetDatabase.AssetPathToGUID(item.path),
+						Path = item.path,
+						Enabled = item.enabled
+					}).ToList(),
+				configGuid = plan.Config == null ? string.Empty : AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(plan.Config)),
+				configJson = plan.Config == null ? string.Empty : EditorJsonUtility.ToJson(plan.Config, true)
 			};
 			return snapshot;
 		}
@@ -381,6 +425,16 @@ namespace TorProduction.Addressables.Editor {
 				foreach (var label in snapshot.createdLabels.OrderBy(item => item, StringComparer.Ordinal)) {
 					settings.RemoveLabel(label, false);
 				}
+				if (snapshot.buildScenes != null) {
+					EditorBuildSettings.scenes = snapshot.buildScenes.Select(item => new EditorBuildSettingsScene(item.Path, item.Enabled)).ToArray();
+				}
+				if (!string.IsNullOrEmpty(snapshot.configJson)) {
+					var configPath = AssetDatabase.GUIDToAssetPath(snapshot.configGuid);
+					var config = string.IsNullOrEmpty(configPath) ? null : AssetDatabase.LoadAssetAtPath<AddressablesAutomationConfig>(configPath);
+					if (config == null) throw new InvalidOperationException($"Configuration '{snapshot.configGuid}' is unavailable during rollback.");
+					EditorJsonUtility.FromJsonOverwrite(snapshot.configJson, config);
+					EditorUtility.SetDirty(config);
+				}
 				settings.SetDirty(
 					AddressableAssetSettings.ModificationEvent.BatchModification,
 					null, true, true);
@@ -418,7 +472,7 @@ namespace TorProduction.Addressables.Editor {
 				return false;
 			}
 			recoveryPath = Directory.EnumerateFiles(
-				RecoveryDirectory, "group-sync-*.json", SearchOption.TopDirectoryOnly)
+				RecoveryDirectory, "*-sync-*.json", SearchOption.TopDirectoryOnly)
 				.OrderBy(path => path, StringComparer.Ordinal)
 				.FirstOrDefault() ?? string.Empty;
 			return !string.IsNullOrEmpty(recoveryPath);
@@ -480,6 +534,9 @@ namespace TorProduction.Addressables.Editor {
 		public List<GroupSyncRecoveryEntry> entries = new List<GroupSyncRecoveryEntry>();
 		public List<GroupSyncRecoveryGroup> groups = new List<GroupSyncRecoveryGroup>();
 		public List<string> createdLabels = new List<string>();
+		public List<SceneBuildState> buildScenes = new List<SceneBuildState>();
+		public string configGuid = string.Empty;
+		public string configJson = string.Empty;
 	}
 
 	[Serializable]

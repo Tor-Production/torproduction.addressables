@@ -2,7 +2,7 @@
 
 This repository develops `com.torproduction.addressables`, an editor-first Unity Package Manager package for safe, previewable Addressables automation. `AddressablesProject/` is the pinned Unity 6 integration-test host; the package itself is under `com.torproduction.addressables/`.
 
-The implemented surface currently includes explicit GUID-backed configuration and deterministic group synchronization with dry-run plans, stale-plan rejection, recovery snapshots, rollback, UI, and CLI entry points. Package import and configuration reads are inert when setup is absent or invalid. Scene synchronization, dependency analysis, build workflows, final package-layout cleanup, and release automation remain unavailable until their owning implementation phases are complete.
+The implemented surface includes explicit GUID-backed configuration plus deterministic group and scene synchronization with dry-run plans, stale-plan rejection, recovery snapshots, rollback, UI, and CLI entry points. Scene reconciliation manages Addressables and local Build Settings by scene GUID while preserving unrelated state. Package import, configuration reads, and unrelated asset imports are inert when setup is absent or invalid. Dependency analysis, build workflows, final package-layout cleanup, and release automation remain unavailable until their owning implementation phases are complete.
 
 ## Development
 
@@ -49,4 +49,4 @@ Do not treat phase-verification tags as public package releases.
 - `ImplementationPlan.md` is the source of truth for phase status, known limitations, verification evidence, and legal/provenance blockers.
 - Package publication, a GitHub Release, and version tags remain disabled pending later implementation and explicit legal/release authorization.
 
-See `com.torproduction.addressables/Documentation~/SAFETY.md` and `GROUP_SYNCHRONIZATION.md` for the implemented safety model.
+See `com.torproduction.addressables/Documentation~/SAFETY.md`, `GROUP_SYNCHRONIZATION.md`, and `SCENE_SYNCHRONIZATION.md` for the implemented safety model.

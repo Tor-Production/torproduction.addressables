@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -333,7 +334,12 @@ namespace TorProduction.Addressables.Editor {
 					folders);
 				ValidateSceneAddressPolicy(rule.AddressPolicy, location, report);
 				ValidateAddressPrefix(rule.AddressPrefix, location, report);
-				ValidateLabels(rule.SerializedRequiredLabels, location, addressables, report);
+				var sceneLabels = (rule.SerializedRequiredLabels ?? Array.Empty<string>())
+					.Concat(string.IsNullOrWhiteSpace(rule.Category)
+						? Array.Empty<string>()
+						: new[] { rule.Category })
+					.ToArray();
+				ValidateLabels(sceneLabels, location, addressables, report);
 
 				if (!Enum.IsDefined(typeof(SceneFolderMode), rule.Mode) ||
 				    rule.Mode == SceneFolderMode.Unspecified) {

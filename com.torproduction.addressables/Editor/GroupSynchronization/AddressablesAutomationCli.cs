@@ -46,6 +46,42 @@ namespace TorProduction.Addressables.Editor {
 			RunRecoverGroups(AddressablesAutomation.Recover, Debug.Log);
 		}
 
+		public static void AnalyzeScenes() {
+			RunAnalyzeScenes(AddressablesAutomation.AnalyzeActiveScenes, Debug.Log);
+		}
+
+		internal static void RunAnalyzeScenes(Func<AutomationPlan> analyze, Action<string> writeOutput) {
+			var plan = analyze();
+			writeOutput(FormatPlan(plan));
+			if (!plan.IsValid) throw new InvalidOperationException("Addressables scene analysis found blocking diagnostics.");
+		}
+
+		public static void ApplyScenes() {
+			RunApplyScenes(AddressablesAutomation.AnalyzeActiveScenes, AddressablesAutomation.Apply, Debug.Log);
+		}
+
+		internal static void RunApplyScenes(
+			Func<AutomationPlan> analyze,
+			Func<AutomationPlan, AutomationReport> apply,
+			Action<string> writeOutput) {
+			var plan = analyze();
+			writeOutput(FormatPlan(plan));
+			if (!plan.IsValid) throw new InvalidOperationException("Addressables scene analysis found blocking diagnostics; Apply was not started.");
+			var report = apply(plan);
+			writeOutput(FormatReport(report));
+			if (!report.Succeeded) throw new InvalidOperationException("Addressables scene Apply failed: " + string.Join(" | ", report.Failures));
+		}
+
+		public static void RecoverScenes() {
+			RunRecoverScenes(AddressablesAutomation.Recover, Debug.Log);
+		}
+
+		internal static void RunRecoverScenes(Func<AutomationReport> recover, Action<string> writeOutput) {
+			var report = recover();
+			writeOutput(FormatReport(report));
+			if (!report.Succeeded) throw new InvalidOperationException("Addressables scene recovery failed: " + string.Join(" | ", report.Failures));
+		}
+
 		internal static void RunRecoverGroups(
 			Func<AutomationReport> recover,
 			Action<string> writeOutput) {

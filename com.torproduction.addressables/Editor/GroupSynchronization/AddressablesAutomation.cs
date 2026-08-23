@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEditor.AddressableAssets;
 
 namespace TorProduction.Addressables.Editor {
@@ -8,19 +9,21 @@ namespace TorProduction.Addressables.Editor {
 		public static AutomationPlan Analyze(
 			AddressablesAutomationConfig config,
 			AutomationScope scope) {
-			if (scope != AutomationScope.Groups) {
+			if (scope != AutomationScope.Groups && scope != AutomationScope.Scenes) {
 				return InvalidPlan(
 					AutomationDiagnosticCode.InvalidScope,
 					"Scope",
-					"Phase 2 supports the Groups scope only. Scene and dependency scopes remain disabled until their planned phases.",
-					config);
+					"Analyze accepts exactly one implemented scope: Groups or Scenes.",
+					config,
+					scope);
 			}
 			if (config == null) {
 				return InvalidPlan(
 					AutomationDiagnosticCode.ConfigurationInvalid,
 					"Configuration",
 					"Select an Addressables Automation configuration asset.",
-					config);
+					config,
+					scope);
 			}
 			if (!AddressablesAutomationContextProvider.TryValidateConfigCandidate(
 				    config, out var candidateError)) {
@@ -28,21 +31,24 @@ namespace TorProduction.Addressables.Editor {
 					AutomationDiagnosticCode.ConfigurationInvalid,
 					"Configuration",
 					candidateError,
-					config);
+					config,
+					scope);
 			}
 
 			var diagnostics = ConvertDiagnostics(
-				AddressablesAutomationValidator.Validate(config, AutomationScope.Groups));
+				AddressablesAutomationValidator.Validate(config, scope));
 			if (GroupSyncRecovery.TryFindPending(out var recoveryPath)) {
 				diagnostics.Add(new AutomationDiagnostic(
 					AutomationDiagnosticCode.RecoveryRequired,
 					AutomationDiagnosticSeverity.Error,
 					"Recovery",
-					$"A prior group Apply did not finish cleanly. Recover '{recoveryPath}' before analyzing another Apply."));
+					$"A prior Apply did not finish cleanly. Recover '{recoveryPath}' before analyzing another Apply."));
 			}
 
-			var state = UnityGroupSyncDataSource.Capture(config, diagnostics);
-			return GroupSyncPlanner.Create(state, config);
+			if (scope == AutomationScope.Scenes) {
+				return SceneSyncPlanner.Create(UnitySceneSyncDataSource.Capture(config, diagnostics), config);
+			}
+			return GroupSyncPlanner.Create(UnityGroupSyncDataSource.Capture(config, diagnostics), config);
 		}
 
 		public static AutomationReport Apply(AutomationPlan plan) {
@@ -52,11 +58,25 @@ namespace TorProduction.Addressables.Editor {
 					"Apply",
 					"A non-null analyzed plan is required.");
 			}
-			if (plan.Scope != AutomationScope.Groups || plan.Config == null) {
+			if (plan.Scope != AutomationScope.Groups && plan.Scope != AutomationScope.Scenes) {
 				return Failure(
 					AutomationDiagnosticCode.InvalidScope,
 					"Apply",
-					"Only a Groups plan produced by AddressablesAutomation.Analyze can be applied.");
+					"Only a Groups or Scenes plan produced by AddressablesAutomation.Analyze can be applied.");
+			}
+			var config = plan.Config;
+			if (config == null && !string.IsNullOrEmpty(plan.ConfigGuid)) {
+				var configPath = AssetDatabase.GUIDToAssetPath(plan.ConfigGuid);
+				config = string.IsNullOrEmpty(configPath)
+					? null
+					: AssetDatabase.LoadAssetAtPath<AddressablesAutomationConfig>(configPath);
+				plan.BindConfig(config);
+			}
+			if (config == null) {
+				return Failure(
+					AutomationDiagnosticCode.ConfigurationInvalid,
+					"Apply",
+					"The analyzed configuration asset no longer resolves by GUID. No changes were made.");
 			}
 			if (!plan.IsValid) {
 				return new AutomationReport(
@@ -76,7 +96,7 @@ namespace TorProduction.Addressables.Editor {
 					AutomationRollbackStatus.NotRequired, recoveryPath);
 			}
 
-			var current = Analyze(plan.Config, AutomationScope.Groups);
+			var current = Analyze(config, plan.Scope);
 			if (!current.IsValid ||
 			    !string.Equals(current.SourceHash, plan.SourceHash, StringComparison.Ordinal) ||
 			    !string.Equals(current.PlanHash, plan.PlanHash, StringComparison.Ordinal)) {
@@ -124,6 +144,18 @@ namespace TorProduction.Addressables.Editor {
 					resolution.Config);
 		}
 
+		internal static AutomationPlan AnalyzeActiveScenes() {
+			var resolution = AddressablesAutomationContextProvider.ResolveManual(AutomationScope.Scenes);
+			return resolution.IsReady
+				? Analyze(resolution.Config, AutomationScope.Scenes)
+				: InvalidPlan(
+					ConfigurationCode(resolution),
+					"Configuration",
+					resolution.Message,
+					resolution.Config,
+					AutomationScope.Scenes);
+		}
+
 		private static AutomationDiagnosticCode ConfigurationCode(ConfigurationResolution resolution) {
 			return resolution.Status == ConfigurationStatus.AddressablesSettingsMissing
 				? AutomationDiagnosticCode.AddressablesSettingsMissing
@@ -153,13 +185,15 @@ namespace TorProduction.Addressables.Editor {
 			AutomationDiagnosticCode code,
 			string location,
 			string message,
-			AddressablesAutomationConfig config) {
+			AddressablesAutomationConfig config,
+			AutomationScope scope = AutomationScope.Groups) {
 			var diagnostic = new AutomationDiagnostic(
 				code, AutomationDiagnosticSeverity.Error, location, message);
 			var sourceHash = AutomationHash.Compute($"{code}|{location}|{message}");
 			return new AutomationPlan(
-				AutomationScope.Groups, sourceHash, sourceHash,
-				Array.Empty<AutomationOperation>(), new[] { diagnostic }, config);
+				scope, sourceHash, sourceHash,
+				Array.Empty<AutomationOperation>(), new[] { diagnostic }, config,
+				configGuid: config == null ? string.Empty : AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(config)));
 		}
 
 		private static AutomationReport Failure(

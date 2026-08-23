@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ScenesLocation: {fileID: 102900000, guid: 4f42b69c201bcba42a0e7d976c56bd93, type: 3}
   m_UIScenesLocation: {fileID: 0}
-  m_ScenesConfig: {fileID: 11400000, guid: 8cfb83e0df15ded4d919ff42f43b471e, type: 2}
+  m_ScenesConfig: {fileID: 0}
   m_OtherSceneFolders: []

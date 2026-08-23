@@ -27,7 +27,7 @@ Preflight blocks Apply for missing settings or folders, unresolved types, any fa
 
 Before its first mutation, Apply records affected entries, groups, schemas, and created labels under `Library/TorProduction.Addressables/Recovery/group-sync-<operation-id>.json`. The default policy stops on the first failure and restores through public Addressables APIs. A successful Apply or rollback removes the snapshot.
 
-If rollback is incomplete, throws unexpectedly, or cannot clean up its snapshot, an atomically written snapshot remains and further Apply operations are blocked. Use **Recover Previous Group Apply** in Project Settings or the group synchronization window. Recovery touches only identities recorded by the package snapshot; unrelated groups and entries are not cleared.
+If rollback is incomplete, throws unexpectedly, or cannot clean up its snapshot, an atomically written snapshot remains and further Apply operations are blocked. Use **Recover Previous Apply** in Project Settings or the group synchronization window. Recovery touches only identities recorded by the package snapshot; unrelated groups and entries are not cleared.
 
 ## API and CLI
 

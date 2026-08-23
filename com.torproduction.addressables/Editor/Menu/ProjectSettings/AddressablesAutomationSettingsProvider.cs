@@ -24,6 +24,9 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 		private ConfigurationValidationReport m_analysis;
 		private AutomationPlan m_groupPlan;
 		private AutomationReport m_groupReport;
+		private AutomationPlan m_scenePlan;
+		private AutomationReport m_sceneReport;
+		private AutomationReport m_recoveryReport;
 		private LegacyMigrationPreview m_legacyPreview;
 		private bool m_pendingAutomaticScenes;
 		private bool m_loaded;
@@ -55,7 +58,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			EditorGUILayout.LabelField("Addressables Automation", EditorStyles.boldLabel);
 			EditorGUILayout.HelpBox(
 				"Reads are inert. Only the explicit actions below save project state or create a configuration asset. " +
-				"Group Analyze is read-only and group Apply always requires a reviewed preview plus confirmation. Later-phase workflows remain disabled.",
+				"Group and scene Analyze are read-only. Apply always requires a reviewed preview plus confirmation and writes a recovery snapshot before mutation.",
 				MessageType.Info);
 
 			DrawSavedState();
@@ -65,6 +68,10 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			DrawAnalysis();
 			EditorGUILayout.Space();
 			DrawGroupSynchronization();
+			EditorGUILayout.Space();
+			DrawSceneSynchronization();
+			EditorGUILayout.Space();
+			DrawApplyRecovery();
 			EditorGUILayout.Space();
 			DrawLegacyMigration();
 			EditorGUILayout.Space();
@@ -219,12 +226,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				EditorGUI.EndDisabledGroup();
 			}
 
-			if (GroupSyncRecovery.TryFindPending(out var recoveryPath)) {
-				EditorGUILayout.HelpBox($"Recovery required: {recoveryPath}", MessageType.Error);
-				if (GUILayout.Button("Recover Previous Group Apply...")) {
-					RecoverGroupApply(recoveryPath);
-				}
-			}
 			if (m_groupReport != null) {
 				EditorGUILayout.HelpBox(
 					m_groupReport.Succeeded
@@ -235,6 +236,56 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 					EditorGUILayout.HelpBox(failure, MessageType.Error);
 				}
 			}
+		}
+
+		private void DrawApplyRecovery() {
+			if (GroupSyncRecovery.TryFindPending(out var recoveryPath)) {
+				EditorGUILayout.LabelField("Apply recovery", EditorStyles.boldLabel);
+				EditorGUILayout.HelpBox($"Recovery required: {recoveryPath}", MessageType.Error);
+				if (GUILayout.Button("Recover Previous Apply...")) RecoverApply(recoveryPath);
+			}
+			if (m_recoveryReport != null) {
+				EditorGUILayout.HelpBox(
+					m_recoveryReport.Succeeded ? "Recovery succeeded." : "Recovery failed; the snapshot was retained.",
+					m_recoveryReport.Succeeded ? MessageType.Info : MessageType.Error);
+				foreach (var failure in m_recoveryReport.Failures) EditorGUILayout.HelpBox(failure, MessageType.Error);
+			}
+		}
+
+		private void DrawSceneSynchronization() {
+			EditorGUILayout.LabelField("Scene synchronization", EditorStyles.boldLabel);
+			EditorGUILayout.HelpBox(
+				"Analyze reconciles scenes by GUID. Apply preserves unrelated Addressables entries and Build Settings scenes, records managed ownership, and rejects stale previews.",
+				MessageType.Info);
+			EditorGUI.BeginDisabledGroup(!m_sceneResolution.IsReady);
+			if (GUILayout.Button("Analyze Scenes (No Changes)")) {
+				m_scenePlan = AddressablesAutomation.Analyze(m_sceneResolution.Config, AutomationScope.Scenes);
+				m_sceneReport = null;
+			}
+			EditorGUI.EndDisabledGroup();
+			if (m_scenePlan != null) {
+				EditorGUILayout.LabelField("Plan hash", m_scenePlan.PlanHash);
+				EditorGUILayout.LabelField("Proposed operations", m_scenePlan.Operations.Count.ToString());
+				foreach (var diagnostic in m_scenePlan.Diagnostics) EditorGUILayout.HelpBox($"[{diagnostic.Code}] {diagnostic.Location}: {diagnostic.Message}", diagnostic.Severity == AutomationDiagnosticSeverity.Error ? MessageType.Error : diagnostic.Severity == AutomationDiagnosticSeverity.Warning ? MessageType.Warning : MessageType.Info);
+				for (var index = 0; index < m_scenePlan.Operations.Count; index++) EditorGUILayout.LabelField($"{index + 1}. {m_scenePlan.Operations[index].Description}", EditorStyles.wordWrappedLabel);
+				if (m_scenePlan.IsValid && !m_scenePlan.HasChanges) EditorGUILayout.HelpBox("Scenes already converge; Apply is unnecessary.", MessageType.Info);
+				EditorGUI.BeginDisabledGroup(!m_scenePlan.IsValid || !m_scenePlan.HasChanges);
+				if (GUILayout.Button("Apply Scene Preview...")) ApplyScenePlan();
+				EditorGUI.EndDisabledGroup();
+			}
+			if (m_sceneReport != null) {
+				EditorGUILayout.HelpBox(m_sceneReport.Succeeded ? $"Scene operation succeeded ({m_sceneReport.Operations.Count} applied operations)." : $"Scene operation failed. Rollback: {m_sceneReport.RollbackStatus}.", m_sceneReport.Succeeded ? MessageType.Info : MessageType.Error);
+				foreach (var failure in m_sceneReport.Failures) EditorGUILayout.HelpBox(failure, MessageType.Error);
+			}
+		}
+
+		private void ApplyScenePlan() {
+			if (!EditorUtility.DisplayDialog(
+				    "Apply Scene Synchronization Plan",
+				    $"Apply the {m_scenePlan.Operations.Count} reviewed operations? A recovery snapshot is written before the first change.",
+				    "Apply Preview", "Cancel")) return;
+			m_sceneReport = AddressablesAutomation.Apply(m_scenePlan);
+			if (m_sceneReport.Succeeded) m_scenePlan = AddressablesAutomation.Analyze(m_sceneResolution.Config, AutomationScope.Scenes);
 		}
 
 		private void ApplyGroupPlan() {
@@ -250,15 +301,16 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			}
 		}
 
-		private void RecoverGroupApply(string recoveryPath) {
+		private void RecoverApply(string recoveryPath) {
 			if (!EditorUtility.DisplayDialog(
-				    "Recover Addressables Group Apply",
+				    "Recover Addressables Automation Apply",
 				    $"Restore the package-owned state recorded in '{recoveryPath}'?",
 				    "Recover", "Cancel")) {
 				return;
 			}
-			m_groupReport = AddressablesAutomation.Recover();
+			m_recoveryReport = AddressablesAutomation.Recover();
 			m_groupPlan = null;
+			m_scenePlan = null;
 		}
 
 		private void DrawAutomation() {
@@ -266,7 +318,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 			m_pendingAutomaticScenes = EditorGUILayout.Toggle(
 				"Enable postprocessing", m_pendingAutomaticScenes);
 			EditorGUILayout.HelpBox(
-				"This pending toggle is saved only by Apply. Scene reconciliation remains gated until Phase 3; automatic group and dependency processing is unsupported.",
+				"This pending toggle is saved only by Apply. Scene imports are coalesced and reconciled through the same analyzed plan as the manual workflow. Automatic group and dependency processing is unsupported.",
 				MessageType.Info);
 			var canApply = CanApplyAutomaticSceneSetting(m_sceneResolution, m_pendingAutomaticScenes);
 			EditorGUI.BeginDisabledGroup(!canApply);

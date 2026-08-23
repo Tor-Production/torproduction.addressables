@@ -140,7 +140,7 @@ namespace TorProduction.Addressables.Editor {
 					AutomationDiagnosticCode.AddressablesSettingsMissing,
 					"Addressables",
 					"Addressables settings do not exist. Analysis did not create them."));
-				return Build(sourceHash, operations, diagnostics, config);
+				return Build(sourceHash, operations, diagnostics, config, state.ConfigGuid);
 			}
 
 			var groupsByGuid = state.Groups
@@ -233,7 +233,7 @@ namespace TorProduction.Addressables.Editor {
 			DetectFolderEntryConflicts(state.Entries, claims.Values, diagnostics);
 			DetectAddressCollisions(state.Entries, claims, diagnostics);
 			if (diagnostics.Any(item => item.Severity == AutomationDiagnosticSeverity.Error)) {
-				return Build(sourceHash, operations, diagnostics, config);
+				return Build(sourceHash, operations, diagnostics, config, state.ConfigGuid);
 			}
 
 			foreach (var destination in destinationGroups.Values.OrderBy(item => item.Name, StringComparer.Ordinal)
@@ -300,7 +300,7 @@ namespace TorProduction.Addressables.Editor {
 				}
 			}
 
-			return Build(sourceHash, operations, diagnostics, config);
+			return Build(sourceHash, operations, diagnostics, config, state.ConfigGuid);
 		}
 
 		private static bool destinationMatches(GroupSyncEntryState entry, DestinationGroup destination) {
@@ -428,7 +428,8 @@ namespace TorProduction.Addressables.Editor {
 			string sourceHash,
 			IEnumerable<AutomationOperation> operations,
 			IEnumerable<AutomationDiagnostic> diagnostics,
-			AddressablesAutomationConfig config) {
+			AddressablesAutomationConfig config,
+			string configGuid) {
 			var sortedOperations = operations.OrderBy(OperationRank)
 				.ThenBy(item => item.AssetGuid, StringComparer.Ordinal)
 				.ThenBy(item => item.AssetPath, StringComparer.Ordinal)
@@ -456,7 +457,8 @@ namespace TorProduction.Addressables.Editor {
 				AutomationHash.Compute(planText.ToString()),
 				sortedOperations,
 				sortedDiagnostics,
-				config);
+				config,
+				configGuid: configGuid);
 		}
 
 		private static int OperationRank(AutomationOperation operation) {

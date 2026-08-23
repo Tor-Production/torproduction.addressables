@@ -6,7 +6,7 @@
 - Implementation: In progress
 - Latest completed phase: Phase 2 — complete and verified
 - Next incomplete phase: Phase 3 — GUID-based scene synchronization
-- Current active batch: Phase 3 `SCENE-001` through `SCENE-004` implementation — in progress
+- Current active batch: Phase 3 `SCENE-001` through `SCENE-004` completion candidate — local validation passed; hosted verification pending
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-23`
@@ -548,7 +548,20 @@ Immediately before force-push, a fresh remote fetch still showed only `main` at 
 
 ### Phase 3 GUID-based scene synchronization implementation record — 2026-08-23
 
-**Status:** in progress. Phases 0–2 remain complete; their rewritten verification tags retain the exact semantic targets recorded above. Phase 2 is not reopened for unrelated polishing. This batch is limited to `SCENE-001` through `SCENE-004`; Phase 4 work remains excluded.
+**Status:** implementation and local validation complete; hosted verification pending. Phases 0–2 remain complete; their rewritten verification tags retain the exact semantic targets recorded above. Phase 2 was not reopened for unrelated polishing. This batch is limited to `SCENE-001` through `SCENE-004`; Phase 4 work remains excluded.
+
+**Completed scope and decisions:**
+
+- `SCENE-001`: the asset postprocessor performs a case-insensitive `.unity` path check before configuration resolution, coalesces relevant events through `delayCall`, requires the existing explicit automatic-scene opt-in, and suppresses re-entry while the shared public transaction runs. Missing/invalid setup and unrelated imports remain inert.
+- `SCENE-002`: scene identity is the Unity GUID. A deterministic full planner covers add, rename, move, delete, duplicate filenames, stale entries, and Addressable/local folder transitions. Managed records retain GUID and last-known path so a deleted local Build Settings row can be removed even after its GUID no longer resolves. Preserve-managed-address retains the prior address; relative-path policy deliberately regenerates it. Explicit claims never clear unrelated Addressables entries or Build Settings rows.
+- `SCENE-003`: the active and bundled numeric application-state types/sample were retired. Optional categories and labels are strings; no production assembly references the sample assembly. Legacy application-state GUIDs remain read-only migration inputs and are reported as intentionally unmapped project-owned data.
+- `SCENE-004`: configuration schema `2` adds initialized managed-scene records and an explicit schema `0`/`1` migration. Ordered `SceneFolderRule` entries uniformly cover primary and additional folders. Scene Apply reuses the Phase 2 source/plan hash check and recovery transaction, snapshots Addressables state plus complete Build Settings and configuration JSON, updates Build Settings once, dirties the config once, saves at the transaction boundary, and retains the snapshot if rollback or cleanup is incomplete. Configuration assets invalidated by an import are rebound by their stored GUID before stale-plan validation.
+
+The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime state, scene catalog types, and bundled numeric-state/catalog assets were removed. `ScenesListConfig` remains only as an obsolete, inert MonoScript-GUID migration carrier with a generic object reference and initialized additional-folder array; removing that carrier before migration support is retired would strand legacy folder intent. Manual Project Settings and CLI operations use the same `AddressablesAutomation.Analyze(..., AutomationScope.Scenes)` plan as automatic processing. Recovery is scope-neutral and blocks all later Apply operations while any group or scene snapshot is pending.
+
+**Local evidence:** static repository validation and JSON/asmdef/meta checks passed. The development-host EditMode suite passed `79/79`. Fresh isolated clean-install/EditMode/removal lanes on Unity `6000.0.78f1` passed `79/79` for Addressables `2.7.6` and `79/79` for `2.9.1`; package import and removal remained inert in both lanes. Focused integration tests verify one-Apply convergence followed by an empty plan, configuration persistence/reload, stale public scene-plan rejection, recovery from an actual pending scene snapshot, preserved unrelated Build Settings, and add/rename/move/delete/mode-transition behavior. No hosted Unity job has been dispatched for Phase 3 yet.
+
+**Remaining completion step:** create and push the exact Phase 3 completion commit, dispatch the paid hosted workflow once, require both lanes to pass that SHA, record the run/job evidence in a documentation-only commit, and create annotated `phase-3-verified` at the hosted-tested commit. No version tag, release, publication, or Phase 4 work is included.
 
 ## D. Prioritized roadmap
 

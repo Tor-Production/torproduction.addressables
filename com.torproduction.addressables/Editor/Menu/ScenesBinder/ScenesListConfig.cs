@@ -1,13 +1,13 @@
 using UnityEditor;
 using UnityEngine;
-using TorProduction.AddressablesToolpack.Data;
+using System;
 
 namespace TorProduction.AddressablesToolpack.Editor.Menu {
-	[CreateAssetMenu(fileName = "ScenesListConfig", menuName = "Tor Production/Scenes Binder Config", order = 31)]
-	public class ScenesListConfig : ScriptableObject {
+	[Obsolete("Legacy migration carrier only. Use AddressablesAutomationConfig scene rules.")]
+	public sealed class ScenesListConfig : ScriptableObject {
 		public DefaultAsset m_ScenesLocation;
 		public DefaultAsset m_UIScenesLocation;
-		public ScenesConfig m_ScenesConfig;
-		public DefaultAsset[] m_OtherSceneFolders;
+		public UnityEngine.Object m_ScenesConfig;
+		public DefaultAsset[] m_OtherSceneFolders = Array.Empty<DefaultAsset>();
 	}
 }

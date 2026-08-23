@@ -24,6 +24,8 @@ namespace TorProduction.Addressables.Editor {
 		DestinationGroupNonBuildable,
 		FolderEntryConflict,
 		AddressCollision,
+		SceneClaimConflict,
+		SceneLoadFailed,
 		StalePlan,
 		ApplyFailed,
 		RollbackFailed,
@@ -39,7 +41,10 @@ namespace TorProduction.Addressables.Editor {
 		MoveEntry,
 		SetAddress,
 		AddLabel,
-		RemoveLabel
+		RemoveLabel,
+		RemoveEntry,
+		UpdateBuildSettings,
+		UpdateManagedScenes
 	}
 
 	public enum AutomationRollbackStatus {
@@ -118,6 +123,12 @@ namespace TorProduction.Addressables.Editor {
 						return $"Add label '{Value}' to '{AssetPath}'.";
 					case AutomationOperationKind.RemoveLabel:
 						return $"Remove label '{Value}' from '{AssetPath}'.";
+					case AutomationOperationKind.RemoveEntry:
+						return $"Remove package-managed scene entry '{AssetPath}'.";
+					case AutomationOperationKind.UpdateBuildSettings:
+						return "Reconcile package-managed local scenes in Build Settings.";
+					case AutomationOperationKind.UpdateManagedScenes:
+						return "Persist managed scene identities and last-known paths.";
 					default:
 						return Kind.ToString();
 				}
@@ -135,13 +146,17 @@ namespace TorProduction.Addressables.Editor {
 			string planHash,
 			IEnumerable<AutomationOperation> operations,
 			IEnumerable<AutomationDiagnostic> diagnostics,
-			AddressablesAutomationConfig config) {
+			AddressablesAutomationConfig config,
+			SceneSyncMutation sceneMutation = null,
+			string configGuid = "") {
 			Scope = scope;
 			SourceHash = sourceHash ?? string.Empty;
 			PlanHash = planHash ?? string.Empty;
 			m_operations = Array.AsReadOnly((operations ?? Array.Empty<AutomationOperation>()).ToArray());
 			m_diagnostics = Array.AsReadOnly((diagnostics ?? Array.Empty<AutomationDiagnostic>()).ToArray());
 			Config = config;
+			SceneMutation = sceneMutation;
+			ConfigGuid = configGuid ?? string.Empty;
 		}
 
 		public AutomationScope Scope { get; }
@@ -151,7 +166,10 @@ namespace TorProduction.Addressables.Editor {
 		public IReadOnlyList<AutomationDiagnostic> Diagnostics => m_diagnostics;
 		public bool IsValid => !m_diagnostics.Any(item => item.Severity == AutomationDiagnosticSeverity.Error);
 		public bool HasChanges => m_operations.Count != 0;
-		internal AddressablesAutomationConfig Config { get; }
+		internal AddressablesAutomationConfig Config { get; private set; }
+		internal SceneSyncMutation SceneMutation { get; }
+		internal string ConfigGuid { get; }
+		internal void BindConfig(AddressablesAutomationConfig config) => Config = config;
 	}
 
 	public sealed class AutomationReport {

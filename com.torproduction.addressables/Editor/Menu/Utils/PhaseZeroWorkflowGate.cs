@@ -8,11 +8,13 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 		internal static bool IncompleteWorkflowsEnabled => false;
 		internal static bool GroupSynchronizationImplemented => true;
-		internal static bool AutomaticSceneReconciliationImplemented => false;
+		internal static bool AutomaticSceneReconciliationImplemented => true;
 
 		internal static bool CanExecute(AutomationScope scope) {
 			var resolution = AddressablesAutomationContextProvider.ResolveManual(scope);
-			return resolution.IsReady && scope == AutomationScope.Groups && GroupSynchronizationImplemented;
+			return resolution.IsReady &&
+			       ((scope == AutomationScope.Groups && GroupSynchronizationImplemented) ||
+			        (scope == AutomationScope.Scenes && AutomaticSceneReconciliationImplemented));
 		}
 
 		internal static bool TryBegin(string workflowName, AutomationScope scope) {
@@ -23,6 +25,9 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				return false;
 			}
 			if (scope == AutomationScope.Groups && GroupSynchronizationImplemented) {
+				return true;
+			}
+			if (scope == AutomationScope.Scenes && AutomaticSceneReconciliationImplemented) {
 				return true;
 			}
 

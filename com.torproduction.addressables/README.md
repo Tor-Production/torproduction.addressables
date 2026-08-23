@@ -6,11 +6,12 @@ Editor tooling for project-agnostic, previewable Addressables automation on Unit
 
 - Explicit GUID-backed project configuration under Project Settings.
 - Deterministic group analysis and convergence for group, address, and label state.
+- GUID-based scene reconciliation for Addressables and local Build Settings, including rename, move, delete, and folder-mode transitions.
 - Missing group/schema planning, collision checks, stale-plan rejection, transaction snapshots, rollback, and manual recovery.
 - Project Settings, menu, public editor API, and CLI entry points that share the same planner.
 - Inert package import and configuration reads when setup is missing or invalid.
 
-Scene synchronization, dependency fixing, content builds, final sample/layout cleanup, and release automation are not yet available.
+Dependency fixing, content builds, final sample/layout cleanup, and release automation are not yet available.
 
 ## Development installation
 
@@ -34,9 +35,9 @@ There is no authorized public version release yet. Phase-verification tags recor
 
 ## Use
 
-Open `Project Settings > Tor Production > Addressables Automation` to create or select a configuration and analyze the supported scope. Group Apply is always explicit, rejects stale previews, and blocks when complete convergence cannot be proven.
+Open `Project Settings > Tor Production > Addressables Automation` to create or select a configuration and analyze Groups or Scenes. Manual Apply is always explicit, rejects stale previews, and blocks when complete convergence cannot be proven. Automatic scene processing is separately opt-in and uses the same scene plan and transaction as the manual workflow.
 
-For current limitations and recovery behavior, see `Documentation~/SAFETY.md` and `Documentation~/GROUP_SYNCHRONIZATION.md`.
+For current limitations and recovery behavior, see `Documentation~/SAFETY.md`, `Documentation~/GROUP_SYNCHRONIZATION.md`, and `Documentation~/SCENE_SYNCHRONIZATION.md`.
 
 ## Compatibility
 

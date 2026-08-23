@@ -10,9 +10,10 @@ Editor tooling for project-agnostic, previewable Addressables automation on Unit
 - Analyze-only duplicate-dependency reporting plus a separately confirmed, version-gated Fix that creates or validates the destination group and schemas without moving physical assets.
 - Missing group/schema planning, collision checks, stale-plan rejection, transaction snapshots, rollback, and manual recovery.
 - Project Settings, menu, public editor API, and CLI entry points that share the same planner.
+- Explicit Full, Content Update, Editor-Compatible, and deterministic Multi-Platform content builds with exact-target preflight, domain-reload recovery, preserved reports, cancellation, and built-in existing-build Play Mode selection guarded by freshness receipts.
 - Inert package import and configuration reads when setup is missing or invalid.
 
-Content builds, final sample/layout cleanup, and release automation are not yet available. The former project-specific prefab/interactable migration tool was removed rather than generalized inside the package.
+Final sample/layout cleanup and release automation are not yet available. The former project-specific prefab/interactable migration tool was removed rather than generalized inside the package.
 
 ## Development installation
 
@@ -38,7 +39,7 @@ There is no authorized public version release yet. Phase-verification tags recor
 
 Open `Project Settings > Tor Production > Addressables Automation` to create or select a configuration and analyze Groups, Scenes, or duplicate Dependencies. Manual Apply/Fix is always explicit, rejects stale previews, and blocks when complete convergence cannot be proven. Automatic scene processing is separately opt-in and uses the same scene plan and transaction as the manual workflow.
 
-For current limitations and recovery behavior, see `Documentation~/SAFETY.md`, `Documentation~/GROUP_SYNCHRONIZATION.md`, `Documentation~/SCENE_SYNCHRONIZATION.md`, and `Documentation~/DEPENDENCY_ANALYSIS.md`.
+For current limitations and recovery behavior, see `Documentation~/SAFETY.md`, `Documentation~/GROUP_SYNCHRONIZATION.md`, `Documentation~/SCENE_SYNCHRONIZATION.md`, `Documentation~/DEPENDENCY_ANALYSIS.md`, and `Documentation~/BUILD_PIPELINE.md`.
 
 ## Compatibility
 

@@ -129,7 +129,7 @@ try {
 
     [xml]$results = Get-Content -Raw -LiteralPath $resultsPath
     $testRun = $results.'test-run'
-    $expectedTestCount = 91
+    $expectedTestCount = 125
     if ($testRun.result -ne 'Passed' -or
         [int]$testRun.total -ne $expectedTestCount -or
         [int]$testRun.passed -ne $expectedTestCount -or

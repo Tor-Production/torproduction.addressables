@@ -141,8 +141,55 @@ foreach ($relativePath in $removedPrefabMigrationPaths) {
 
 $editorSources = Get-ChildItem -Recurse -File -LiteralPath (Join-Path $packageRoot 'Editor') -Filter '*.cs'
 foreach ($source in $editorSources) {
-    if ((Get-Content -Raw -LiteralPath $source.FullName) -match '\[InitializeOnLoad(Method)?\]') {
+    $contents = Get-Content -Raw -LiteralPath $source.FullName
+    $relativeSource = $source.FullName.Substring($root.Length).TrimStart('\', '/') -replace '\\', '/'
+    $recoveryBootstrapPath = 'com.torproduction.addressables/Editor/Menu/BuildMenu/BuildMenu.cs'
+    if ($contents -match '\[InitializeOnLoad(Method)?\]' -and $relativeSource -ne $recoveryBootstrapPath) {
         throw "Automatic editor initialization remains: $($source.FullName)"
+    }
+}
+
+$buildMenuSource = Get-Content -Raw -LiteralPath `
+    (Join-Path $packageRoot 'Editor/Menu/BuildMenu/BuildMenu.cs')
+if ($buildMenuSource -notmatch 'ShouldOfferRecovery\(ContentBuildRecoveryInfo recovery\)' -or
+    $buildMenuSource -notmatch 'if \(ShouldOfferRecovery\(recovery\)\) BuildWorkflowWindow\.OpenRecovery\(\)') {
+    throw 'The only allowed startup hook must remain a fail-closed package-job recovery offer.'
+}
+
+$removedBuildPaths = @(
+    'com.torproduction.addressables/Editor/BuildProcess/CustomBuildScripts/EditorPlaymodeBuildScript.cs',
+    'com.torproduction.addressables/Editor/Utils/ReportUpdater.cs'
+)
+foreach ($relativePath in $removedBuildPaths) {
+    if (Test-Path -LiteralPath (Join-Path $root $relativePath)) {
+        throw "A removed legacy build execution path remains: $relativePath"
+    }
+}
+
+$buildPipelineRoot = Join-Path $packageRoot 'Editor/BuildPipeline'
+$buildPipelineSources = Get-ChildItem -Recurse -File -LiteralPath $buildPipelineRoot -Filter '*.cs'
+foreach ($source in $buildPipelineSources) {
+    $contents = Get-Content -Raw -LiteralPath $source.FullName
+    if ($contents -match 'System\.Reflection|BindingFlags|Get(Field|Property|Method)\s*\(') {
+        throw "Private/reflection-based Addressables access exists in the Phase 5 build pipeline: $($source.FullName)"
+    }
+}
+$allProductionSource = ($productionSources | ForEach-Object { Get-Content -Raw -LiteralPath $_.FullName }) -join "`n"
+foreach ($legacyIdentifier in @('EditorPlaymodeBuildScript', 'ReportUpdater', 'TargetPlatform')) {
+    if ($allProductionSource -match "\b$legacyIdentifier\b") {
+        throw "A legacy build identifier remains reachable in production source: $legacyIdentifier"
+    }
+}
+foreach ($requiredBuildCall in @(
+    'AddressableAssetSettings.BuildPlayerContent',
+    'ContentUpdateScript.BuildContentUpdate',
+    'ContentUpdateScript.GatherModifiedEntries',
+    'BuildPipeline.IsBuildTargetSupported',
+    'SwitchActiveBuildTarget',
+    'BuildScriptPackedPlayMode'
+)) {
+    if ($allProductionSource -notmatch [regex]::Escape($requiredBuildCall)) {
+        throw "The supported Phase 5 build integration is missing: $requiredBuildCall"
     }
 }
 

@@ -13,6 +13,8 @@ All notable changes to this project are documented in this file. The format foll
 - GUID-based scene synchronization for Addressable and local Build Settings modes, with managed ownership records, deterministic transitions, and opt-in deferred postprocessing.
 - A static current-tree guard that rejects reintroduction of former-owner identifiers in tracked paths or contents.
 - Analyze-only duplicate-dependency reporting with exact-version capability diagnostics and a separately confirmed transactional Fix.
+- Full, Content Update, Editor-Compatible, and deterministic Multi-Platform Addressables content-build workflows with shared preflight, persistent recovery, reports, cancellation, and CLI entry points.
+- Package-owned Editor-Compatible receipts and confirmed selection of Addressables' built-in Use Existing Build Play Mode builder.
 
 ### Changed
 
@@ -31,3 +33,4 @@ All notable changes to this project are documented in this file. The format foll
 - Corrected the package repository metadata and made the Unity workflow display name phase-neutral.
 - Scene rename, move, delete, duplicate-name, stale-plan, rollback, and recursion cases now converge through the shared transaction boundary.
 - Removed the project-specific prefab/interactable organizer, migration configuration, physical asset-moving command, and private Addressables analyzer/path reflection.
+- Replaced the legacy content-update-only build controller, target-group queue, destructive report updater, and copied existing-build Play Mode script with supported public Addressables APIs and exact-target recovery.

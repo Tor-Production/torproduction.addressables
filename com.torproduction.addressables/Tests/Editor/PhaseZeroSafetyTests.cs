@@ -84,28 +84,18 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			Assert.That(AddressablesAutomationWorkflowGate.AutomaticSceneReconciliationImplemented, Is.True);
 			Assert.That(AddressablesAutomationWorkflowGate.DependencyAnalysisImplemented, Is.True);
 			Assert.That(AddressablesAutomationWorkflowGate.CanExecute(AutomationScope.All), Is.False);
-			Assert.That(
-				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.WindowsEditor),
-				Is.EqualTo(BuildTarget.StandaloneWindows64));
-			Assert.That(
-				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.OSXEditor),
-				Is.EqualTo(BuildTarget.StandaloneOSX));
-			Assert.That(
-				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.LinuxEditor),
-				Is.EqualTo(BuildTarget.StandaloneLinux64));
-			Assert.Throws<PlatformNotSupportedException>(() =>
-				EditorPlaymodeBuildScript.GetEditorStandaloneTarget(RuntimePlatform.Android));
-			Assert.That(
-				EditorPlaymodeBuildScript.GetEditorPlatformSubfolder(RuntimePlatform.WindowsEditor),
-				Is.EqualTo("Windows"));
-			Assert.That(
-				EditorPlaymodeBuildScript.GetEditorPlatformSubfolder(RuntimePlatform.OSXEditor),
-				Is.EqualTo("OSX"));
-			Assert.That(
-				EditorPlaymodeBuildScript.GetEditorPlatformSubfolder(RuntimePlatform.LinuxEditor),
-				Is.EqualTo("Linux"));
-			Assert.Throws<PlatformNotSupportedException>(() =>
-				EditorPlaymodeBuildScript.GetEditorPlatformSubfolder(RuntimePlatform.Android));
+			Assert.That(BuildTargetMapper.TryMapEditor(
+				RuntimePlatform.WindowsEditor, out var windowsTarget), Is.True);
+			Assert.That(windowsTarget, Is.EqualTo(BuildTarget.StandaloneWindows64));
+			Assert.That(BuildTargetMapper.TryMapEditor(
+				RuntimePlatform.OSXEditor, out var macTarget), Is.True);
+			Assert.That(macTarget, Is.EqualTo(BuildTarget.StandaloneOSX));
+			Assert.That(BuildTargetMapper.TryMapEditor(
+				RuntimePlatform.LinuxEditor, out var linuxTarget), Is.True);
+			Assert.That(linuxTarget, Is.EqualTo(BuildTarget.StandaloneLinux64));
+			Assert.That(BuildTargetMapper.TryMapEditor(
+				RuntimePlatform.Android, out var unsupportedTarget), Is.False);
+			Assert.That(unsupportedTarget, Is.EqualTo(BuildTarget.NoTarget));
 
 			LogAssert.Expect(LogType.Warning, new Regex("^Test workflow:"));
 			Assert.That(

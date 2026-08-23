@@ -4,9 +4,9 @@
 
 - Planning: Complete
 - Implementation: In progress
-- Latest completed phase: Phase 3 — GUID-based scene synchronization complete and verified
-- Next incomplete phase: Phase 4 — dependency analysis and prefab removal
-- Current active batch: Phase 4 — dependency analysis and prefab removal (`PREFAB-001`, `PREFAB-002`, `DEPS-001`, and `DEPS-002`)
+- Latest completed phase: Phase 4 — dependency analysis and prefab removal complete and verified
+- Next incomplete phase: Phase 5 — build pipeline and existing-build Play Mode
+- Current active batch: Phase 4 verification evidence and tag closure; Phase 5 has not started
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-23`
@@ -565,13 +565,15 @@ The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime 
 
 ### Phase 4 dependency-analysis and prefab-removal implementation record — 2026-08-23
 
-**Status:** implementation and local verification complete; hosted verification pending. The guarded rewritten-history repair and independent fresh-clone validation are complete, and the existing Phase 3 hosted artifacts agree with the recorded `79/79` result in both compatibility lanes. This batch remains limited to `PREFAB-001`, `PREFAB-002`, `DEPS-001`, and `DEPS-002`; Phase 5 has not started.
+**Status:** complete and verified. The guarded rewritten-history repair and independent fresh-clone validation are complete, and the existing Phase 3 hosted artifacts agree with the recorded `79/79` result in both compatibility lanes. This batch remained limited to `PREFAB-001`, `PREFAB-002`, `DEPS-001`, and `DEPS-002`; Phase 5 has not started.
 
 **Active scope:** remove the project-specific prefab/interactable organizer, migration configuration, and physical asset-moving behavior; replace the duplicate-dependency implementation with a fail-closed Addressables compatibility adapter using only supported public/protected analyzer lifecycle and results; keep analysis immutable by default; require a separate confirmed Fix; report already-explicit entries without moving them; safely create or validate the destination group and required schemas; and disable Fix with an actionable diagnostic for unsupported or unverified Addressables versions.
 
 **Issue progress:** `PREFAB-001` and `PREFAB-002` are implemented by removing the prefab/interactable organizer, its migration configuration, and every production physical-asset move path. `DEPS-001` is implemented with an exact-version-gated subclass of Addressables' built-in duplicate-dependency analyzer that consumes only `RefreshAnalysis` and protected `CheckDupeResults`; the package contains no private Addressables reflection. `DEPS-002` is implemented as an immutable planner, a separately confirmed stale-plan-safe Fix transaction, report-only handling for already-explicit entries, safe group/schema creation, and fail-closed capability diagnostics outside the verified `2.7.6` and `2.9.1` adapters.
 
 **Local evidence:** `Tools/CI/Validate-PhaseZero.ps1 -RepositoryRoot . -ExpectedHostAddressablesVersion 2.7.6`, `git diff --check`, tracked JSON/asmdef parsing, Unity `.meta` pairing/GUID checks, removed-path checks, and targeted scans for private Addressables access and production `AssetDatabase.MoveAsset` passed. The development-host EditMode suite passed `91/91`, including all twelve Phase 4 tests. Fresh isolated clean-install/EditMode/removal lanes on the pinned Unity `6000.0.78f1` passed `91/91` for Addressables `2.7.6` and `91/91` for `2.9.1`; both package imports and removals remained inert, and all four lane logs were clean of the configured compiler, exception, serialization, and fatal-error patterns. Evidence is under ignored `artifacts/phase4-local-pinned-2.7.6` and `artifacts/phase4-local-pinned-2.9.1`.
+
+**Hosted Phase 4 evidence:** the exact implementation commit is `13286cbc0c7f622cba3a157f8713c3f68df00b45`. Manual workflow dispatch occurred exactly once for that SHA. Run [`32625614016`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32625614016) used `workflow_dispatch` on `main` and completed successfully on `2026-08-23`. Addressables `2.7.6` job [`97160393538`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32625614016/job/97160393538) passed in `2m55s`; Addressables `2.9.1` job [`97160393605`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32625614016/job/97160393605) passed in `3m22s`. Both passed license preflight, exact lane selection, static validation, Unity compilation/EditMode tests, package-import inertness, tracked-project-state verification, and artifact upload. Downloaded XML results independently report exactly `91` passed, zero failed, zero skipped, and zero inconclusive in each lane; hosted artifacts remain ignored and uncommitted under `artifacts/phase4-hosted-run-32625614016`. The authorized annotated `phase-4-verified` tag is created only after this documentation-only evidence record is pushed and must peel to the exact hosted-tested implementation commit above. No version tag, release, publication, or Phase 5 work is included.
 
 ## D. Prioritized roadmap
 

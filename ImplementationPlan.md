@@ -6,7 +6,7 @@
 - Implementation: In progress
 - Latest completed phase: Phase 2 — complete and verified
 - Next incomplete phase: Phase 3 — GUID-based scene synchronization
-- Current active batch: pre-Phase 3 maintenance and repository-history sanitization — in progress
+- Current active batch: Phase 3 `SCENE-001` through `SCENE-004` implementation — in progress
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-23`
@@ -209,7 +209,7 @@ This protocol is the documented exception to the repository's general commit, ta
 - [x] Phase 0 — Reproducible baseline and compile/install safety (implementation and required hosted matrix complete)
 - [x] Phase 1 — Explicit setup and configuration (implementation, manual-verification corrections, hosted matrix, and revised SettingsProvider visual recheck complete)
 - [x] Phase 2 — Deterministic group synchronization (implementation, local validation, hosted matrix, evidence record, and verification tag complete)
-- [ ] Phase 3 — GUID-based scene synchronization
+- [ ] Phase 3 — GUID-based scene synchronization (in progress)
 - [ ] Phase 4 — Dependency analysis and prefab removal
 - [ ] Phase 5 — Build pipeline and existing-build Play Mode
 - [ ] Phase 6 — Package layout and API cleanup
@@ -513,7 +513,7 @@ This protocol is the documented exception to the repository's general commit, ta
 
 ### Pre-Phase 3 maintenance and history-sanitization record — 2026-08-23
 
-**Status:** maintenance corrections are implemented and locally verified; the focused commit/push and history rewrite are pending. Starting remote and local `main` both resolved to `d4516c8f6178b73ec7af3d54ec7cad7f8549e325` after fetch/prune. The repository had only `main`; no open pull requests, forks, releases, branch protection, or rulesets; and only the owner collaborator. Existing annotated tags peeled to `b843fa52846406342cfb624c859b386389bb997a` for `phase-0-verified` and `phase-1-verified`, and `2bd0ab66ccbba60a55aecd01db37141e9462d999` for `phase-2-verified`.
+**Status:** complete and verified locally, from a fresh rewritten clone, and by the hosted compatibility matrix. Starting remote and local `main` both resolved to `d4516c8f6178b73ec7af3d54ec7cad7f8549e325` after fetch/prune. The repository had only `main`; no open pull requests, forks, releases, branch protection, or rulesets; and only the owner collaborator. Existing annotated tags peeled to `b843fa52846406342cfb624c859b386389bb997a` for `phase-0-verified` and `phase-1-verified`, and `2bd0ab66ccbba60a55aecd01db37141e9462d999` for `phase-2-verified`.
 
 **Finding decisions:**
 
@@ -535,6 +535,20 @@ This protocol is the documented exception to the repository's general commit, ta
 **Local maintenance verification:** Windows PowerShell parsing, JSON/asmdef parsing, `git diff --check`, current-tree prohibited-token/path scans, public-template residue scans, host tracked-state checks, Unity `.meta` pairing/GUID checks, and `Tools/CI/Validate-PhaseZero.ps1 -RepositoryRoot .` pass. Isolated Unity `6000.0.78f1` clean-install/EditMode/removal lanes passed on Addressables `2.7.6` and `2.9.1`: each discovered and passed exactly `61/61`, created no configuration/Addressables/Build Settings state on import, remained inert after package removal, and removed its verified temporary project. Evidence is under ignored `artifacts/maintenance-local-2.7.6` and `artifacts/maintenance-local-2.9.1`.
 
 The first `2.7.6` attempt stopped at test compilation because the expanded integration fixture omitted the `UnityEditor.AddressableAssets` namespace import. No tests ran and no source project state changed. The import was added and the necessary lane reran successfully; no paid hosted workflow was dispatched during local maintenance.
+
+**Rewrite and backup evidence:** focused maintenance commit `9bc50cdd0a7fd32d4f7ce676927cabb3d53de8b9` was pushed normally and created no paid run. A fresh sibling mirror was filtered with `git-filter-repo` `2.47.0`; the exact discovered content phrase was replaced by neutral former-owner wording, while defensive callbacks covered paths, commit/tag messages, refs, and author/committer/tagger names and emails. No matching path, ref, message, metadata, namespace, URL/domain, email domain, compact identifier, or legal notice had been discovered. The complete verified pre-rewrite bundle is `C:\Users\morta\Documents\Projects\UnityProjects\tor-production-addressables-pre-rewrite-20260823.bundle`; the original checkout is retained with its push URL disabled.
+
+Immediately before force-push, a fresh remote fetch still showed only `main` at `9bc50cdd0a7fd32d4f7ce676927cabb3d53de8b9` and the three unchanged phase tags, with no open pull requests. Rewritten `main` is `caefbf8511b761662e64e6820666928a41adb36d`. Annotated `phase-0-verified` and `phase-1-verified` now peel to rewritten `7dc1860f60ff649b5e13e1e2e71f09fa546cb140`; annotated `phase-2-verified` peels to rewritten `86a977e254fd243ff171efafc07c10a8980c2771`. The current tree remained exact (`d8343d18f90137466b4e22b36c22dcdfe85bf36d`), all four ref updates succeeded, and no other branch/tag update failed. Rewriting changed commit/tag-object hashes and stripped any old cryptographic signatures; the recreated phase tags are annotated but not claimed to retain prior signatures.
+
+**Fresh-clone verification:** a new normal GitHub clone fetched every branch/tag and independently scanned all repository-owned reachable refs: `623` objects and `374` unique blobs, plus historical paths, commit authors/committers/messages, annotated tag messages/taggers, and ref names. No prohibited token remained. Static validation, package/host JSON and every asmdef parse, Unity `.meta` pairing/GUID uniqueness, no-publication/no-version-tag checks, exact phase-tag mapping, and clean-worktree checks passed. Fresh-clone Addressables `2.7.6` and `2.9.1` clean-install/EditMode/removal lanes each passed exactly `61/61`; import/removal remained inert and tracked host state stayed unchanged.
+
+**Hosted rewritten-baseline evidence:** manual workflow dispatch occurred exactly once for rewritten `main`. Run [`32607348409`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32607348409) used `workflow_dispatch`, tested exact SHA `caefbf8511b761662e64e6820666928a41adb36d`, and completed successfully on `2026-08-23`. Addressables `2.7.6` job [`97114386713`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32607348409/job/97114386713) passed every required step in `3m24s`; Addressables `2.9.1` job [`97114386556`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32607348409/job/97114386556) passed every required step in `2m43s`. Both passed license preflight, lane selection, static validation, Unity compilation/EditMode tests, inertness, tracked-state, and artifact upload. Only the previously documented non-failing upstream Node runtime deprecation annotation remained.
+
+**Guarantee boundary:** every repository-owned reachable branch, tag, ref, historical/current blob, path, and Git metadata field has been sanitized, and the static current-tree guard prevents accidental reintroduction. External clones, forks, caches, backup bundles, pull-request refs, old workflow records/artifacts, and provider-side caches are outside central control and are not claimed sanitized. The backup is intentionally retained and must be protected as sensitive pre-rewrite history. No version tag, GitHub Release, package publication, or repository setting was created or changed.
+
+### Phase 3 GUID-based scene synchronization implementation record — 2026-08-23
+
+**Status:** in progress. Phases 0–2 remain complete; their rewritten verification tags retain the exact semantic targets recorded above. Phase 2 is not reopened for unrelated polishing. This batch is limited to `SCENE-001` through `SCENE-004`; Phase 4 work remains excluded.
 
 ## D. Prioritized roadmap
 

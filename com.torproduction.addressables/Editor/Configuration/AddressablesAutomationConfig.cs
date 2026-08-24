@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace TorProduction.Addressables.Editor {
 	[Flags]
@@ -193,6 +194,7 @@ namespace TorProduction.Addressables.Editor {
 		fileName = "AddressablesAutomationConfig",
 		menuName = "Tor Production/Addressables Automation Config",
 		order = 30)]
+	[MovedFrom(true, sourceAssembly: "TorProduction.AddressablesService.Editor")]
 	public sealed class AddressablesAutomationConfig : ScriptableObject {
 		public const int CurrentSchemaVersion = 3;
 

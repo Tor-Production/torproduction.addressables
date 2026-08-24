@@ -19,5 +19,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Yurii-Tor/torproduction.addressables.git"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Basic Setup",
+      "description": "Editor-only configuration and scene for the explicit Addressables automation workflow.",
+      "path": "Samples~/BasicSetup"
+    }
+  ]
 }

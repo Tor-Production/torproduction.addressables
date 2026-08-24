@@ -7,7 +7,7 @@ using TorProduction.Addressables.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	internal enum LegacyMigrationDiagnosticCode {
 		SettingsMissing,
 		SettingsCorrupt,
@@ -173,6 +173,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 
 	internal static class LegacyConfigurationMigration {
 		internal const string SettingsPath = LegacyProjectConfigFormat.SettingsPath;
+		internal const string LegacyScenesGroupName = "ScenesGroup";
 		internal const string ScenesConfigScriptGuid = "485de64a98f018044b1d84b3d9a26955";
 		internal const string AddressableAssetsConfigScriptGuid = "bb1976c08118e184da01617a660f81b5";
 
@@ -452,7 +453,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				return;
 			}
 
-			var groupName = mode == SceneFolderMode.Addressable ? GroupNames.SCENES : string.Empty;
+			var groupName = mode == SceneFolderMode.Addressable ? LegacyScenesGroupName : string.Empty;
 			var groupGuid = string.Empty;
 			if (!string.IsNullOrEmpty(groupName)) {
 				environment.TryGetGroupGuid(groupName, out groupGuid);

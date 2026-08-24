@@ -451,7 +451,7 @@ namespace TorProduction.Addressables.Editor.Tests {
 				"No job.",
 				"current.json");
 
-			Assert.That(TorProduction.AddressablesToolpack.Editor.Menu.BuildRecoveryBootstrap.ShouldOfferRecovery(recovery), Is.False);
+			Assert.That(TorProduction.Addressables.Editor.BuildRecoveryBootstrap.ShouldOfferRecovery(recovery), Is.False);
 		}
 
 		[Test]

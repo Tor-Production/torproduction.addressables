@@ -9,7 +9,7 @@ using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	internal sealed class DependencyAnalysisAssetState {
 		internal string Guid = string.Empty;
 		internal string Path = string.Empty;

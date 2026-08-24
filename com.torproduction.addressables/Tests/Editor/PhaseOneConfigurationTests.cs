@@ -3,20 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using TorProduction.Addressables.Editor;
-using TorProduction.AddressablesToolpack.Editor.Menu;
 using UnityEditor;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Tests {
+namespace TorProduction.Addressables.Editor.Tests {
 	internal sealed class PhaseOneConfigurationTests {
 		private const string CONFIG_GUID = "0123456789abcdef0123456789abcdef";
 		private const string LEGACY_ADDRESSABLES_GUID = "11111111111111111111111111111111";
 		private const string LEGACY_SCENES_GUID = "22222222222222222222222222222222";
 		private const string LEGACY_APP_STATES_GUID = "33333333333333333333333333333333";
-		private const string SAMPLE_ADDRESSABLES_CONFIG_GUID = "2cccb57831ce0b142bd410986607fd0e";
-		private const string SAMPLE_SCENES_CONFIG_GUID = "82222a4673d24384d9b8554ccb08996f";
-		private const string SAMPLE_APP_STATES_CONFIG_GUID = "a20111eb8a0c7cf4396ff7e9e9e84b1c";
-		private const string SAMPLE_SCENES_FOLDER_GUID = "4f42b69c201bcba42a0e7d976c56bd93";
 
 		[Test]
 		public void ProjectSettingsRead_WhenMissing_IsInert() {
@@ -678,7 +673,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 					additionalFolder, "Packages/com.test/Samples/Scenes", "dddddddddddddddddddddddddddddddd");
 				environment.AssetPaths[sceneCatalog] = "Packages/com.test/ScenesConfig.asset";
 				environment.GroupGuids["SceneMapsGroup"] = "stable-group-id";
-				environment.GroupGuids[GroupNames.SCENES] = "stable-scenes-id";
+				environment.GroupGuids[LegacyConfigurationMigration.LegacyScenesGroupName] = "stable-scenes-id";
 				environment.TypeMatches["String"] = new[] { typeof(string) };
 
 				var addressablesBefore = EditorJsonUtility.ToJson(legacyAddressables);
@@ -701,7 +696,8 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 					Is.EqualTo(typeof(string).AssemblyQualifiedName));
 				Assert.That(preview.SceneRules.Length, Is.EqualTo(3));
 				Assert.That(preview.SceneRules[0].Mode, Is.EqualTo(SceneFolderMode.Addressable));
-				Assert.That(preview.SceneRules[0].DestinationGroupName, Is.EqualTo(GroupNames.SCENES));
+				Assert.That(preview.SceneRules[0].DestinationGroupName,
+					Is.EqualTo(LegacyConfigurationMigration.LegacyScenesGroupName));
 				Assert.That(preview.SceneRules[0].AddressPolicy,
 					Is.EqualTo(SceneAddressPolicy.PreserveManagedAddress));
 				Assert.That(preview.SceneRules[1].Mode, Is.EqualTo(SceneFolderMode.LocalBuildSettings));
@@ -775,59 +771,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 				UnityEngine.Object.DestroyImmediate(folder);
 				UnityEngine.Object.DestroyImmediate(appStates);
 			}
-		}
-
-		[Test]
-		public void LegacyPreview_WhenBundledSamplesArePresent_PreservesTheirExactValues() {
-			var addressablesPath = AssetDatabase.GUIDToAssetPath(SAMPLE_ADDRESSABLES_CONFIG_GUID);
-			var scenesPath = AssetDatabase.GUIDToAssetPath(SAMPLE_SCENES_CONFIG_GUID);
-			var appStatesPath = AssetDatabase.GUIDToAssetPath(SAMPLE_APP_STATES_CONFIG_GUID);
-			var samplesExcluded = Environment.GetCommandLineArgs().Contains("-torSamplesExcluded");
-			if (samplesExcluded) {
-				Assert.That(addressablesPath, Is.Empty);
-				Assert.That(scenesPath, Is.Empty);
-				Assert.That(appStatesPath, Is.Empty);
-				Assert.Pass("The marked clean no-Samples lane omitted every legacy sample migration fixture.");
-			}
-
-			Assert.That(addressablesPath, Is.Not.Empty, "The sample-inclusive lane must import the legacy Addressables config.");
-			Assert.That(scenesPath, Is.Not.Empty, "The sample-inclusive lane must import the legacy scenes config.");
-			Assert.That(
-				string.IsNullOrEmpty(appStatesPath) || AssetDatabase.LoadMainAssetAtPath(appStatesPath) == null,
-				Is.True,
-				"Numeric application-state samples are retired; migration reports an unresolved legacy GUID without recreating game-specific state.");
-			var addressablesAsset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(addressablesPath);
-			var scenesAsset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(scenesPath);
-			var addressablesBefore = EditorJsonUtility.ToJson(addressablesAsset);
-			var scenesBefore = EditorJsonUtility.ToJson(scenesAsset);
-			var json =
-				$"{{\"m_ScenesListConfigGUID\":\"{SAMPLE_SCENES_CONFIG_GUID}\"," +
-				$"\"m_AddressableAssetsConfigGUID\":\"{SAMPLE_ADDRESSABLES_CONFIG_GUID}\"," +
-				$"\"m_AppStatesConfigGUID\":\"{SAMPLE_APP_STATES_CONFIG_GUID}\"}}";
-
-			var preview = LegacyConfigurationMigration.Preview(
-				json,
-				new UnityLegacyMigrationEnvironment());
-
-			Assert.That(preview.GroupRules.Length, Is.EqualTo(1));
-			Assert.That(preview.GroupRules[0].SourceFolderGuid, Is.EqualTo(SAMPLE_SCENES_FOLDER_GUID));
-			Assert.That(preview.GroupRules[0].DestinationGroupGuid, Is.Empty);
-			Assert.That(preview.GroupRules[0].DestinationGroupName, Is.EqualTo("SceneMapsGroup"));
-			Assert.That(preview.GroupRules[0].RequiredLabels, Is.Empty);
-			Assert.That(preview.GroupRules[0].AssemblyQualifiedTypeFilters, Is.Empty);
-			Assert.That(preview.SceneRules.Length, Is.EqualTo(1));
-			Assert.That(preview.SceneRules[0].SourceFolderGuid, Is.EqualTo(SAMPLE_SCENES_FOLDER_GUID));
-			Assert.That(preview.SceneRules[0].Mode, Is.EqualTo(SceneFolderMode.Addressable));
-			Assert.That(preview.SceneRules[0].DestinationGroupGuid, Is.Empty);
-			Assert.That(preview.SceneRules[0].DestinationGroupName, Is.EqualTo("ScenesGroup"));
-			Assert.That(preview.SceneRules[0].AddressPolicy, Is.EqualTo(SceneAddressPolicy.PreserveManagedAddress));
-			Assert.That(preview.SceneRules[0].RequiredLabels, Is.Empty);
-			Assert.That(preview.Diagnostics.Any(item =>
-				item.Code == LegacyMigrationDiagnosticCode.SourceFolderOutsideAssets), Is.True);
-			Assert.That(preview.Diagnostics.Any(item =>
-				item.Code == LegacyMigrationDiagnosticCode.AppStatesIntentionallyIgnored), Is.True);
-			Assert.That(EditorJsonUtility.ToJson(addressablesAsset), Is.EqualTo(addressablesBefore));
-			Assert.That(EditorJsonUtility.ToJson(scenesAsset), Is.EqualTo(scenesBefore));
 		}
 
 		private static FakeProjectSettingsBackend CreateValidBackend() {

@@ -1,6 +1,6 @@
 using TorProduction.Addressables.Editor;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	internal static class BuildController {
 		internal static ContentBuildPreflight Analyze(ContentBuildRequest request) =>
 			AddressablesBuildQueue.Analyze(request);

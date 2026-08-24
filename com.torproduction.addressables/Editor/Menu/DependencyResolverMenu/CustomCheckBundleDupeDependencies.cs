@@ -5,7 +5,7 @@ using UnityEditor.AddressableAssets.Build.AnalyzeRules;
 using UnityEditor.AddressableAssets.Settings;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	internal sealed class DuplicateDependencyOccurrence {
 		internal DuplicateDependencyOccurrence(
 			string assetGuid,

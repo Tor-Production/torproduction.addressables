@@ -3,7 +3,7 @@ using TorProduction.Addressables.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	internal static class BuildMenu {
 		private const string Root = "Tools/Tor Production/Addressables/Build/";
 

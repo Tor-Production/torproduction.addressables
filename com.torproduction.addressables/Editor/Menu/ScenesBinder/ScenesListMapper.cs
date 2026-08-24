@@ -3,8 +3,8 @@ using TorProduction.Addressables.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
-	public sealed class ScenesListMapper : AssetPostprocessor {
+namespace TorProduction.Addressables.Editor {
+	internal sealed class ScenesListMapper : AssetPostprocessor {
 		private static void OnPostprocessAllAssets(
 			string[] importedAssets,
 			string[] deletedAssets,

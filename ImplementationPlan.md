@@ -3,13 +3,13 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Phase 5 complete and verified
+- Implementation: Phase 6 complete locally; hosted verification candidate pending
 - Latest completed phase: Phase 5 — build pipeline and existing-build Play Mode complete and verified
 - Next incomplete phase: Phase 6 — package layout and API cleanup
-- Current active batch: None — stopped at the verified Phase 5 boundary; Phase 6 has not started
+- Current active batch: Phase 6 — candidate commit and hosted completion protocol (`API-001`–`API-004`, `PKG-001`, `PKG-002`, `TEST-002`, Phase 6 portion of `TEST-001` locally complete)
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
-- Last updated: `2026-08-23`
+- Last updated: `2026-08-24`
 
 This document is the implementation source of truth. Every implementation context must read it before changing code. Work must proceed incrementally by phase and issue ID. After completing a batch, update this status and the relevant issue/phase progress before committing.
 
@@ -212,7 +212,7 @@ This protocol is the documented exception to the repository's general commit, ta
 - [x] Phase 3 — GUID-based scene synchronization (implementation, local validation, hosted matrix, and evidence record complete)
 - [x] Phase 4 — Dependency analysis and prefab removal
 - [x] Phase 5 — Build pipeline and existing-build Play Mode
-- [ ] Phase 6 — Package layout and API cleanup
+- [ ] Phase 6 — Package layout and API cleanup (local implementation complete; hosted verification pending)
 - [ ] Phase 7 — Tests, documentation, CI, and release readiness
 
 ### First implementation batch record — 2026-08-20
@@ -594,6 +594,24 @@ The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime 
 **Hosted Phase 5 evidence:** after separate user authorization, run [`32681584182`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32681584182) used `workflow_dispatch` on `main` with exact head SHA `a90278572f4ddd4a18a3814495c847bf0f4adafb` and completed successfully on `2026-08-24`. Addressables `2.7.6` job [`97299088355`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32681584182/job/97299088355) and Addressables `2.9.1` job [`97299088509`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32681584182/job/97299088509) both passed license preflight, exact lane selection, clean-checkout static validation, Unity `6000.0.78f1` compilation/EditMode tests, package-import inertness, tracked-project-state verification, and artifact upload. Downloaded artifacts were independently verified under ignored `artifacts/phase5-hosted-run-32681584182`: each authoritative XML reports exactly `125` total and passed, zero failed, zero skipped, and zero inconclusive. The annotated `phase-5-verified` tag must target exact hosted-tested commit `a90278572f4ddd4a18a3814495c847bf0f4adafb`, not this later documentation-only evidence commit.
 
 **Scope boundary:** Phase 6 package layout, namespace, assembly, runtime API, and sample cleanup did not begin. No release/publication behavior, `v*` tag, GitHub Release, package publication, or new repository is included.
+
+### Phase 6 package-layout and API-cleanup implementation record — 2026-08-24
+
+**Status:** local implementation and every required local gate are complete. The candidate commit and the single authorized hosted compatibility run remain pending. The batch is limited to `API-001` through `API-004`, `PKG-001`, `PKG-002`, `TEST-002`, and the Phase 6-owned template/dead-test portion of `TEST-001`; Phase 7 remains unstarted.
+
+**Assembly and namespace decision:** before this phase, production compiled as runtime `TorProduction.AddressablesToolpack`, editor `TorProduction.AddressablesService.Editor`, and menu `TorProduction.AddressablesToolpack.Editor.Menu`, while package-root `Samples` also compiled as `TorProduction.AddressablesToolpack.Samples`. The Menu boundary existed only for historical internal access and sample dependencies, so it was merged. After this phase, production is exactly one editor-only assembly, `TorProduction.Addressables.Editor`, with root namespace `TorProduction.Addressables.Editor` and only the Addressables runtime/editor assembly references. There is no package Runtime or sample assembly. `TorProduction.Addressables.Editor.Tests` explicitly references production, Addressables runtime/editor, and Unity's test runners; NUnit remains its test-only precompiled reference. Production retains exactly one friend, `TorProduction.Addressables.Editor.Tests`, because integration tests exercise internal planners and adapters without widening implementation types. Production has no dependency on Samples, tests, Foundation, or project-specific runtime types.
+
+**Serialized migration:** `AddressablesAutomationConfig` retained its existing MonoScript GUID and now carries Unity `MovedFrom` metadata for source assembly `TorProduction.AddressablesService.Editor`. `Tests/Editor/Fixtures/AddressablesAutomationConfigAssemblyMigration.asset` is a real serialized schema-3 fixture whose retained group rule, labels, and source/destination GUID data load through the renamed assembly and namespace. Every deleted serialized type's MonoScript GUID was scanned across package and host YAML before deletion; the Phase 6 tests keep the removed-GUID set under assertion. Retained sample scene/folder GUIDs were preserved during their move. New sample configuration and genuinely new folders have new unique GUIDs.
+
+**Runtime/dead API disposition:** `API-001` through `API-004` are complete. The runtime assembly, `ITemplate`, `IObjectTemplate`, `ObjectTemplate`, `InteractableFactoryId`, `SerializableDictionary`, `SceneField` and its drawer, read-only attribute/drawer, RuntimeExample, EditorExample, and unrelated runtime/editor utilities were removed after code/YAML/asmdef reference checks. No compatibility shim was added. Obsolete update-all/config/template carriers and empty placeholder classes were removed; legacy configuration preview continues to recognize historical fields and script GUIDs without retaining those public types. Retained public editor contracts are recorded deterministically in `Documentation~/API_SURFACE.txt`; `Documentation~/PHASE_6_BREAKING_CHANGES.md` maps each removed or renamed public API to its exact removal reason, replacement, or supported migration path. EditMode validation regenerates and compares the API/assembly snapshot so unreviewed drift fails.
+
+**Sample/package disposition:** `PKG-001` and `PKG-002` are complete. The compiled package-root `Samples` tree was replaced by optional `Samples~/BasicSetup`. `package.json` declares display name `Basic Setup`, the concise editor-workflow description, and path `Samples~/BasicSetup`; package version remains `0.1.0-preview.1`. The curated sample contains only a schema-3 `AddressablesAutomationConfig` and the retained scene. It has no script/asmdef, legacy configuration asset, application-state asset, template, or production dependency. The real Unity Package Manager sample API imports it at the standard project path with preserved scene/folder GUIDs and a new configuration GUID. Exact-path sample removal preserves a hashed unrelated asset and meta byte-for-byte; later package removal remains inert.
+
+**Tests and exact local evidence:** `TEST-002` and the Phase 6-owned portion of `TEST-001` are complete; Phase 7's broader test/documentation/CI work remains open. The new package-layout suite asserts the exact production/test graph and references, one necessary friend, editor-only player boundary, Tor Production namespaces, NUnit isolation, absence of stale code namespaces and removed types/GUIDs, migration-fixture load, manifest/sample contents, script-GUID resolution, imported-scene missing-script count, player-script compilation, and deterministic API surface. Unity `6000.0.78f1` development-host EditMode passed `133/133`, zero failed, skipped, or inconclusive, including clean Standalone Windows player-script compilation with no Tor Production player assembly. Fresh disposable Addressables `2.7.6` and `2.9.1` lanes each passed `133/133` with `Samples~` physically absent, package import inertness, and package removal inertness. Separate fresh lanes for both versions each passed `133/133` after real UPM `Basic Setup` import and compilation, exact sample removal, unrelated-state hash preservation, and package removal. All lane logs are clean of the configured compiler/import/exception/fatal patterns.
+
+`git diff --check`, tracked package/host JSON and all asmdef parsing, PowerShell parsing, `Validate-PhaseZero.ps1`, Unity asset/meta pairing, GUID uniqueness, assembly/API snapshot checks, removed type/GUID scans, production NUnit/Foundation/sample dependency scans, stale StansAssets code-namespace scan, and the current-tree prohibited-token guard pass. The final host check found no generated Addressables settings, temporary integration fixture, package recovery job, player output, imported sample, disposable project, host artifact, or tracked host-state change. Ignored evidence is under `artifacts/phase6-*`.
+
+**Scope boundary:** no Phase 7 documentation breadth, CI/PVS/release automation, legal decision, license/notice change, package-version bump, `v*` tag, GitHub Release, publication, release-workflow change, or new repository is included. Existing legal attribution remains untouched. The unresolved ownership/relicensing and required-attribution confirmation remains a Phase 7/legal blocker.
 
 ## D. Prioritized roadmap
 

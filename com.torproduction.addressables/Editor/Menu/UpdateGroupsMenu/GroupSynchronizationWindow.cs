@@ -2,20 +2,20 @@ using TorProduction.Addressables.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
-	internal static class UpdateGroupsController {
+namespace TorProduction.Addressables.Editor {
+	internal static class GroupSynchronizationController {
 		internal static AutomationPlan Analyze() => AddressablesAutomation.AnalyzeActiveGroups();
 		internal static AutomationReport Apply(AutomationPlan plan) => AddressablesAutomation.Apply(plan);
 		internal static AutomationReport Recover() => AddressablesAutomation.Recover();
 	}
 
-	internal sealed class UpdateGroupsWindow : EditorWindow {
+	internal sealed class GroupSynchronizationWindow : EditorWindow {
 		private AutomationPlan m_plan;
 		private AutomationReport m_report;
 		private Vector2 m_scroll;
 
 		internal static void ShowWindow() {
-			var window = GetWindow<UpdateGroupsWindow>("Group Synchronization");
+			var window = GetWindow<GroupSynchronizationWindow>("Group Synchronization");
 			window.minSize = new Vector2(620f, 360f);
 			window.Show();
 		}
@@ -32,7 +32,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				MessageType.Info);
 			EditorGUILayout.BeginHorizontal();
 			if (GUILayout.Button("Analyze Groups (No Changes)", GUILayout.Height(30f))) {
-				m_plan = UpdateGroupsController.Analyze();
+				m_plan = GroupSynchronizationController.Analyze();
 				m_report = null;
 			}
 			EditorGUI.BeginDisabledGroup(m_plan == null || !m_plan.IsValid || !m_plan.HasChanges);
@@ -103,9 +103,9 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				    "Apply Preview", "Cancel")) {
 				return;
 			}
-			m_report = UpdateGroupsController.Apply(m_plan);
+			m_report = GroupSynchronizationController.Apply(m_plan);
 			if (m_report.Succeeded) {
-				m_plan = UpdateGroupsController.Analyze();
+				m_plan = GroupSynchronizationController.Analyze();
 			}
 			Repaint();
 		}
@@ -117,7 +117,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
 				    "Recover", "Cancel")) {
 				return;
 			}
-			m_report = UpdateGroupsController.Recover();
+			m_report = GroupSynchronizationController.Recover();
 			m_plan = null;
 			Repaint();
 		}

@@ -2,14 +2,13 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using TorProduction.Addressables.Editor;
-using TorProduction.AddressablesToolpack.Editor.Menu;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Tests {
+namespace TorProduction.Addressables.Editor.Tests {
 	public sealed class PhaseFourDependencyAnalysisTests {
 		[Test]
 		public void Planner_ImplicitDuplicatesPlanMissingGroupSchemasAndEntries() {

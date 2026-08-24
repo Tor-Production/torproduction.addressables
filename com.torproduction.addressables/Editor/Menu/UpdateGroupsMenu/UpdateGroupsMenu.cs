@@ -1,7 +1,7 @@
 using UnityEditor;
 using TorProduction.Addressables.Editor;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
     internal static class UpdateGroupsMenu {
         private const string MENU_PATH = "Tools/Tor Production/Addressables/Synchronize Groups...";
 
@@ -11,7 +11,7 @@ namespace TorProduction.AddressablesToolpack.Editor.Menu {
                 return;
             }
 
-            UpdateGroupsWindow.ShowWindow();
+            GroupSynchronizationWindow.ShowWindow();
         }
 
         [MenuItem(MENU_PATH, true)]

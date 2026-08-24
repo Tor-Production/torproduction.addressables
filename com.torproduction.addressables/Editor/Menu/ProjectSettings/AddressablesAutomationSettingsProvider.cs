@@ -4,7 +4,7 @@ using TorProduction.Addressables.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	internal sealed class AddressablesAutomationSettingsProvider : SettingsProvider {
 		internal const string SettingsPath = "Project/Tor Production/Addressables Automation";
 		internal const string SetActiveConfigurationLabel = "Set Active Configuration";

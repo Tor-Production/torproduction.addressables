@@ -71,6 +71,12 @@ if ($packageManifest.dependencies.'com.unity.addressables' -ne '2.7.6') {
 if ($packageManifest.repository.url -ne 'git+https://github.com/Yurii-Tor/torproduction.addressables.git') {
     throw 'The package repository URL does not match the configured GitHub repository.'
 }
+if (@($packageManifest.samples).Count -ne 1 -or
+    $packageManifest.samples[0].displayName -ne 'Basic Setup' -or
+    $packageManifest.samples[0].path -ne 'Samples~/BasicSetup' -or
+    [string]::IsNullOrWhiteSpace($packageManifest.samples[0].description)) {
+    throw 'The package must declare exactly the curated Samples~/BasicSetup sample.'
+}
 if ($hostManifest.dependencies.'com.unity.addressables' -ne $ExpectedHostAddressablesVersion) {
     throw "Host Addressables version does not match the lane: $ExpectedHostAddressablesVersion"
 }
@@ -109,8 +115,16 @@ if (Test-Path -LiteralPath (Join-Path $projectRoot 'Assets/MobileDependencyResol
     throw 'The vendored Mobile Dependency Resolver is still present.'
 }
 
+if (Test-Path -LiteralPath (Join-Path $packageRoot 'Runtime')) {
+    throw 'The editor-only package must not contain a production Runtime directory.'
+}
+if (Test-Path -LiteralPath (Join-Path $packageRoot 'Samples')) {
+    throw 'The compiled legacy Samples directory must not exist.'
+}
+if (-not (Test-Path -LiteralPath (Join-Path $packageRoot 'Samples~/BasicSetup'))) {
+    throw 'The declared BasicSetup sample path is missing.'
+}
 $productionSources = @(
-    Get-ChildItem -Recurse -File -LiteralPath (Join-Path $packageRoot 'Runtime') -Filter '*.cs'
     Get-ChildItem -Recurse -File -LiteralPath (Join-Path $packageRoot 'Editor') -Filter '*.cs'
 )
 foreach ($source in $productionSources) {
@@ -193,24 +207,60 @@ foreach ($requiredBuildCall in @(
     }
 }
 
-$menuAssembly = Get-Content -Raw -LiteralPath `
-    (Join-Path $packageRoot 'Editor/Menu/TorProduction.AddressablesToolpack.Menu.asmdef') | ConvertFrom-Json
-if ($menuAssembly.references -contains 'GUID:1824a82c9c6c70540989aa5f5e2b83d5') {
-    throw 'The production Menu assembly depends on Samples.'
+$productionAssemblies = @(Get-ChildItem -Recurse -File -LiteralPath `
+    (Join-Path $packageRoot 'Editor') -Filter '*.asmdef')
+if ($productionAssemblies.Count -ne 1) {
+    throw "Expected exactly one production editor assembly, found $($productionAssemblies.Count)."
+}
+$editorAssembly = Get-Content -Raw -LiteralPath $productionAssemblies[0].FullName | ConvertFrom-Json
+if ($editorAssembly.name -ne 'TorProduction.Addressables.Editor' -or
+    $editorAssembly.rootNamespace -ne 'TorProduction.Addressables.Editor' -or
+    @($editorAssembly.includePlatforms).Count -ne 1 -or
+    $editorAssembly.includePlatforms[0] -ne 'Editor') {
+    throw 'The production editor assembly identity/root/platform boundary is invalid.'
+}
+$expectedEditorReferences = @(
+    'GUID:69448af7b92c7f342b298e06a37122aa',
+    'GUID:9e24947de15b9834991c9d8411ea37cf'
+) | Sort-Object
+if (Compare-Object $expectedEditorReferences @($editorAssembly.references | Sort-Object)) {
+    throw 'The production editor assembly reference graph changed unexpectedly.'
+}
+if (@(Get-ChildItem -Recurse -File -LiteralPath (Join-Path $packageRoot 'Samples~') `
+        -Filter '*.asmdef').Count -ne 0) {
+    throw 'The optional BasicSetup sample must not compile a sample assembly.'
 }
 
 $testAssembly = Get-Content -Raw -LiteralPath `
     (Join-Path $packageRoot 'Tests/Editor/TorProduction.Addressables.Editor.Tests.asmdef') | ConvertFrom-Json
 $requiredTestReferences = @(
-    'GUID:a5d30c4d8d475d442b6f3f91d04306a1',
     'GUID:6a4270a497015e843be16b899b29c2fb',
-    'GUID:d7d6534ed8cfdf5449425dc001ec6d7d',
-    'GUID:9e24947de15b9834991c9d8411ea37cf'
+    'GUID:9e24947de15b9834991c9d8411ea37cf',
+    'GUID:69448af7b92c7f342b298e06a37122aa',
+    'UnityEditor.TestRunner',
+    'UnityEngine.TestRunner'
 )
 foreach ($reference in $requiredTestReferences) {
     if ($testAssembly.references -notcontains $reference) {
         throw "The EditMode test assembly is missing production reference $reference"
     }
+}
+foreach ($removedReference in @(
+    'GUID:a5d30c4d8d475d442b6f3f91d04306a1',
+    'GUID:d7d6534ed8cfdf5449425dc001ec6d7d'
+)) {
+    if ($testAssembly.references -contains $removedReference) {
+        throw "The EditMode test assembly retains removed production reference $removedReference"
+    }
+}
+if ($testAssembly.name -ne 'TorProduction.Addressables.Editor.Tests' -or
+    $testAssembly.rootNamespace -ne 'TorProduction.Addressables.Editor.Tests' -or
+    @($testAssembly.precompiledReferences) -notcontains 'nunit.framework.dll') {
+    throw 'The EditMode test assembly identity or NUnit-only test boundary is invalid.'
+}
+if (-not (Test-Path -LiteralPath (Join-Path $packageRoot 'Documentation~/API_SURFACE.txt')) -or
+    -not (Test-Path -LiteralPath (Join-Path $packageRoot 'Documentation~/PHASE_6_BREAKING_CHANGES.md'))) {
+    throw 'Phase 6 API snapshot or breaking-change record is missing.'
 }
 
 $metaGuids = @{}

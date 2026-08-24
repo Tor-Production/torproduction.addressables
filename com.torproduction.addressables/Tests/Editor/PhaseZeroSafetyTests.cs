@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using TorProduction.Addressables.Editor;
-using TorProduction.AddressablesToolpack.Editor;
-using TorProduction.AddressablesToolpack.Editor.Menu;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.Compilation;
@@ -13,7 +11,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using PackageManagerPackageInfo = UnityEditor.PackageManager.PackageInfo;
 
-namespace TorProduction.AddressablesToolpack.Editor.Tests {
+namespace TorProduction.Addressables.Editor.Tests {
 	internal sealed class PhaseZeroSafetyTests {
 		[Test]
 		public void ConfigurationReads_DoNotCreateOrMutateProjectState() {
@@ -120,21 +118,19 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 
 		[Test]
 		public void ProductionAssemblies_AreReferencedWithoutSamplesOrTests() {
-			Assert.That(typeof(InteractableFactoryId).Assembly.GetName().Name, Is.EqualTo("TorProduction.AddressablesToolpack"));
-			Assert.That(typeof(AssetTypes).Assembly.GetName().Name, Is.EqualTo("TorProduction.AddressablesService.Editor"));
-			Assert.That(typeof(AddressablesAutomationSettingsProvider).Assembly.GetName().Name, Is.EqualTo("TorProduction.AddressablesToolpack.Editor.Menu"));
+			Assert.That(typeof(AddressablesAutomationConfig).Assembly.GetName().Name, Is.EqualTo("TorProduction.Addressables.Editor"));
+			Assert.That(typeof(AddressablesAutomationSettingsProvider).Assembly.GetName().Name, Is.EqualTo("TorProduction.Addressables.Editor"));
 
 			var editorAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Editor);
 			var productionAssemblyNames = new[] {
-				"TorProduction.AddressablesToolpack",
-				"TorProduction.AddressablesService.Editor",
-				"TorProduction.AddressablesToolpack.Editor.Menu"
+				"TorProduction.Addressables.Editor"
 			};
 
 			foreach (var assemblyName in productionAssemblyNames) {
 				var assembly = editorAssemblies.Single(candidate => candidate.name == assemblyName);
 				var references = assembly.assemblyReferences.Select(reference => reference.name).ToArray();
-				Assert.That(references, Does.Not.Contain("TorProduction.AddressablesToolpack.Samples"));
+				Assert.That(references.Any(reference =>
+					reference.IndexOf("Samples", StringComparison.OrdinalIgnoreCase) >= 0), Is.False);
 				Assert.That(references.Any(reference => reference.EndsWith(".Tests", StringComparison.Ordinal)), Is.False);
 			}
 

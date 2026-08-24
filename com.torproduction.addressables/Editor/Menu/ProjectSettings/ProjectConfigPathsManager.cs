@@ -1,4 +1,4 @@
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	// This source/meta pair retains the legacy manager GUID. Active legacy reads and writes
 	// were removed; LegacyConfigurationMigration owns the explicit read-only preview.
 	internal static class LegacyProjectConfigFormat {

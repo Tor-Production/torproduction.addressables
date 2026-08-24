@@ -1,0 +1,349 @@
+assembly TorProduction.Addressables.Editor
+root-namespace TorProduction.Addressables.Editor
+reference Unity.Addressables
+reference Unity.Addressables.Editor
+type static-class TorProduction.Addressables.Editor.AddressablesAutomation
+  method TorProduction.Addressables.Editor.AutomationPlan Analyze(TorProduction.Addressables.Editor.AddressablesAutomationConfig config, TorProduction.Addressables.Editor.AutomationScope scope)
+  method TorProduction.Addressables.Editor.AutomationReport Apply(TorProduction.Addressables.Editor.AutomationPlan plan)
+  method TorProduction.Addressables.Editor.AutomationReport Recover()
+type static-class TorProduction.Addressables.Editor.AddressablesAutomationCli
+  method System.Void AnalyzeGroups()
+  method System.Void AnalyzeScenes()
+  method System.Void ApplyGroups()
+  method System.Void ApplyScenes()
+  method System.Void RecoverGroups()
+  method System.Void RecoverScenes()
+type sealed-class TorProduction.Addressables.Editor.AddressablesAutomationConfig
+  constructor ()
+  field System.Int32 CurrentSchemaVersion = 3
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.GroupSyncRule> GroupRules { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.ManagedSceneRecord> ManagedScenes { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.SceneFolderRule> SceneRules { get; }
+  property System.Int32 SchemaVersion { get; }
+  property TorProduction.Addressables.Editor.DependencyAnalysisSettings DependencySettings { get; }
+type static-class TorProduction.Addressables.Editor.AddressablesAutomationValidator
+  method TorProduction.Addressables.Editor.ConfigurationValidationReport Validate(TorProduction.Addressables.Editor.AddressablesAutomationConfig config)
+  method TorProduction.Addressables.Editor.ConfigurationValidationReport Validate(TorProduction.Addressables.Editor.AddressablesAutomationConfig config, TorProduction.Addressables.Editor.AutomationScope scope)
+type static-class TorProduction.Addressables.Editor.AddressablesBuildQueue
+  method TorProduction.Addressables.Editor.ContentBuildPreflight Analyze(TorProduction.Addressables.Editor.ContentBuildRequest request)
+  method TorProduction.Addressables.Editor.ContentBuildRecoveryInfo InspectRecovery()
+  method TorProduction.Addressables.Editor.ContentBuildResult AbandonReset()
+  method TorProduction.Addressables.Editor.ContentBuildResult Cancel()
+  method TorProduction.Addressables.Editor.ContentBuildResult Enqueue(TorProduction.Addressables.Editor.ContentBuildRequest request)
+  method TorProduction.Addressables.Editor.ContentBuildResult RestoreOriginalTarget()
+  method TorProduction.Addressables.Editor.ContentBuildResult Resume()
+  method TorProduction.Addressables.Editor.ExistingBuildValidation SelectExistingBuild(System.Boolean explicitlyConfirmed)
+  method TorProduction.Addressables.Editor.ExistingBuildValidation ValidateExistingBuild()
+type sealed-class TorProduction.Addressables.Editor.AutomationDiagnostic
+  property System.String Location { get; }
+  property System.String Message { get; }
+  property TorProduction.Addressables.Editor.AutomationDiagnosticCode Code { get; }
+  property TorProduction.Addressables.Editor.AutomationDiagnosticSeverity Severity { get; }
+type enum TorProduction.Addressables.Editor.AutomationDiagnosticCode
+  value AddressCollision = 13
+  value AddressablesSettingsMissing = 2
+  value ApplyFailed = 22
+  value AssetClaimConflict = 7
+  value AssetLoadFailed = 6
+  value ConfigurationAssetClaimed = 8
+  value ConfigurationInvalid = 1
+  value DependencyAdapterUnsupported = 15
+  value DependencyAdapterVerified = 14
+  value DependencyAlreadyExplicit = 17
+  value DependencyAnalysisFailed = 16
+  value DependencyFixConfirmationRequired = 18
+  value DestinationGroupMissing = 9
+  value DestinationGroupNonBuildable = 11
+  value DestinationGroupReadOnly = 10
+  value FolderEntryConflict = 12
+  value InvalidScope = 0
+  value RecoveryFailed = 24
+  value RecoveryRequired = 3
+  value RollbackFailed = 23
+  value SceneClaimConflict = 19
+  value SceneLoadFailed = 20
+  value SourceFolderMissing = 4
+  value StalePlan = 21
+  value TypeFilterUnresolved = 5
+type enum TorProduction.Addressables.Editor.AutomationDiagnosticSeverity
+  value Error = 2
+  value Info = 0
+  value Warning = 1
+type sealed-class TorProduction.Addressables.Editor.AutomationOperation
+  property System.Collections.Generic.IReadOnlyList<System.String> Labels { get; }
+  property System.String AssetGuid { get; }
+  property System.String AssetPath { get; }
+  property System.String Description { get; }
+  property System.String GroupGuid { get; }
+  property System.String GroupName { get; }
+  property System.String Value { get; }
+  property TorProduction.Addressables.Editor.AutomationOperationKind Kind { get; }
+type enum TorProduction.Addressables.Editor.AutomationOperationKind
+  value AddBundledAssetGroupSchema = 1
+  value AddContentUpdateGroupSchema = 2
+  value AddLabel = 7
+  value CreateEntry = 4
+  value CreateGroup = 0
+  value CreateLabel = 3
+  value MoveEntry = 5
+  value RemoveEntry = 9
+  value RemoveLabel = 8
+  value SetAddress = 6
+  value UpdateBuildSettings = 10
+  value UpdateManagedScenes = 11
+type sealed-class TorProduction.Addressables.Editor.AutomationPlan
+  property System.Boolean HasChanges { get; }
+  property System.Boolean IsValid { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.AutomationDiagnostic> Diagnostics { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.AutomationOperation> Operations { get; }
+  property System.String PlanHash { get; }
+  property System.String SourceHash { get; }
+  property TorProduction.Addressables.Editor.AutomationScope Scope { get; }
+type sealed-class TorProduction.Addressables.Editor.AutomationReport
+  property System.Boolean Succeeded { get; }
+  property System.Collections.Generic.IReadOnlyList<System.String> Failures { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.AutomationDiagnostic> Diagnostics { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.AutomationOperation> Operations { get; }
+  property System.String RecoveryPath { get; }
+  property TorProduction.Addressables.Editor.AutomationRollbackStatus RollbackStatus { get; }
+type enum TorProduction.Addressables.Editor.AutomationRollbackStatus
+  value Failed = 2
+  value NotRequired = 0
+  value Succeeded = 1
+type enum TorProduction.Addressables.Editor.AutomationScope
+  value All = 7
+  value Dependencies = 4
+  value Groups = 1
+  value None = 0
+  value Scenes = 2
+type static-class TorProduction.Addressables.Editor.Cli.AddressablesCli
+  method System.Void Run()
+type sealed-class TorProduction.Addressables.Editor.ConfigurationDiagnostic
+  property System.String Location { get; }
+  property System.String Message { get; }
+  property TorProduction.Addressables.Editor.ConfigurationDiagnosticCode Code { get; }
+  property TorProduction.Addressables.Editor.ConfigurationDiagnosticSeverity Severity { get; }
+type enum TorProduction.Addressables.Editor.ConfigurationDiagnosticCode
+  value AddressPolicyInvalid = 18
+  value AddressPrefixInvalid = 19
+  value AddressablesSettingsMissing = 5
+  value ConfigSchemaMigrationRequired = 3
+  value ConfigSchemaUnsupported = 4
+  value ConfigurationIsAddressable = 1
+  value ConfigurationMissing = 0
+  value DependencySettingsMissing = 30
+  value DestinationGroupMissing = 15
+  value DestinationGroupNameMismatch = 17
+  value DestinationGroupNotFound = 16
+  value ExcludedFolderDuplicate = 14
+  value ExcludedFolderGuidMissing = 11
+  value ExcludedFolderMissing = 12
+  value ExcludedFolderOutsideSource = 13
+  value LabelDuplicate = 22
+  value LabelEmpty = 21
+  value LabelNotFound = 23
+  value LabelPolicyInvalid = 20
+  value RuleCollectionMissing = 6
+  value RuleMissing = 7
+  value RuleOverlap = 31
+  value SceneModeInvalid = 28
+  value ScopeInvalid = 2
+  value SourceFolderGuidMissing = 8
+  value SourceFolderMissing = 9
+  value SourceFolderOutsideAssets = 10
+  value TypeFilterDuplicate = 25
+  value TypeFilterEmpty = 24
+  value TypeFilterNotAssemblyQualified = 26
+  value TypeFilterUnresolved = 27
+  value UnexpectedSceneGroup = 29
+type enum TorProduction.Addressables.Editor.ConfigurationDiagnosticSeverity
+  value Error = 2
+  value Info = 0
+  value Warning = 1
+type sealed-class TorProduction.Addressables.Editor.ConfigurationValidationReport
+  constructor ()
+  property System.Boolean IsValid { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.ConfigurationDiagnostic> Diagnostics { get; }
+type sealed-class TorProduction.Addressables.Editor.ContentBuildDiagnostic
+  property System.String Message { get; }
+  property TorProduction.Addressables.Editor.ContentBuildDiagnosticCode Code { get; }
+  property TorProduction.Addressables.Editor.ContentBuildDiagnosticSeverity Severity { get; }
+  property UnityEditor.BuildTarget Target { get; }
+type enum TorProduction.Addressables.Editor.ContentBuildDiagnosticCode
+  value AddressablesSettingsMissing = 1
+  value AddressablesVersionUnsupported = 2
+  value BuildCancelled = 17
+  value BuildFailed = 16
+  value BuildLayoutCopyFailed = 20
+  value BuildLayoutMissing = 18
+  value BuildLayoutStale = 19
+  value ContentUpdateRestriction = 9
+  value ExistingBuildBuilderMissing = 26
+  value ExistingBuildConfirmationRequired = 25
+  value ExistingBuildSelected = 27
+  value ExistingJobPending = 10
+  value InvalidRequest = 0
+  value JobAbandoned = 29
+  value JobStateInvalid = 12
+  value JobStateMissing = 11
+  value JobStateStale = 13
+  value PlayerDataBuilderMissing = 3
+  value ReceiptInvalid = 22
+  value ReceiptMissing = 21
+  value ReceiptStale = 23
+  value ReceiptTargetMismatch = 24
+  value RestorationFailed = 28
+  value ResumeRequired = 14
+  value StateFileIncompatible = 8
+  value StateFileInvalid = 7
+  value StateFileMissing = 6
+  value StateFileRequired = 5
+  value TargetSwitchFailed = 15
+  value TargetUnsupported = 4
+type enum TorProduction.Addressables.Editor.ContentBuildDiagnosticSeverity
+  value Error = 2
+  value Info = 0
+  value Warning = 1
+type enum TorProduction.Addressables.Editor.ContentBuildFailurePolicy
+  value ContinueOnError = 1
+  value StopOnFirstFailure = 0
+type sealed-class TorProduction.Addressables.Editor.ContentBuildItemResult
+  property System.String LayoutPath { get; }
+  property System.String Message { get; }
+  property System.String OutputPath { get; }
+  property System.String ReceiptPath { get; }
+  property TorProduction.Addressables.Editor.ContentBuildStatus Status { get; }
+  property UnityEditor.BuildTarget Target { get; }
+type enum TorProduction.Addressables.Editor.ContentBuildKind
+  value ContentUpdate = 1
+  value EditorCompatible = 2
+  value Full = 0
+  value MultiPlatform = 3
+type enum TorProduction.Addressables.Editor.ContentBuildPlatform
+  value Android = 0
+  value Linux = 4
+  value Windows = 2
+  value iOS = 1
+  value macOS = 3
+type sealed-class TorProduction.Addressables.Editor.ContentBuildPreflight
+  property System.Boolean IsValid { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.ContentBuildDiagnostic> Diagnostics { get; }
+  property System.Collections.Generic.IReadOnlyList<UnityEditor.BuildTarget> Targets { get; }
+  property System.String AddressablesVersion { get; }
+  property System.String RequestHash { get; }
+  property System.String SettingsGuid { get; }
+  property System.String SettingsHash { get; }
+  property System.String StateFileHash { get; }
+  property TorProduction.Addressables.Editor.ContentBuildRequest Request { get; }
+type sealed-class TorProduction.Addressables.Editor.ContentBuildReceipt
+  constructor ()
+  field System.Int32 CurrentSchema = 1
+  field System.Int32 schemaVersion
+  field System.Int64 buildCompletedUtcTicks
+  field System.Int64 createdUtcTicks
+  field System.Int64 settingsFileLastWriteUtcTicks
+  field System.Int64 settingsFileLength
+  field System.String addressablesVersion
+  field System.String buildKind
+  field System.String jobId
+  field System.String outputPath
+  field System.String settingsFileHash
+  field System.String settingsFilePath
+  field System.String settingsGuid
+  field System.String settingsHash
+  field System.String target
+  field System.String unityVersion
+type sealed-class TorProduction.Addressables.Editor.ContentBuildRecoveryInfo
+  property System.Boolean Exists { get; }
+  property System.Boolean IsStale { get; }
+  property System.Boolean IsValid { get; }
+  property System.Collections.Generic.IReadOnlyList<UnityEditor.BuildTarget> PendingTargets { get; }
+  property System.String JobId { get; }
+  property System.String Message { get; }
+  property System.String Stage { get; }
+  property System.String StatePath { get; }
+  property UnityEditor.BuildTarget ActiveTarget { get; }
+  property UnityEditor.BuildTarget OriginalTarget { get; }
+type sealed-class TorProduction.Addressables.Editor.ContentBuildRequest
+  constructor (TorProduction.Addressables.Editor.ContentBuildKind kind, TorProduction.Addressables.Editor.ContentBuildPlatform platform = Windows, System.Collections.Generic.IEnumerable<TorProduction.Addressables.Editor.ContentBuildPlatform> platforms = null, System.String stateFilePath = "", TorProduction.Addressables.Editor.ContentBuildFailurePolicy failurePolicy = StopOnFirstFailure)
+  method TorProduction.Addressables.Editor.ContentBuildRequest ContentUpdate(TorProduction.Addressables.Editor.ContentBuildPlatform platform, System.String stateFilePath)
+  method TorProduction.Addressables.Editor.ContentBuildRequest EditorCompatible()
+  method TorProduction.Addressables.Editor.ContentBuildRequest Full(TorProduction.Addressables.Editor.ContentBuildPlatform platform)
+  method TorProduction.Addressables.Editor.ContentBuildRequest MultiPlatform(System.Collections.Generic.IEnumerable<TorProduction.Addressables.Editor.ContentBuildPlatform> platforms, TorProduction.Addressables.Editor.ContentBuildFailurePolicy failurePolicy = StopOnFirstFailure)
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.ContentBuildPlatform> Platforms { get; }
+  property System.String StateFilePath { get; }
+  property TorProduction.Addressables.Editor.ContentBuildFailurePolicy FailurePolicy { get; }
+  property TorProduction.Addressables.Editor.ContentBuildKind Kind { get; }
+  property TorProduction.Addressables.Editor.ContentBuildPlatform Platform { get; }
+type sealed-class TorProduction.Addressables.Editor.ContentBuildResult
+  property System.Boolean RequiresUserAction { get; }
+  property System.Boolean Succeeded { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.ContentBuildDiagnostic> Diagnostics { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.ContentBuildItemResult> Items { get; }
+  property System.String JobId { get; }
+  property System.String Message { get; }
+  property System.String RecoveryPath { get; }
+  property System.String ReportPath { get; }
+  property TorProduction.Addressables.Editor.ContentBuildStatus Status { get; }
+type enum TorProduction.Addressables.Editor.ContentBuildStatus
+  value AwaitingResume = 7
+  value Cancellation = 3
+  value FatalFailure = 2
+  value RestorationFailure = 6
+  value Skipped = 4
+  value Success = 0
+  value TargetSwitchFailure = 5
+  value Warning = 1
+type sealed-class TorProduction.Addressables.Editor.DependencyAnalysisSettings
+  constructor ()
+  field System.String DefaultDestinationGroupName = "Duplicate Asset Isolation"
+  property System.String DestinationGroupGuid { get; }
+  property System.String DestinationGroupName { get; }
+type sealed-class TorProduction.Addressables.Editor.ExistingBuildValidation
+  property System.Boolean IsValid { get; }
+  property System.Collections.Generic.IReadOnlyList<TorProduction.Addressables.Editor.ContentBuildDiagnostic> Diagnostics { get; }
+  property System.String ReceiptPath { get; }
+  property UnityEditor.BuildTarget Target { get; }
+type enum TorProduction.Addressables.Editor.ExistingLabelPolicy
+  value Exact = 1
+  value PreserveUnrelated = 0
+type enum TorProduction.Addressables.Editor.GroupAddressPolicy
+  value PreserveExisting = 1
+  value RelativePath = 0
+type sealed-class TorProduction.Addressables.Editor.GroupSyncRule
+  constructor ()
+  property System.Collections.Generic.IReadOnlyList<System.String> AssemblyQualifiedTypeFilters { get; }
+  property System.Collections.Generic.IReadOnlyList<System.String> ExcludedNestedFolderGuids { get; }
+  property System.Collections.Generic.IReadOnlyList<System.String> RequiredLabels { get; }
+  property System.String AddressPrefix { get; }
+  property System.String DestinationGroupGuid { get; }
+  property System.String DestinationGroupName { get; }
+  property System.String SourceFolderGuid { get; }
+  property TorProduction.Addressables.Editor.ExistingLabelPolicy LabelPolicy { get; }
+  property TorProduction.Addressables.Editor.GroupAddressPolicy AddressPolicy { get; }
+type sealed-class TorProduction.Addressables.Editor.ManagedSceneRecord
+  property System.Collections.Generic.IReadOnlyList<System.String> ManagedLabels { get; }
+  property System.String DestinationGroupGuid { get; }
+  property System.String DestinationGroupName { get; }
+  property System.String LastKnownPath { get; }
+  property System.String ManagedAddress { get; }
+  property System.String SceneGuid { get; }
+  property TorProduction.Addressables.Editor.SceneFolderMode Mode { get; }
+type enum TorProduction.Addressables.Editor.SceneAddressPolicy
+  value PreserveManagedAddress = 1
+  value RelativePath = 0
+type enum TorProduction.Addressables.Editor.SceneFolderMode
+  value Addressable = 1
+  value LocalBuildSettings = 2
+  value Unspecified = 0
+type sealed-class TorProduction.Addressables.Editor.SceneFolderRule
+  constructor ()
+  property System.Collections.Generic.IReadOnlyList<System.String> ExcludedNestedFolderGuids { get; }
+  property System.Collections.Generic.IReadOnlyList<System.String> RequiredLabels { get; }
+  property System.String AddressPrefix { get; }
+  property System.String Category { get; }
+  property System.String DestinationGroupGuid { get; }
+  property System.String DestinationGroupName { get; }
+  property System.String SourceFolderGuid { get; }
+  property TorProduction.Addressables.Editor.SceneAddressPolicy AddressPolicy { get; }
+  property TorProduction.Addressables.Editor.SceneFolderMode Mode { get; }

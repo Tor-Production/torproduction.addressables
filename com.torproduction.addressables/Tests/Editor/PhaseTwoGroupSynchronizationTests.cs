@@ -5,14 +5,13 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using TorProduction.Addressables.Editor;
-using TorProduction.AddressablesToolpack.Editor;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 
-namespace TorProduction.AddressablesToolpack.Editor.Tests {
+namespace TorProduction.Addressables.Editor.Tests {
 	public sealed class PhaseTwoGroupSynchronizationTests {
 		[Test]
 		public void Planner_NullFiltersAndLabelsTreatsAllLoadableAssetsAsCandidates() {
@@ -413,12 +412,6 @@ namespace TorProduction.AddressablesToolpack.Editor.Tests {
 			Assert.That(first.Operations.Select(item => item.Description),
 				Is.EqualTo(second.Operations.Select(item => item.Description)));
 			Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(5)));
-		}
-
-		[Test]
-		public void AssetTypeEnumeration_DoesNotDependOnProjectSpecificRuntimeTypes() {
-			Assert.DoesNotThrow(() => AssetTypes.GetInheritedTypes<ScriptableObject>());
-			Assert.That(AssetTypes.AvailableTypes, Does.Contain(typeof(ScriptableObject)));
 		}
 
 		[Test]

@@ -1,4 +1,4 @@
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	[System.Serializable]
 	internal sealed class LegacyProjectConfigData {
 		public string m_ScenesListConfigGUID;

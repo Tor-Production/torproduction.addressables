@@ -13,7 +13,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ArtifactsPath,
 
-    [switch]$ExcludeSamples
+    [switch]$ExcludeSamples,
+
+    [switch]$ImportSample
 )
 
 $ErrorActionPreference = 'Stop'
@@ -31,6 +33,15 @@ $temporaryArtifactsPath = Join-Path $temporaryRoot 'artifacts'
 $logPath = Join-Path $temporaryArtifactsPath "editmode-$AddressablesVersion.log"
 $resultsPath = Join-Path $temporaryArtifactsPath "editmode-$AddressablesVersion.xml"
 $removalLogPath = Join-Path $temporaryArtifactsPath "removal-$AddressablesVersion.log"
+$sampleRemovalLogPath = Join-Path $temporaryArtifactsPath "sample-removal-$AddressablesVersion.log"
+$importedSampleRoot = Join-Path $temporaryProjectPath `
+    'Assets/Samples/Tor Production - Addressables Toolpack/0.1.0-preview.1/Basic Setup'
+$unrelatedSentinelPath = Join-Path $temporaryProjectPath 'Assets/PhaseSixUnrelatedState.txt'
+$unrelatedSentinelMetaPath = $unrelatedSentinelPath + '.meta'
+
+if ($ExcludeSamples -and $ImportSample) {
+    throw 'ExcludeSamples and ImportSample are mutually exclusive.'
+}
 
 function Assert-TemporaryPath([string]$Path) {
     $fullPath = [IO.Path]::GetFullPath($Path)
@@ -49,9 +60,66 @@ New-Item -ItemType Directory -Path `
     $temporaryArtifactsPath, `
     $resolvedArtifactsPath -Force | Out-Null
 
+if ($ImportSample) {
+    [IO.File]::WriteAllText(
+        $unrelatedSentinelPath,
+        "Unrelated disposable-project state must survive sample and package removal.`n",
+        [Text.UTF8Encoding]::new($false))
+}
+
+function Assert-UnrelatedSentinel([string]$ExpectedAssetHash, [string]$ExpectedMetaHash) {
+    foreach ($path in @($unrelatedSentinelPath, $unrelatedSentinelMetaPath)) {
+        if (-not (Test-Path -LiteralPath $path)) {
+            throw "Sample or package removal deleted unrelated project state: $path"
+        }
+    }
+
+    if ((Get-FileHash -Algorithm SHA256 -LiteralPath $unrelatedSentinelPath).Hash -ne $ExpectedAssetHash -or
+        (Get-FileHash -Algorithm SHA256 -LiteralPath $unrelatedSentinelMetaPath).Hash -ne $ExpectedMetaHash) {
+        throw 'Sample or package removal modified unrelated project state.'
+    }
+}
+
+function Remove-ImportedSample() {
+    Assert-TemporaryPath $importedSampleRoot
+    if (-not (Test-Path -LiteralPath $importedSampleRoot)) {
+        throw "Imported BasicSetup sample is missing before removal: $importedSampleRoot"
+    }
+
+    Remove-Item -Recurse -Force -LiteralPath $importedSampleRoot
+    $importedSampleMetaPath = $importedSampleRoot + '.meta'
+    if (Test-Path -LiteralPath $importedSampleMetaPath) {
+        Remove-Item -Force -LiteralPath $importedSampleMetaPath
+    }
+
+    $samplesRoot = Join-Path $temporaryProjectPath 'Assets/Samples'
+    $parent = Split-Path -Parent $importedSampleRoot
+    while ($parent.StartsWith($samplesRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        if (-not (Test-Path -LiteralPath $parent)) {
+            $parent = Split-Path -Parent $parent
+            continue
+        }
+        if (@(Get-ChildItem -Force -LiteralPath $parent).Count -ne 0) {
+            break
+        }
+
+        Assert-TemporaryPath $parent
+        Remove-Item -Force -LiteralPath $parent
+        $parentMetaPath = $parent + '.meta'
+        if (Test-Path -LiteralPath $parentMetaPath) {
+            Remove-Item -Force -LiteralPath $parentMetaPath
+        }
+        if ([String]::Equals($parent, $samplesRoot, [StringComparison]::OrdinalIgnoreCase)) {
+            break
+        }
+        $parent = Split-Path -Parent $parent
+    }
+}
+
 foreach ($artifactName in @(
     "editmode-$AddressablesVersion.log",
     "editmode-$AddressablesVersion.xml",
+    "sample-removal-$AddressablesVersion.log",
     "removal-$AddressablesVersion.log")) {
     $previousArtifactPath = Join-Path $resolvedArtifactsPath $artifactName
     if (Test-Path -LiteralPath $previousArtifactPath) {
@@ -74,8 +142,8 @@ try {
         -Destination (Join-Path $temporaryProjectPath 'ProjectSettings')
 
     if ($ExcludeSamples) {
-        $samplesPath = Join-Path $temporaryPackagePath 'Samples'
-        $samplesMetaPath = Join-Path $temporaryPackagePath 'Samples.meta'
+        $samplesPath = Join-Path $temporaryPackagePath 'Samples~'
+        $samplesMetaPath = Join-Path $temporaryPackagePath 'Samples~.meta'
         Assert-TemporaryPath $samplesPath
         Remove-Item -Recurse -Force -LiteralPath $samplesPath
         Remove-Item -Force -LiteralPath $samplesMetaPath
@@ -97,6 +165,9 @@ try {
     )
     if ($ExcludeSamples) {
         $arguments += '-torSamplesExcluded'
+    }
+    if ($ImportSample) {
+        $arguments += '-torSampleImported'
     }
     $startProcessParameters = @{
         FilePath = $resolvedUnityPath
@@ -129,7 +200,7 @@ try {
 
     [xml]$results = Get-Content -Raw -LiteralPath $resultsPath
     $testRun = $results.'test-run'
-    $expectedTestCount = 125
+    $expectedTestCount = 133
     if ($testRun.result -ne 'Passed' -or
         [int]$testRun.total -ne $expectedTestCount -or
         [int]$testRun.passed -ne $expectedTestCount -or
@@ -145,6 +216,41 @@ try {
     $failures = Select-String -LiteralPath $logPath -Pattern $failurePattern
     if ($failures) {
         throw "Unity log contains a compilation/import failure. See $resolvedArtifactsPath"
+    }
+
+    if ($ImportSample) {
+        $unrelatedSentinelHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $unrelatedSentinelPath).Hash
+        $unrelatedSentinelMetaHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $unrelatedSentinelMetaPath).Hash
+        Remove-ImportedSample
+
+        $sampleRemovalArguments = @(
+            '-batchmode',
+            '-nographics',
+            '-quit',
+            '-projectPath', $temporaryProjectPath,
+            '-logFile', $sampleRemovalLogPath
+        )
+        $startProcessParameters.ArgumentList = $sampleRemovalArguments
+        $sampleRemovalProcess = Start-Process @startProcessParameters
+        Wait-Process -Id $sampleRemovalProcess.Id
+        $sampleRemovalProcess.Refresh()
+
+        if (-not (Test-Path -LiteralPath $sampleRemovalLogPath)) {
+            throw 'Unity did not produce a sample-removal log file.'
+        }
+        Copy-Item -Force -LiteralPath $sampleRemovalLogPath -Destination $resolvedArtifactsPath
+        if ($sampleRemovalProcess.ExitCode -ne 0) {
+            throw "Unity exited with code $($sampleRemovalProcess.ExitCode) after sample removal. See $resolvedArtifactsPath"
+        }
+        if (Test-Path -LiteralPath $importedSampleRoot) {
+            throw 'Imported BasicSetup sample remains after explicit removal.'
+        }
+        Assert-UnrelatedSentinel $unrelatedSentinelHash $unrelatedSentinelMetaHash
+        & (Join-Path $PSScriptRoot 'Assert-InertProject.ps1') -ProjectPath $temporaryProjectPath
+        $sampleRemovalFailures = Select-String -LiteralPath $sampleRemovalLogPath -Pattern $failurePattern
+        if ($sampleRemovalFailures) {
+            throw "Unity log contains a sample-removal failure. See $resolvedArtifactsPath"
+        }
     }
 
     $manifestPath = Join-Path $temporaryProjectPath 'Packages/manifest.json'
@@ -179,12 +285,17 @@ try {
 
     & (Join-Path $PSScriptRoot 'Assert-InertProject.ps1') -ProjectPath $temporaryProjectPath
 
+    if ($ImportSample) {
+        Assert-UnrelatedSentinel $unrelatedSentinelHash $unrelatedSentinelMetaHash
+    }
+
     $removalFailures = Select-String -LiteralPath $removalLogPath -Pattern $failurePattern
     if ($removalFailures) {
         throw "Unity log contains a package-removal failure. See $resolvedArtifactsPath"
     }
 
-    Write-Output "Clean-install and removal Addressables $AddressablesVersion passed: total=$($testRun.total), passed=$($testRun.passed)"
+    $sampleResult = if ($ImportSample) { ', sample import/removal passed' } elseif ($ExcludeSamples) { ', Samples~ absent' } else { '' }
+    Write-Output "Clean-install and removal Addressables $AddressablesVersion passed: total=$($testRun.total), passed=$($testRun.passed)$sampleResult"
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {
         Assert-TemporaryPath $temporaryRoot

@@ -11,7 +11,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace TorProduction.AddressablesToolpack.Editor.Tests {
+namespace TorProduction.Addressables.Editor.Tests {
 	public sealed class PhaseThreeSceneSynchronizationPlannerTests {
 		[TearDown]
 		public void TearDown() => ScenePostprocessCoordinator.ResetForTests();

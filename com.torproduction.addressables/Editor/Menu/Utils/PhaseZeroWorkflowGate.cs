@@ -1,7 +1,7 @@
 using UnityEngine;
 using TorProduction.Addressables.Editor;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	internal static class AddressablesAutomationWorkflowGate {
 		internal const string DisabledReason =
 			"This workflow is disabled until its planned safe analyze/apply implementation is complete.";

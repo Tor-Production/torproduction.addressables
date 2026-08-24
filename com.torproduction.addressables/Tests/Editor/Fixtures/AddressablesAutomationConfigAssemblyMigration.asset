@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f50e41ae3754b909db9399a89ec831a, type: 3}
+  m_Name: AddressablesAutomationConfigAssemblyMigration
+  m_EditorClassIdentifier:
+  m_schemaVersion: 3
+  m_groupRules:
+  - m_sourceFolderGuid: 11111111111111111111111111111111
+    m_excludedNestedFolderGuids: []
+    m_destinationGroupGuid: 22222222222222222222222222222222
+    m_destinationGroupName: Migrated Content
+    m_addressPrefix: migrated
+    m_addressPolicy: 0
+    m_labelPolicy: 0
+    m_requiredLabels:
+    - retained
+    m_assemblyQualifiedTypeFilters: []
+  m_sceneRules: []
+  m_managedScenes: []
+  m_dependencySettings:
+    m_destinationGroupGuid:
+    m_destinationGroupName: Duplicate Asset Isolation

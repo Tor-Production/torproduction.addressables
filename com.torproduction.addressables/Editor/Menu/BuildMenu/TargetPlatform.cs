@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using TorProduction.Addressables.Editor;
 
-namespace TorProduction.AddressablesToolpack.Editor.Menu {
+namespace TorProduction.Addressables.Editor {
 	internal sealed class BuildMenuSelection {
 		internal ContentBuildKind Kind = ContentBuildKind.Full;
 		internal ContentBuildPlatform Target = ContentBuildPlatform.Windows;

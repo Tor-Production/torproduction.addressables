@@ -3,10 +3,10 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Phase 6 complete locally; hosted verification candidate pending
-- Latest completed phase: Phase 5 — build pipeline and existing-build Play Mode complete and verified
-- Next incomplete phase: Phase 6 — package layout and API cleanup
-- Current active batch: Phase 6 — candidate commit and hosted completion protocol (`API-001`–`API-004`, `PKG-001`, `PKG-002`, `TEST-002`, Phase 6 portion of `TEST-001` locally complete)
+- Implementation: Phase 6 complete and verified
+- Latest completed phase: Phase 6 — package layout and API cleanup complete and verified
+- Next incomplete phase: Phase 7 — tests, documentation, CI, and release readiness
+- Current active batch: None — stopped at the verified Phase 6 boundary; Phase 7 has not started
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-24`
@@ -212,7 +212,7 @@ This protocol is the documented exception to the repository's general commit, ta
 - [x] Phase 3 — GUID-based scene synchronization (implementation, local validation, hosted matrix, and evidence record complete)
 - [x] Phase 4 — Dependency analysis and prefab removal
 - [x] Phase 5 — Build pipeline and existing-build Play Mode
-- [ ] Phase 6 — Package layout and API cleanup (local implementation complete; hosted verification pending)
+- [x] Phase 6 — Package layout and API cleanup
 - [ ] Phase 7 — Tests, documentation, CI, and release readiness
 
 ### First implementation batch record — 2026-08-20
@@ -597,7 +597,7 @@ The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime 
 
 ### Phase 6 package-layout and API-cleanup implementation record — 2026-08-24
 
-**Status:** local implementation and every required local gate are complete. The candidate commit and the single authorized hosted compatibility run remain pending. The batch is limited to `API-001` through `API-004`, `PKG-001`, `PKG-002`, `TEST-002`, and the Phase 6-owned template/dead-test portion of `TEST-001`; Phase 7 remains unstarted.
+**Status:** complete and verified. Local implementation, development-host/player compilation, both package-without-samples lanes, both real UPM sample import/removal lanes, the single authorized hosted compatibility run, and independent hosted XML verification all pass. The exact hosted-tested implementation commit is `bf147de69b1bb9f2afb4ca76450027056e4682b4`. The batch is limited to `API-001` through `API-004`, `PKG-001`, `PKG-002`, `TEST-002`, and the Phase 6-owned template/dead-test portion of `TEST-001`; Phase 7 remains unstarted.
 
 **Assembly and namespace decision:** before this phase, production compiled as runtime `TorProduction.AddressablesToolpack`, editor `TorProduction.AddressablesService.Editor`, and menu `TorProduction.AddressablesToolpack.Editor.Menu`, while package-root `Samples` also compiled as `TorProduction.AddressablesToolpack.Samples`. The Menu boundary existed only for historical internal access and sample dependencies, so it was merged. After this phase, production is exactly one editor-only assembly, `TorProduction.Addressables.Editor`, with root namespace `TorProduction.Addressables.Editor` and only the Addressables runtime/editor assembly references. There is no package Runtime or sample assembly. `TorProduction.Addressables.Editor.Tests` explicitly references production, Addressables runtime/editor, and Unity's test runners; NUnit remains its test-only precompiled reference. Production retains exactly one friend, `TorProduction.Addressables.Editor.Tests`, because integration tests exercise internal planners and adapters without widening implementation types. Production has no dependency on Samples, tests, Foundation, or project-specific runtime types.
 
@@ -610,6 +610,8 @@ The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime 
 **Tests and exact local evidence:** `TEST-002` and the Phase 6-owned portion of `TEST-001` are complete; Phase 7's broader test/documentation/CI work remains open. The new package-layout suite asserts the exact production/test graph and references, one necessary friend, editor-only player boundary, Tor Production namespaces, NUnit isolation, absence of stale code namespaces and removed types/GUIDs, migration-fixture load, manifest/sample contents, script-GUID resolution, imported-scene missing-script count, player-script compilation, and deterministic API surface. Unity `6000.0.78f1` development-host EditMode passed `133/133`, zero failed, skipped, or inconclusive, including clean Standalone Windows player-script compilation with no Tor Production player assembly. Fresh disposable Addressables `2.7.6` and `2.9.1` lanes each passed `133/133` with `Samples~` physically absent, package import inertness, and package removal inertness. Separate fresh lanes for both versions each passed `133/133` after real UPM `Basic Setup` import and compilation, exact sample removal, unrelated-state hash preservation, and package removal. All lane logs are clean of the configured compiler/import/exception/fatal patterns.
 
 `git diff --check`, tracked package/host JSON and all asmdef parsing, PowerShell parsing, `Validate-PhaseZero.ps1`, Unity asset/meta pairing, GUID uniqueness, assembly/API snapshot checks, removed type/GUID scans, production NUnit/Foundation/sample dependency scans, stale StansAssets code-namespace scan, and the current-tree prohibited-token guard pass. The final host check found no generated Addressables settings, temporary integration fixture, package recovery job, player output, imported sample, disposable project, host artifact, or tracked host-state change. Ignored evidence is under `artifacts/phase6-*`.
+
+**Hosted Phase 6 evidence:** remote `main` still equaled `e39b34a8f789ffb46ea64776d6960044637d6997` immediately before the candidate push. The normal branch push advanced it to `bf147de69b1bb9f2afb4ca76450027056e4682b4` and triggered no workflow: the inventory remained the same ten runs, latest `32681584182`. Exact-candidate checks before push, immediately after push, and again after propagation all found zero runs, so exactly one manual dispatch was issued. Run [`32689916114`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32689916114) used `workflow_dispatch`, exact head SHA `bf147de69b1bb9f2afb4ca76450027056e4682b4`, and completed successfully on `2026-08-24`. Addressables `2.7.6` job [`97321645273`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32689916114/job/97321645273) passed in `3m04s`; Addressables `2.9.1` job [`97321645395`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32689916114/job/97321645395) passed in `2m56s`. Both passed clean checkout, license preflight, exact lane selection, static validation, Unity compilation/EditMode tests, package-import inertness, tracked-project-state verification, and artifact upload. Downloaded artifacts `9506953830` and `9506951197` were independently verified under ignored `artifacts/phase6-hosted-run-32689916114`: each authoritative XML reports exactly `133` total and passed, zero failed, zero skipped, and zero inconclusive; both hosted logs are clean of the configured failure patterns. The annotated `phase-6-verified` tag is created only after this documentation-only evidence record is pushed and must target the exact hosted-tested implementation commit above, not the evidence commit.
 
 **Scope boundary:** no Phase 7 documentation breadth, CI/PVS/release automation, legal decision, license/notice change, package-version bump, `v*` tag, GitHub Release, publication, release-workflow change, or new repository is included. Existing legal attribution remains untouched. The unresolved ownership/relicensing and required-attribution confirmation remains a Phase 7/legal blocker.
 

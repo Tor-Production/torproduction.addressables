@@ -3,10 +3,10 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Phase 5 local corrective candidate complete; a fresh hosted verification dispatch requires separate authorization after the first hosted failure
-- Latest completed phase: Phase 4 — dependency analysis and prefab removal complete and verified
-- Next incomplete phase: Phase 5 — build pipeline and existing-build Play Mode
-- Current active batch: Phase 5 — locally corrected `BUILD-001` through `BUILD-005` candidate awaiting separately authorized hosted verification
+- Implementation: Phase 5 complete and verified
+- Latest completed phase: Phase 5 — build pipeline and existing-build Play Mode complete and verified
+- Next incomplete phase: Phase 6 — package layout and API cleanup
+- Current active batch: None — stopped at the verified Phase 5 boundary; Phase 6 has not started
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-23`
@@ -211,7 +211,7 @@ This protocol is the documented exception to the repository's general commit, ta
 - [x] Phase 2 — Deterministic group synchronization (implementation, local validation, hosted matrix, evidence record, and verification tag complete)
 - [x] Phase 3 — GUID-based scene synchronization (implementation, local validation, hosted matrix, and evidence record complete)
 - [x] Phase 4 — Dependency analysis and prefab removal
-- [ ] Phase 5 — Build pipeline and existing-build Play Mode
+- [x] Phase 5 — Build pipeline and existing-build Play Mode
 - [ ] Phase 6 — Package layout and API cleanup
 - [ ] Phase 7 — Tests, documentation, CI, and release readiness
 
@@ -577,7 +577,7 @@ The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime 
 
 ### Phase 5 build-pipeline implementation record — 2026-08-24
 
-**Status:** local implementation and both compatibility/install/removal gates are complete; the single authorized hosted compatibility dispatch is still pending. Until that run passes and its downloaded XML is independently verified, Phase 5 remains the next incomplete phase and no `phase-5-verified` tag exists. The exact implementation SHA will be recorded by the later documentation-only hosted evidence commit.
+**Status:** complete and verified. Local implementation, both compatibility/install/removal gates, the corrected clean-checkout invariant, the separately authorized hosted compatibility run, and independent hosted XML verification all pass. The exact hosted-tested implementation commit is `a90278572f4ddd4a18a3814495c847bf0f4adafb`; its tree is identical to corrective implementation commit `8d238428d65800215aad427fcd84336ea7baca8a`.
 
 **Issue progress:** `BUILD-001` replaces the content-update-only controller with explicit Full, Content Update, Editor-Compatible, and Multi-Platform requests; Full uses `AddressableAssetSettings.BuildPlayerContent` without reading prior state, while Content Update requires and fingerprints an explicit state file, validates compatibility, and runs `ContentUpdateScript.GatherModifiedEntries` before mutation. `BUILD-002` maps Android, iOS, `StandaloneWindows64`, `StandaloneOSX`, and `StandaloneLinux64` exactly and deterministically without conflating their target groups. `BUILD-003` implements the package-owned persistent job state machine, checked target support/switches, explicit post-reload Resume, cancellation, stop/continue policies, restoration, stale/malformed recovery, and archive/reset behavior. `BUILD-004` preserves every operation report and copies only fresh build-layout artifacts without deleting, renaming, or overwriting Addressables' source. `BUILD-005` removes the copied custom Play Mode builder and private platform-path access, creates deterministic Editor-Compatible receipts, validates target/settings/version/output freshness, and selects Addressables' public built-in `BuildScriptPackedPlayMode` only after confirmation.
 
@@ -590,6 +590,8 @@ The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime 
 **Exact local evidence:** `git diff --check` and `Tools/CI/Validate-PhaseZero.ps1 -RepositoryRoot . -ExpectedHostAddressablesVersion 2.7.6` pass. All tracked JSON/asmdefs parse; Unity asset/meta pairing and GUID uniqueness pass; the staged current-tree and all six repository refs/727 reachable objects pass the exhaustive prohibited-token guard; and production build sources contain no private Addressables reflection or reachable legacy build entry point. The Unity `6000.0.78f1` development-host EditMode suite passed `125/125`, zero failed, skipped, or inconclusive, with no tracked host/Addressables changes. `Tools/CI/Test-CleanInstall.ps1` passed isolated clean-install/EditMode/removal lanes on Addressables `2.7.6` and `2.9.1`; each reports exactly `125/125`, zero failed, skipped, or inconclusive, executes the real full/update integration fixture, remains inert after import and package removal, and deletes its temporary project. Ignored local evidence is under `artifacts/phase5-local-2.7.6` and `artifacts/phase5-local-2.9.1`. The final development-host check found no tracked changes, generated Addressables settings, current package recovery job, or temporary fixture.
 
 **First hosted attempt and narrow correction:** implementation commit `a0ecbf7a61ebfe742ec7a8f184f0e67b1f672f75` was pushed normally and triggered no workflow. Exactly one paid workflow was then manually dispatched: run [`32668602049`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32668602049), event `workflow_dispatch`, exact head SHA `a0ecbf7a61ebfe742ec7a8f184f0e67b1f672f75`. Both Addressables jobs passed checkout, license preflight, and lane selection, then failed the static invariant step before Unity execution because `Editor/BuildProcess/CustomBuildScripts.meta` was orphaned in a clean Linux checkout. Windows local validation had retained the now-empty directory physically and therefore masked the cross-platform clean-clone condition. No XML test results were produced, no tag was created, and no second paid run was automatically dispatched. The narrow Phase 5 correction removes only the obsolete empty `BuildProcess`/`CustomBuildScripts` folder metas and local empty directories left by retiring `EditorPlaymodeBuildScript`; it does not alter production behavior or enter Phase 6 cleanup.
+
+**Hosted Phase 5 evidence:** after separate user authorization, run [`32681584182`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32681584182) used `workflow_dispatch` on `main` with exact head SHA `a90278572f4ddd4a18a3814495c847bf0f4adafb` and completed successfully on `2026-08-24`. Addressables `2.7.6` job [`97299088355`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32681584182/job/97299088355) and Addressables `2.9.1` job [`97299088509`](https://github.com/Yurii-Tor/torproduction.addressables/actions/runs/32681584182/job/97299088509) both passed license preflight, exact lane selection, clean-checkout static validation, Unity `6000.0.78f1` compilation/EditMode tests, package-import inertness, tracked-project-state verification, and artifact upload. Downloaded artifacts were independently verified under ignored `artifacts/phase5-hosted-run-32681584182`: each authoritative XML reports exactly `125` total and passed, zero failed, zero skipped, and zero inconclusive. The annotated `phase-5-verified` tag must target exact hosted-tested commit `a90278572f4ddd4a18a3814495c847bf0f4adafb`, not this later documentation-only evidence commit.
 
 **Scope boundary:** Phase 6 package layout, namespace, assembly, runtime API, and sample cleanup did not begin. No release/publication behavior, `v*` tag, GitHub Release, package publication, or new repository is included.
 

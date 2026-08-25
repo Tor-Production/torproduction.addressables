@@ -13,15 +13,27 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ArtifactsPath,
 
+    [string]$PackageArchivePath,
+
+    [ValidateRange(1, 10000)]
+    [int]$ExpectedEditModeTestCount = 133,
+
     [switch]$ExcludeSamples,
 
-    [switch]$ImportSample
+    [switch]$ImportSample,
+
+    [switch]$RunPlayMode
 )
 
 $ErrorActionPreference = 'Stop'
 
 $resolvedUnityPath = (Resolve-Path -LiteralPath $UnityPath).Path
 $resolvedPackagePath = (Resolve-Path -LiteralPath $PackagePath).Path
+$resolvedPackageArchivePath = if ([string]::IsNullOrWhiteSpace($PackageArchivePath)) {
+    $null
+} else {
+    (Resolve-Path -LiteralPath $PackageArchivePath).Path
+}
 $repositoryRoot = Split-Path -Parent $resolvedPackagePath
 $sourceProjectPath = Join-Path $repositoryRoot 'AddressablesProject'
 $resolvedArtifactsPath = [IO.Path]::GetFullPath($ArtifactsPath)
@@ -32,15 +44,22 @@ $temporaryPackagePath = Join-Path $temporaryRoot 'com.torproduction.addressables
 $temporaryArtifactsPath = Join-Path $temporaryRoot 'artifacts'
 $logPath = Join-Path $temporaryArtifactsPath "editmode-$AddressablesVersion.log"
 $resultsPath = Join-Path $temporaryArtifactsPath "editmode-$AddressablesVersion.xml"
+$playModeLogPath = Join-Path $temporaryArtifactsPath "playmode-$AddressablesVersion.log"
+$playModeResultsPath = Join-Path $temporaryArtifactsPath "playmode-$AddressablesVersion.xml"
+$playModePrepareLogPath = Join-Path $temporaryArtifactsPath "playmode-prepare-$AddressablesVersion.log"
+$playModeCleanupLogPath = Join-Path $temporaryArtifactsPath "playmode-cleanup-$AddressablesVersion.log"
 $removalLogPath = Join-Path $temporaryArtifactsPath "removal-$AddressablesVersion.log"
 $sampleRemovalLogPath = Join-Path $temporaryArtifactsPath "sample-removal-$AddressablesVersion.log"
 $importedSampleRoot = Join-Path $temporaryProjectPath `
-    'Assets/Samples/Tor Production - Addressables Toolpack/0.1.0-preview.1/Basic Setup'
+    'Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.1/Basic Setup'
 $unrelatedSentinelPath = Join-Path $temporaryProjectPath 'Assets/PhaseSixUnrelatedState.txt'
 $unrelatedSentinelMetaPath = $unrelatedSentinelPath + '.meta'
 
 if ($ExcludeSamples -and $ImportSample) {
     throw 'ExcludeSamples and ImportSample are mutually exclusive.'
+}
+if ($ExcludeSamples -and $resolvedPackageArchivePath) {
+    throw 'ExcludeSamples is available only for package-path validation, not immutable archive validation.'
 }
 
 function Assert-TemporaryPath([string]$Path) {
@@ -65,6 +84,24 @@ if ($ImportSample) {
         $unrelatedSentinelPath,
         "Unrelated disposable-project state must survive sample and package removal.`n",
         [Text.UTF8Encoding]::new($false))
+}
+
+function Remove-TemporaryRoot() {
+    if (-not (Test-Path -LiteralPath $temporaryRoot)) {
+        return
+    }
+    Assert-TemporaryPath $temporaryRoot
+    for ($attempt = 1; $attempt -le 15; $attempt++) {
+        try {
+            Remove-Item -Recurse -Force -LiteralPath $temporaryRoot -ErrorAction Stop
+            return
+        } catch {
+            if ($attempt -eq 15) {
+                throw
+            }
+            Start-Sleep -Milliseconds 1000
+        }
+    }
 }
 
 function Assert-UnrelatedSentinel([string]$ExpectedAssetHash, [string]$ExpectedMetaHash) {
@@ -119,6 +156,10 @@ function Remove-ImportedSample() {
 foreach ($artifactName in @(
     "editmode-$AddressablesVersion.log",
     "editmode-$AddressablesVersion.xml",
+    "playmode-$AddressablesVersion.log",
+    "playmode-$AddressablesVersion.xml",
+    "playmode-prepare-$AddressablesVersion.log",
+    "playmode-cleanup-$AddressablesVersion.log",
     "sample-removal-$AddressablesVersion.log",
     "removal-$AddressablesVersion.log")) {
     $previousArtifactPath = Join-Path $resolvedArtifactsPath $artifactName
@@ -128,7 +169,12 @@ foreach ($artifactName in @(
 }
 
 try {
-    Copy-Item -Recurse -LiteralPath $resolvedPackagePath -Destination $temporaryPackagePath
+    if ($resolvedPackageArchivePath) {
+        $temporaryArchivePath = Join-Path $temporaryRoot (Split-Path -Leaf $resolvedPackageArchivePath)
+        Copy-Item -LiteralPath $resolvedPackageArchivePath -Destination $temporaryArchivePath
+    } else {
+        Copy-Item -Recurse -LiteralPath $resolvedPackagePath -Destination $temporaryPackagePath
+    }
     Copy-Item -LiteralPath `
         (Join-Path $sourceProjectPath 'Packages/manifest.json'), `
         (Join-Path $sourceProjectPath 'Packages/packages-lock.json') `
@@ -140,6 +186,17 @@ try {
         (Join-Path $sourceProjectPath 'ProjectSettings/ProjectVersion.txt'), `
         (Join-Path $sourceProjectPath 'ProjectSettings/VersionControlSettings.asset') `
         -Destination (Join-Path $temporaryProjectPath 'ProjectSettings')
+
+    if ($resolvedPackageArchivePath) {
+        $manifestPath = Join-Path $temporaryProjectPath 'Packages/manifest.json'
+        $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
+        $archiveReference = 'file:' + $temporaryArchivePath.Replace('\', '/')
+        $manifest.dependencies.'com.torproduction.addressables' = $archiveReference
+        [IO.File]::WriteAllText(
+            $manifestPath,
+            ($manifest | ConvertTo-Json -Depth 20) + [Environment]::NewLine,
+            [Text.UTF8Encoding]::new($false))
+    }
 
     if ($ExcludeSamples) {
         $samplesPath = Join-Path $temporaryPackagePath 'Samples~'
@@ -200,10 +257,9 @@ try {
 
     [xml]$results = Get-Content -Raw -LiteralPath $resultsPath
     $testRun = $results.'test-run'
-    $expectedTestCount = 133
     if ($testRun.result -ne 'Passed' -or
-        [int]$testRun.total -ne $expectedTestCount -or
-        [int]$testRun.passed -ne $expectedTestCount -or
+        [int]$testRun.total -ne $ExpectedEditModeTestCount -or
+        [int]$testRun.passed -ne $ExpectedEditModeTestCount -or
         [int]$testRun.failed -ne 0 -or
         [int]$testRun.inconclusive -ne 0 -or
         [int]$testRun.skipped -ne 0) {
@@ -216,6 +272,109 @@ try {
     $failures = Select-String -LiteralPath $logPath -Pattern $failurePattern
     if ($failures) {
         throw "Unity log contains a compilation/import failure. See $resolvedArtifactsPath"
+    }
+
+    if ($RunPlayMode) {
+        $fixtureRunnerDirectory = Join-Path $temporaryProjectPath 'Assets/Editor'
+        New-Item -ItemType Directory -Force -Path $fixtureRunnerDirectory | Out-Null
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'PlayModeFixtureRunner.cs') `
+            -Destination $fixtureRunnerDirectory
+
+        $playModePrepareArguments = @(
+            '-batchmode',
+            '-nographics',
+            '-quit',
+            '-projectPath', $temporaryProjectPath,
+            '-executeMethod', 'TorProduction.Addressables.ReleaseReadiness.PlayModeFixtureRunner.Prepare',
+            '-torReleaseReadinessPlayMode',
+            '-logFile', $playModePrepareLogPath
+        )
+        $startProcessParameters.ArgumentList = $playModePrepareArguments
+        $playModePrepareProcess = Start-Process @startProcessParameters
+        Wait-Process -Id $playModePrepareProcess.Id
+        $playModePrepareProcess.Refresh()
+        if (-not (Test-Path -LiteralPath $playModePrepareLogPath)) {
+            throw 'Unity did not produce a PlayMode fixture-setup log file.'
+        }
+        Copy-Item -Force -LiteralPath $playModePrepareLogPath -Destination $resolvedArtifactsPath
+        if ($playModePrepareProcess.ExitCode -ne 0) {
+            throw "Unity exited with code $($playModePrepareProcess.ExitCode) during PlayMode fixture setup. See $resolvedArtifactsPath"
+        }
+        $playModePrepareFailures = Select-String -LiteralPath $playModePrepareLogPath -Pattern $failurePattern
+        if ($playModePrepareFailures) {
+            throw "Unity log contains a PlayMode fixture-setup failure. See $resolvedArtifactsPath"
+        }
+
+        $playModeArguments = @(
+            '-batchmode',
+            '-nographics',
+            '-projectPath', $temporaryProjectPath,
+            '-runTests',
+            '-testPlatform', 'PlayMode',
+            '-testFilter', 'TorProduction.Addressables.PlayMode.Tests.ReleaseReadinessPlayModeTests',
+            '-testResults', $playModeResultsPath,
+            '-torReleaseReadinessPlayMode',
+            '-logFile', $playModeLogPath
+        )
+        $startProcessParameters.ArgumentList = $playModeArguments
+        $playModeProcess = Start-Process @startProcessParameters
+        Wait-Process -Id $playModeProcess.Id
+        $playModeProcess.Refresh()
+
+        if (-not (Test-Path -LiteralPath $playModeLogPath)) {
+            throw 'Unity did not produce a PlayMode log file.'
+        }
+        Copy-Item -Force -LiteralPath $playModeLogPath -Destination $resolvedArtifactsPath
+        if (Test-Path -LiteralPath $playModeResultsPath) {
+            Copy-Item -Force -LiteralPath $playModeResultsPath -Destination $resolvedArtifactsPath
+        }
+        if ($playModeProcess.ExitCode -ne 0) {
+            throw "Unity exited with code $($playModeProcess.ExitCode) during PlayMode tests. See $resolvedArtifactsPath"
+        }
+        if (-not (Test-Path -LiteralPath $playModeResultsPath)) {
+            throw 'Unity did not produce PlayMode test results.'
+        }
+
+        [xml]$playModeResults = Get-Content -Raw -LiteralPath $playModeResultsPath
+        $playModeRun = $playModeResults.'test-run'
+        if ($playModeRun.result -ne 'Passed' -or
+            [int]$playModeRun.total -ne 1 -or
+            [int]$playModeRun.passed -ne 1 -or
+            [int]$playModeRun.failed -ne 0 -or
+            [int]$playModeRun.inconclusive -ne 0 -or
+            [int]$playModeRun.skipped -ne 0) {
+            throw "Unexpected PlayMode result: total=$($playModeRun.total), passed=$($playModeRun.passed), failed=$($playModeRun.failed), inconclusive=$($playModeRun.inconclusive), skipped=$($playModeRun.skipped)"
+        }
+        $playModeFailures = Select-String -LiteralPath $playModeLogPath -Pattern $failurePattern
+        if ($playModeFailures) {
+            throw "Unity log contains a PlayMode compilation/runtime failure. See $resolvedArtifactsPath"
+        }
+
+        $playModeCleanupArguments = @(
+            '-batchmode',
+            '-nographics',
+            '-quit',
+            '-projectPath', $temporaryProjectPath,
+            '-executeMethod', 'TorProduction.Addressables.ReleaseReadiness.PlayModeFixtureRunner.Cleanup',
+            '-torReleaseReadinessPlayMode',
+            '-logFile', $playModeCleanupLogPath
+        )
+        $startProcessParameters.ArgumentList = $playModeCleanupArguments
+        $playModeCleanupProcess = Start-Process @startProcessParameters
+        Wait-Process -Id $playModeCleanupProcess.Id
+        $playModeCleanupProcess.Refresh()
+        if (-not (Test-Path -LiteralPath $playModeCleanupLogPath)) {
+            throw 'Unity did not produce a PlayMode fixture-cleanup log file.'
+        }
+        Copy-Item -Force -LiteralPath $playModeCleanupLogPath -Destination $resolvedArtifactsPath
+        if ($playModeCleanupProcess.ExitCode -ne 0) {
+            throw "Unity exited with code $($playModeCleanupProcess.ExitCode) during PlayMode fixture cleanup. See $resolvedArtifactsPath"
+        }
+        $playModeCleanupFailures = Select-String -LiteralPath $playModeCleanupLogPath -Pattern $failurePattern
+        if ($playModeCleanupFailures) {
+            throw "Unity log contains a PlayMode fixture-cleanup failure. See $resolvedArtifactsPath"
+        }
+        & (Join-Path $PSScriptRoot 'Assert-InertProject.ps1') -ProjectPath $temporaryProjectPath
     }
 
     if ($ImportSample) {
@@ -295,10 +454,9 @@ try {
     }
 
     $sampleResult = if ($ImportSample) { ', sample import/removal passed' } elseif ($ExcludeSamples) { ', Samples~ absent' } else { '' }
-    Write-Output "Clean-install and removal Addressables $AddressablesVersion passed: total=$($testRun.total), passed=$($testRun.passed)$sampleResult"
+    $playModeResult = if ($RunPlayMode) { ', PlayMode 1/1 passed' } else { '' }
+    $installKind = if ($resolvedPackageArchivePath) { 'archive' } else { 'path' }
+    Write-Output "Clean-install and removal ($installKind) Addressables $AddressablesVersion passed: total=$($testRun.total), passed=$($testRun.passed)$playModeResult$sampleResult"
 } finally {
-    if (Test-Path -LiteralPath $temporaryRoot) {
-        Assert-TemporaryPath $temporaryRoot
-        Remove-Item -Recurse -Force -LiteralPath $temporaryRoot
-    }
+    Remove-TemporaryRoot
 }

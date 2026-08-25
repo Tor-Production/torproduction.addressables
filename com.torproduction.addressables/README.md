@@ -13,7 +13,7 @@ Editor tooling for project-agnostic, previewable Addressables automation on Unit
 - Explicit Full, Content Update, Editor-Compatible, and deterministic Multi-Platform content builds with exact-target preflight, domain-reload recovery, preserved reports, cancellation, and built-in existing-build Play Mode selection guarded by freshness receipts.
 - Inert package import and configuration reads when setup is missing or invalid.
 
-Final sample/layout cleanup and release automation are not yet available. The former project-specific prefab/interactable migration tool was removed rather than generalized inside the package.
+The curated Basic Setup sample, package-layout checks, archive dry run, and release-readiness validation are available. Publication remains disabled pending the ownership/licensing decisions and final authorized hosted verification. The former project-specific prefab/interactable migration tool was removed rather than generalized inside the package.
 
 ## Development installation
 
@@ -39,16 +39,17 @@ There is no authorized public version release yet. Phase-verification tags recor
 
 Open `Project Settings > Tor Production > Addressables Automation` to create or select a configuration and analyze Groups, Scenes, or duplicate Dependencies. Manual Apply/Fix is always explicit, rejects stale previews, and blocks when complete convergence cannot be proven. Automatic scene processing is separately opt-in and uses the same scene plan and transaction as the manual workflow.
 
-For current limitations and recovery behavior, see `Documentation~/SAFETY.md`, `Documentation~/GROUP_SYNCHRONIZATION.md`, `Documentation~/SCENE_SYNCHRONIZATION.md`, `Documentation~/DEPENDENCY_ANALYSIS.md`, and `Documentation~/BUILD_PIPELINE.md`.
+For complete usage, start with `Documentation~/INSTALLATION.md`, `CONFIGURATION.md`, and `com.torproduction.addressables.md`. Detailed group, scene, dependency, build, CLI, sample, recovery, limitations, and troubleshooting material is indexed there.
 
 ## Compatibility
 
-- Unity `6000.0.78f1`
+- Unity `6000.0.78f1` verified baseline
 - Addressables `2.7.6` minimum lane
 - Addressables `2.9.1` compatibility lane
+- Unity `6000.0.82f1` / Addressables `2.11.2` prepared experimental lane (not yet verified)
 
 The exact verification evidence is maintained in the repository `ImplementationPlan.md`.
 
 ## License and provenance
 
-The existing license and attribution files are preserved. Public release remains blocked until ownership, redistribution rights, relicensing authority, and required attribution are confirmed by the owner.
+The existing license and attribution files are preserved. Public release remains blocked until ownership, redistribution rights, relicensing authority, and required attribution are confirmed by the owner. See `Documentation~/PROVENANCE_AUDIT.md` for verified facts and the exact unresolved questions.

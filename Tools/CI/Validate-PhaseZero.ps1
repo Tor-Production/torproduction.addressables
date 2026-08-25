@@ -2,7 +2,7 @@
 param(
     [string]$RepositoryRoot = (Join-Path $PSScriptRoot '../..'),
 
-    [ValidateSet('2.7.6', '2.9.1')]
+    [ValidateSet('2.7.6', '2.9.1', '2.11.2')]
     [string]$ExpectedHostAddressablesVersion = '2.7.6'
 )
 
@@ -38,6 +38,10 @@ function Test-ContainsFormerOwnerToken([byte[]]$Bytes, [byte[]]$Token) {
 $forbiddenTokenCodes = @(87, 104, 105, 109, 115, 121)
 $forbiddenToken = -join ($forbiddenTokenCodes | ForEach-Object { [char]$_ })
 $forbiddenTokenBytes = [Text.Encoding]::ASCII.GetBytes($forbiddenToken.ToLowerInvariant())
+$legalAuditPaths = @(
+    'ImplementationPlan.md',
+    'com.torproduction.addressables/Documentation~/PROVENANCE_AUDIT.md'
+)
 $trackedPaths = @(& git -C $root -c core.quotepath=false ls-files)
 if ($LASTEXITCODE -ne 0) {
     throw 'Unable to enumerate tracked files for the former-owner guard.'
@@ -48,7 +52,8 @@ foreach ($trackedPath in $trackedPaths) {
     }
     $fullTrackedPath = Join-Path $root $trackedPath
     if ((Test-Path -LiteralPath $fullTrackedPath -PathType Leaf) -and
-        (Test-ContainsFormerOwnerToken ([IO.File]::ReadAllBytes($fullTrackedPath)) $forbiddenTokenBytes)) {
+        (Test-ContainsFormerOwnerToken ([IO.File]::ReadAllBytes($fullTrackedPath)) $forbiddenTokenBytes) -and
+        $legalAuditPaths -notcontains $trackedPath.Replace('\', '/')) {
         throw "A tracked file contains the forbidden former-owner token: $trackedPath"
     }
 }
@@ -322,8 +327,8 @@ if ($unityWorkflow -match '(?m)^\s{2}pull_request:') {
 if ($unityWorkflow -match '(?m)^\s{4}branches:') {
     throw 'The paid Unity matrix must not run automatically for branch pushes.'
 }
-if ($unityWorkflow -notmatch "(?ms)^on:\s*\r?\n\s{2}push:\s*\r?\n\s{4}tags:\s*\r?\n\s{6}-\s+'v\*'\s*\r?\n\s{2}workflow_dispatch:\s*$") {
-    throw "The Unity workflow must run only for 'v*' tags or explicit workflow dispatch."
+if ($unityWorkflow -notmatch '(?ms)^on:\s*\r?\n\s{2}workflow_dispatch:\s*$') {
+    throw 'The paid Unity workflow must be manual dispatch only.'
 }
 if ($unityWorkflow -notmatch '(?ms)^concurrency:\s*\r?\n\s{2}group:\s*\$\{\{\s*github\.workflow\s*\}\}-\$\{\{\s*github\.ref\s*\}\}\s*\r?\n\s{2}cancel-in-progress:\s*true\s*$') {
     throw 'The Unity workflow must cancel an in-progress run for the same workflow and ref.'

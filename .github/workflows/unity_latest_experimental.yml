@@ -1,4 +1,4 @@
-name: Unity compatibility validation
+name: Experimental latest Unity compatibility
 
 on:
   workflow_dispatch:
@@ -12,14 +12,8 @@ permissions:
 
 jobs:
   editmode:
-    name: Addressables ${{ matrix.addressables }}
+    name: Unity 6000.0.82f1 / Addressables 2.11.2
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        addressables:
-          - 2.7.6
-          - 2.9.1
 
     steps:
       - name: Check out repository
@@ -34,26 +28,22 @@ jobs:
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
         run: ./Tools/CI/Assert-UnityLicenseEnvironment.ps1
 
-      - name: Select Addressables compatibility lane
+      - name: Select experimental Addressables lane
         shell: pwsh
         run: >-
           ./Tools/CI/Set-AddressablesVersion.ps1
           -ProjectPath ./AddressablesProject
-          -AddressablesVersion '${{ matrix.addressables }}'
+          -AddressablesVersion 2.11.2
 
-      - name: Validate Phase 0 repository invariants
+      - name: Validate repository and package invariants
         shell: pwsh
-        run: >-
-          ./Tools/CI/Validate-PhaseZero.ps1
-          -ExpectedHostAddressablesVersion '${{ matrix.addressables }}'
+        run: |
+          ./Tools/CI/Validate-PhaseZero.ps1 -ExpectedHostAddressablesVersion 2.11.2
+          ./Tools/CI/Validate-PackageManifest.ps1 -PackagePath ./com.torproduction.addressables
 
-      - name: Validate package manifest and content
-        shell: pwsh
-        run: ./Tools/CI/Validate-PackageManifest.ps1 -PackagePath ./com.torproduction.addressables
-
-      - name: Compile and run EditMode tests
+      - name: Compile and run experimental EditMode tests
         id: unity-tests
-        uses: game-ci/unity-test-runner@0ff419b913a3630032cbe0de48a0099b5a9f0ed9 # v4
+        uses: game-ci/unity-test-runner@f7d28f891263d875d47ef34370e9e8dd6087e1ef # v5.0.0-beta.1
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -61,9 +51,9 @@ jobs:
           UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
         with:
           projectPath: AddressablesProject
-          unityVersion: 6000.0.78f1
+          unityVersion: 6000.0.82f1
           testMode: editmode
-          artifactsPath: artifacts/editmode-${{ matrix.addressables }}
+          artifactsPath: artifacts/editmode-addressables-2.11.2
 
       - name: Confirm package import remained inert
         if: always()
@@ -79,6 +69,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: editmode-addressables-${{ matrix.addressables }}
-          path: artifacts/editmode-${{ matrix.addressables }}
+          name: experimental-unity-6000.0.82f1-addressables-2.11.2
+          path: artifacts/editmode-addressables-2.11.2
           if-no-files-found: warn

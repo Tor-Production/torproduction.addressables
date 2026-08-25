@@ -2,7 +2,7 @@
 
 This repository develops `com.torproduction.addressables`, an editor-first Unity Package Manager package for safe, previewable Addressables automation. `AddressablesProject/` is the pinned Unity 6 integration-test host; the package itself is under `com.torproduction.addressables/`.
 
-The implemented surface includes explicit GUID-backed configuration plus deterministic group and scene synchronization with dry-run plans, stale-plan rejection, recovery snapshots, rollback, UI, and CLI entry points. Scene reconciliation manages Addressables and local Build Settings by scene GUID while preserving unrelated state. Package import, configuration reads, and unrelated asset imports are inert when setup is absent or invalid. Dependency analysis, build workflows, final package-layout cleanup, and release automation remain unavailable until their owning implementation phases are complete.
+The implemented surface includes explicit GUID-backed configuration; deterministic group and scene synchronization; duplicate-dependency analysis/Fix; recoverable Full, Content Update, Editor-Compatible, and Multi-Platform builds; a curated sample; clean-install/removal checks; and release-archive validation. Preview hashes, stale-plan rejection, recovery snapshots, rollback, UI, public editor API, and CLI paths share the same safety boundaries. Package import, configuration reads, and unrelated asset imports are inert when setup is absent or invalid.
 
 ## Development
 
@@ -11,12 +11,13 @@ Requirements:
 - Unity `6000.0.78f1`
 - Addressables `2.7.6` for the minimum lane
 - Addressables `2.9.1` for the compatibility lane
-- PowerShell 7 for the repository validation scripts
+- Windows PowerShell 5.1 or PowerShell 7 for the repository validation scripts
 
 Run static validation from the repository root:
 
 ```powershell
 pwsh ./Tools/CI/Validate-PhaseZero.ps1
+pwsh ./Tools/CI/Validate-PackageManifest.ps1 -PackagePath ./com.torproduction.addressables
 ```
 
 Run a clean-install, EditMode, inert-import, and removal lane:
@@ -31,6 +32,8 @@ pwsh ./Tools/CI/Test-CleanInstall.ps1 `
 ```
 
 Repeat with `2.9.1`. The paid Unity compatibility workflow is intentionally manual and does not run for ordinary branch pushes or pull requests.
+
+Phase 7A also provides `New-PackageArchive.ps1`, archive-aware clean installation, selected PlayMode validation, and disposable Package Validation Suite execution. Generated archives, reports, projects, and caches stay under ignored `artifacts/` or the system temporary directory.
 
 ## Installation status
 
@@ -49,4 +52,4 @@ Do not treat phase-verification tags as public package releases.
 - `ImplementationPlan.md` is the source of truth for phase status, known limitations, verification evidence, and legal/provenance blockers.
 - Package publication, a GitHub Release, and version tags remain disabled pending later implementation and explicit legal/release authorization.
 
-See `com.torproduction.addressables/Documentation~/SAFETY.md`, `GROUP_SYNCHRONIZATION.md`, and `SCENE_SYNCHRONIZATION.md` for the implemented safety model.
+See `com.torproduction.addressables/Documentation~/com.torproduction.addressables.md` for the complete documentation index and `PROVENANCE_AUDIT.md` for the unresolved ownership/licensing questions.

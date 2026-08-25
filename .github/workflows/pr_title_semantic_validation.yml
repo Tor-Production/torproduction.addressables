@@ -1,4 +1,5 @@
-name: "PR Title Convention Validation"
+name: PR title convention validation
+
 on:
   pull_request:
     types:
@@ -6,10 +7,21 @@ on:
       - edited
       - synchronize
 
+permissions:
+  contents: read
+
 jobs:
-  main:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v1.1.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate semantic title
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const title = context.payload.pull_request?.title ?? '';
+            const semanticTitle = /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._/-]+\))?!?: .+/;
+            if (!semanticTitle.test(title)) {
+              core.setFailed(
+                'Use a semantic PR title, for example "fix: reject stale group plan".'
+              );
+            }

@@ -3,13 +3,13 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Phase 6 complete and verified
+- Implementation: Phase 7A non-legal release-readiness batch in progress; Phase 7 remains incomplete
 - Latest completed phase: Phase 6 — package layout and API cleanup complete and verified
 - Next incomplete phase: Phase 7 — tests, documentation, CI, and release readiness
-- Current active batch: None — stopped at the verified Phase 6 boundary; Phase 7 has not started
+- Current active batch: Phase 7A — non-legal release readiness, local validation, documentation, CI hardening, packaging, and provenance audit; hosted verification, legal changes, tagging, release, and publication are excluded
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
-- Last updated: `2026-08-24`
+- Last updated: `2026-08-25`
 
 This document is the implementation source of truth. Every implementation context must read it before changing code. Work must proceed incrementally by phase and issue ID. After completing a batch, update this status and the relevant issue/phase progress before committing.
 
@@ -214,6 +214,52 @@ This protocol is the documented exception to the repository's general commit, ta
 - [x] Phase 5 — Build pipeline and existing-build Play Mode
 - [x] Phase 6 — Package layout and API cleanup
 - [ ] Phase 7 — Tests, documentation, CI, and release readiness
+
+### Phase 7A non-legal release-readiness record — 2026-08-25
+
+**Status:** active non-legal/non-publishing batch implemented and locally exercised; Phase 7 remains incomplete. Final hosted verification, ownership/licensing decisions and resulting notice changes, a real version bump, `phase-7-verified`, any `v*` tag, GitHub Release, registry/OpenUPM publication, and publication enablement are explicitly excluded and were not performed.
+
+**Verified starting state:** after a fresh `git fetch --prune origin`, work resumed on clean `main` at `d9603c64200d8b4ecae653ebc23b04dc9c26df1a`, equal to `origin/main` with `0/0` divergence. Annotated `phase-6-verified` tag object `6f9c7c1794ca4e603d009587c90f4df965605b28` peels to the tested implementation `bf147de69b1bb9f2afb4ca76450027056e4682b4`. Hosted manual run `32689916114` was independently re-read: it tested that exact implementation and both Addressables `2.7.6` and `2.9.1` jobs passed `133/133`. No hosted workflow was dispatched in Phase 7A.
+
+**Phase 7 requirement audit and implementation map:**
+
+| Requirement | Phase 7A implementation/evidence | State |
+| --- | --- | --- |
+| EditMode and integration coverage | Existing meaningful planner/Unity suites retained; package-layout test narrowly permits the new test-only player assembly; host/path/archive/sample lanes assert exactly `133/133` | Passed locally |
+| Selected PlayMode coverage | `Tests/Runtime/ReleaseReadinessPlayModeTests.cs` plus a marked disposable `PlayModeFixtureRunner.cs` build a known Addressable, select Addressables' built-in packed Play Mode builder, load/verify it in PlayMode, assert no package production runtime surface/components, remove fixture/settings, and recheck inertness | `1/1` passed on Addressables `2.7.6` |
+| Package path install/removal | Archive-aware `Test-CleanInstall.ps1` retains exact-count/log/inertness checks and bounded temp cleanup | `2.7.6` and `2.9.1` passed; `Samples~` physically absent in both path lanes |
+| Sample import/removal | Real UPM import validates config/scene/GUIDs/missing scripts, removes the sample, preserves an unrelated sentinel by SHA-256, removes package, and rechecks inertness | Current package passed on `2.7.6` |
+| Package archive | `Validate-PackageManifest.ps1` and `New-PackageArchive.ps1` enforce SemVer/manifest/docs/layout/meta/GUID/prohibited-content rules, compare source/archive file lists, validate extraction, and create SHA-256 | Final archive passed; SHA-256 `3b53f9a6adb58927494a096193e0239e3cf8e2942676a60f428caadafb3ed83f` |
+| Archive installation/removal | Clean project uses the produced `.tgz` as its UPM `file:` dependency, runs `133/133`, removes package, and rechecks inertness | Final exact archive passed on `2.9.1` |
+| Metadata/version consistency | Package name/version/Unity/dependency/author/repository/sample, current changelog heading, archive filename/embedded manifest, and version-scoped PVS exception are validated together; package version remains `0.1.0-preview.1` | Passed; no real version bump |
+| Package Validation Suite | `Run-PackageValidation.ps1` creates a disposable two-pass project with official PVS `0.86.0-preview`, exports report/log, and asserts inertness | Executed but technically blocked: all non-XML-doc checks pass; PVS remains failed because bundled `FindMissingDocs.exe` throws `TypeLoadException` for `Microsoft.DocAsCode.Metadata.ManagedReference.Roslyn, Version=2.56.6.0` only as Unity's child process. Direct invocation of the same bundled checker works and reports missing public XML docs as warnings. No blanket XML-doc exception was added. |
+| Documentation | Root/package READMEs and `Documentation~` now cover installation/removal, compatibility, configuration, preview/Apply, recovery, groups, scenes, dependencies, builds, CLI, sample use/removal, limitations, troubleshooting, contribution, release process, readiness, and provenance | Implemented and package-validated |
+| Provenance/license audit | `Documentation~/PROVENANCE_AUDIT.md` separates repository evidence from assumptions, lists retained/historical risk carriers, records current statements, and asks exact owner/legal questions; `LICENSE.md` and `Third Party Notices.md` are preserved | Audit implemented; decisions blocked |
+| Required hosted lanes | Manual compatibility workflow retains `6000.0.78f1` plus Addressables `2.7.6`/`2.9.1` and the reviewed stable GameCI pin | Preserved; not dispatched |
+| Latest compatibility lane | Separate manual-only experimental workflow pins Unity `6000.0.82f1`, Addressables `2.11.2`, and GameCI `v5.0.0-beta.1` by immutable SHA | Prepared, unverified, no schedule |
+| Workflow security/syntax | Obsolete automatic-rebase/PR-assignment workflows removed; semantic-title validation replaced by official `actions/github-script`; official checkout/upload actions moved to Node 24 releases; all third-party actions SHA-pinned; top-level read-only permissions; no ordinary-push/PR/schedule paid Unity trigger or publication permission/path | Static gate and actionlint `1.7.12` pass |
+| Release/publication safety | Intended gate order documented; validation scripts create local artifacts only; workflows contain no tag/release/npm/OpenUPM operation and no write permission | Passed; publication intentionally absent |
+
+**Workflow pins and runtime audit:** required workflow uses official `actions/checkout` `v7.0.1` commit `3d3c42e5aac5ba805825da76410c181273ba90b1` and official `actions/upload-artifact` `v7.0.1` commit `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` (Node 24), plus stable `game-ci/unity-test-runner` `v4.3.1` commit `0ff419b913a3630032cbe0de48a0099b5a9f0ed9`. GameCI's current stable release still declares Node 20, so it is the documented remaining Node-runtime exception in the required paid lane; the available Node 24 `v5.0.0-beta.1` commit `f7d28f891263d875d47ef34370e9e8dd6087e1ef` is confined to the separate manual experimental lane. PR-title validation uses official `actions/github-script` `v9.0.0` commit `3a2844b7e9c422d3c10d287c895573f7108da1b3`. Actionlint `1.7.12` was downloaded from its official release, verified against the release checksum, and accepted all three workflows.
+
+**Exact local evidence:** Windows PowerShell parsing, tracked JSON/asmdef parsing, `git diff --check`, `Validate-PackageManifest.ps1`, `Validate-ReleaseReadiness.ps1`, and actionlint pass. Unity `6000.0.78f1` development-host EditMode passes `133/133`. Disposable path lanes pass `133/133` for Addressables `2.7.6` and `2.9.1`, with package import/removal inert and no configured compiler/import/exception/fatal-pattern hits. The `2.7.6` path lane also passes the single built-content PlayMode test and fixture cleanup. The current-display-name sample lane passes `133/133`, real import/removal, sentinel preservation, and package removal. The final produced archive, SHA-256 `3b53f9a6adb58927494a096193e0239e3cf8e2942676a60f428caadafb3ed83f`, installed on `2.9.1`, passed `133/133`, and removed inertly. Generated projects are deleted; logs/reports/archive/checksum/actionlint stay under ignored `artifacts/` or system temp. At the final pre-commit checkpoint, `git status` contained only the 40 expected staged Phase 7A paths, with no unstaged or untracked non-ignored content.
+
+**PVS details:** PVS reports success for Assembly Definition, Assets, ChangeLog, Folder Structure, X-ray, Package Lifecycle, Documentation, Manifest, Meta Files, Package Unity Version, Path Length, Required File Type, Samples, and Unity Version validations; Package Diff is correctly not run because no production version exists. The manifest's Unity-internal company-prefix rule is handled by one exact, version-scoped `ValidationExceptions.json` entry; the rejected display-name hyphen was removed instead of excepted. The only failed validation is the bundled XML-doc subprocess described above. This is a technical Phase 7 blocker until a compatible PVS/tooling version runs or an upstream-approved resolution is recorded; a broad test exception is not acceptable.
+
+**Factual provenance summary:** the reachable history begins at `728f17a84a80ec6922213a16618fd614331b68de` with Yurii Tor as Git author/committer, which does not prove underlying authorship/ownership. `package.json` names Tor Production. `LICENSE.md` remains MIT with `Copyright (c) 2020 Stan's Assets`; `Third Party Notices.md` remains an unresolved warning. Retained scene/GUID blobs, compatibility/configuration carriers, and rewritten legacy files are enumerated in `PROVENANCE_AUDIT.md`. The deleted historical copied-looking Addressables Play Mode implementation is not shipped but still needs upstream/version/license review. Current-tree absence of former-owner identifiers outside the approved legal audit records is not ownership evidence.
+
+**Exact owner/legal decisions still required:**
+
+1. Identify original author and owner for each initial-baseline code/asset family and every retained scene/GUID/configuration/compatibility carrier.
+2. Confirm whether Stan's Assets, a former prospective company, any former employer/client, or any contractor commissioned, owned, licensed, or contributed retained work; provide contracts, IP assignments, work-for-hire terms, waivers, or releases.
+3. Define exactly what the Stan's Assets 2020 MIT notice covered, whether it must remain verbatim, and whether it grants the intended redistribution/relicensing rights.
+4. Identify every upstream/third-party source by file/portion, exact version/commit, license, copyright holder, modifications, and required notice text, including the removed historical Addressables Play Mode implementation.
+5. Confirm contributor permissions/assignments and identify any missing permission.
+6. Confirm Tor Production's written authority to redistribute/relicense all shipped content and choose the approved outcome: existing MIT notice, MIT plus Tor modifications notice, another license, proprietary terms, or dual licensing.
+7. Supply the exact copyright, attribution, source/link, and third-party notice text required in source, docs, archives, and release notes.
+8. Decide whether the retained sample scene, GUID identities, compatibility shims, and rewritten legacy carriers may ship or must be replaced after serialized-reference review.
+
+**Remaining gates:** resolve the PVS XML-doc tool failure; obtain and record the decisions/evidence above; apply only approved license/notice changes and revalidate; separately authorize and pass final hosted required lanes on the exact candidate; decide/promote the experimental lane; choose a release version and synchronize changelog/manifest/archive; then separately authorize any Phase 7 tag, `v*` tag, GitHub Release, registry/OpenUPM action. Phase 7 is not complete and the repository is not yet cleared for final hosted verification.
 
 ### First implementation batch record — 2026-08-20
 
@@ -880,7 +926,7 @@ The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime 
 - Add an Addressables compatibility matrix:
   - Unity `6000.0.78f1` + Addressables `2.7.6` as the minimum lane.
   - Unity `6000.0.78f1` + Addressables `2.9.1` as the currently observed compatibility lane.
-  - Latest pinned Unity 6000.0 LTS patch + latest explicitly verified Addressables 2.x as a scheduled/non-blocking lane until promoted.
+  - Latest pinned Unity 6000.0 LTS patch + latest candidate Addressables 2.x as a separate manual/non-blocking experimental lane until explicitly verified and promoted. No recurring paid schedule is enabled without authorization.
 - Use explicit version files; never use a floating “latest” in release-gating CI.
 - Add clean-project installation, compilation, EditMode, selected PlayMode, package validation, sample import, archive-content, and release metadata checks.
 - Replace template docs with installation, setup, configuration, menu/CLI, builds, content updates, samples, compatibility, limitations, troubleshooting, API, changelog, notices, license, and contribution documentation.
@@ -937,7 +983,7 @@ The old `ScenesListMapper` mutation body, scene-catalog editor, numeric runtime 
 | `TEST-002` High | `RuntimeExampleTest` | Android is included while test asserts WindowsPlayer; runtime test asm references editor runner | Delete/replace and correct test boundaries | Required lanes pass on editor and player compilation |
 | `DOC-001` High | READMEs, Documentation, changelog, notices | Stale StansAssets/template content and inaccurate installation guidance | Rewrite complete documentation set | Link/name/template scan clean; docs match UI/CLI |
 | `DOC-002` High | `LICENSE.md`, Third Party Notices | Existing copyright differs from requested ownership; notices are placeholders | Legal confirmation and accurate attribution | Release job verifies approved license/notices hashes |
-| `CI-001` Critical | `.github/workflows/*` | No Unity compilation, tests, package validation, or clean-install test | Pinned Unity CI and reusable scripts | Manual dispatch and `v*` tag runs execute both pinned compatibility lanes; duplicate runs for the same ref are cancelled |
+| `CI-001` Critical | `.github/workflows/*` | No Unity compilation, tests, package validation, or clean-install test | Pinned Unity CI and reusable scripts | Manual dispatch executes both pinned compatibility lanes; any future release-condition trigger requires separate authorization; duplicate runs for the same ref are cancelled |
 | `CI-002` Critical | `release_publish_to_npm.yml` | Literal package placeholder, old action/runtime, broad release triggers | Remove; add protected tag/archive workflow | No publish on edited release; dry-run artifact is verified first |
 | `DIST-001` Medium | `package.json`, no configured remote | Repository URL exists in metadata but Git remote and tag policy are absent | Configure/verify remote, protected tags, Git-path documentation | Install from signed tag with package subfolder succeeds |
 
@@ -1096,11 +1142,12 @@ Manual validation additionally verifies:
 ```powershell
 pwsh "$repoRoot\Tools\CI\Run-PackageValidation.ps1" `
   -UnityPath $unityExe `
-  -ProjectPath "$repoRoot\AddressablesProject" `
-  -PackagePath "$repoRoot\com.torproduction.addressables"
+  -PackagePath "$repoRoot\com.torproduction.addressables" `
+  -ArtifactsPath "$repoRoot\artifacts\package-validation"
 
-npm pack "$repoRoot\com.torproduction.addressables" `
-  --pack-destination "$repoRoot\artifacts"
+pwsh "$repoRoot\Tools\CI\New-PackageArchive.ps1" `
+  -PackagePath "$repoRoot\com.torproduction.addressables" `
+  -ArtifactsPath "$repoRoot\artifacts\archive"
 ```
 
 Inspect the archive for production assemblies, docs, `Samples~`, tests as intended, and absence of `Library`, generated reports, host assets, project settings, credentials, or unrelated vendor packages.
@@ -1108,8 +1155,8 @@ Inspect the archive for production assemblies, docs, `Samples~`, tests as intend
 Before release:
 
 - Install from local path.
-- Install the packed archive through a temporary registry fixture.
-- Install from `https://github.com/Yurii-Tor/tor-production-addressables.git?path=/com.torproduction.addressables#<signed-tag>`.
+- Install the packed archive as a local `.tgz` dependency in a disposable project.
+- Install from `https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#<signed-tag>` only after the signed release tag is separately authorized.
 - Verify the tag, `package.json` version, changelog heading, archive version, and release name are identical.
 - Run all required Unity/Addressables matrix lanes from clean caches.
 

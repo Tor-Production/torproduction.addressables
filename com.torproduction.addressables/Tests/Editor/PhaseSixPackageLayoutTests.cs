@@ -23,7 +23,7 @@ namespace TorProduction.Addressables.Editor.Tests {
 		private const string PackageName = "com.torproduction.addressables";
 		private const string ProductionAssemblyName = "TorProduction.Addressables.Editor";
 		private const string ImportedSampleRoot =
-			"Assets/Samples/Tor Production - Addressables Toolpack/0.1.0-preview.1/Basic Setup";
+			"Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.1/Basic Setup";
 
 		[Test]
 		public void ProductionAssemblyGraph_IsExactlyOneEditorAssembly() {
@@ -236,8 +236,9 @@ namespace TorProduction.Addressables.Editor.Tests {
 		[Test]
 		public void PlayerScriptsCompileWithoutPackageRuntimeAssembly() {
 			var playerAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Player);
-			Assert.That(playerAssemblies.Any(assembly => assembly.name.StartsWith(
-				"TorProduction.Addressables", StringComparison.Ordinal)), Is.False);
+			Assert.That(playerAssemblies.Any(assembly =>
+				assembly.name.StartsWith("TorProduction.Addressables", StringComparison.Ordinal) &&
+				!assembly.name.EndsWith(".Tests", StringComparison.Ordinal)), Is.False);
 
 			var outputPath = Path.GetFullPath(
 				Path.Combine("Library", "TorProduction.Addressables", "Phase6PlayerScripts"));

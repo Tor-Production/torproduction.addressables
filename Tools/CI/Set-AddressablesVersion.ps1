@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('2.7.6', '2.9.1')]
+    [ValidateSet('2.7.6', '2.9.1', '2.11.2')]
     [string]$AddressablesVersion,
 
     [Parameter(Mandatory = $true)]

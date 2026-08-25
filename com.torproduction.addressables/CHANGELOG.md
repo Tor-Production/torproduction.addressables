@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+No post-preview product changes are currently recorded. Phase 7 release-readiness work does not authorize publication.
+
+## [0.1.0-preview.1] - 2026-08-25
+
+This preview version remains unpublished while the ownership, licensing, attribution, and final hosted-verification gates are unresolved.
+
 ### Added
 
 - Deterministic, read-only group planning through `AddressablesAutomation.Analyze`.

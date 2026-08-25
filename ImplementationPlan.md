@@ -3,10 +3,10 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Phase 7A non-legal release-readiness batch in progress; Phase 7 remains incomplete
+- Implementation: Phase 7A non-legal release-readiness batch complete at the authorized local boundary; Phase 7 remains incomplete
 - Latest completed phase: Phase 6 — package layout and API cleanup complete and verified
 - Next incomplete phase: Phase 7 — tests, documentation, CI, and release readiness
-- Current active batch: Phase 7A — non-legal release readiness, local validation, documentation, CI hardening, packaging, and provenance audit; hosted verification, legal changes, tagging, release, and publication are excluded
+- Current active batch: Phase 7A local work complete — stopped pending the PVS XML-doc tooling resolution, owner/legal decisions, and separate authorization for hosted verification; legal changes, tagging, release, and publication remain excluded
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-25`
@@ -217,7 +217,7 @@ This protocol is the documented exception to the repository's general commit, ta
 
 ### Phase 7A non-legal release-readiness record — 2026-08-25
 
-**Status:** active non-legal/non-publishing batch implemented and locally exercised; Phase 7 remains incomplete. Final hosted verification, ownership/licensing decisions and resulting notice changes, a real version bump, `phase-7-verified`, any `v*` tag, GitHub Release, registry/OpenUPM publication, and publication enablement are explicitly excluded and were not performed.
+**Status:** non-legal/non-publishing Phase 7A work is complete at the authorized local stop boundary and committed in `dec2eedc6e8dde8c5c4a46be970d0a37b05ec82b`; Phase 7 remains incomplete. Final hosted verification, ownership/licensing decisions and resulting notice changes, a real version bump, `phase-7-verified`, any `v*` tag, GitHub Release, registry/OpenUPM publication, and publication enablement are explicitly excluded and were not performed.
 
 **Verified starting state:** after a fresh `git fetch --prune origin`, work resumed on clean `main` at `d9603c64200d8b4ecae653ebc23b04dc9c26df1a`, equal to `origin/main` with `0/0` divergence. Annotated `phase-6-verified` tag object `6f9c7c1794ca4e603d009587c90f4df965605b28` peels to the tested implementation `bf147de69b1bb9f2afb4ca76450027056e4682b4`. Hosted manual run `32689916114` was independently re-read: it tested that exact implementation and both Addressables `2.7.6` and `2.9.1` jobs passed `133/133`. No hosted workflow was dispatched in Phase 7A.
 

@@ -9,6 +9,8 @@
 
 The immutable tested implementation is `bf147de69b1bb9f2afb4ca76450027056e4682b4`, recorded by `phase-6-verified^{}`. Phase 7A changes require a new hosted verification before any release decision.
 
+The declared production dependency remains exact `2.7.6`, making `2.7.6` the supported minimum rather than excluding it. The verified claim is deliberately limited to the two rows above; versions between or beyond them are not claimed merely because Unity can resolve a consumer override. The owner requested a future `4.0.1` compatibility investigation when that version is intentionally prepared and tested; it is not a current support claim or workflow lane.
+
 ## Prepared latest lane
 
 The manual experimental workflow tracks the current Unity 6.0 LTS patch `6000.0.82f1` with Addressables `2.11.2`. It is prepared but not yet verified. It is intentionally manual-only, non-recurring, and non-publishing. A passing experimental lane does not replace either required lane without an explicit plan change.

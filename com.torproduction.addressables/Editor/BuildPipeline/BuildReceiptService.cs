@@ -304,15 +304,37 @@ namespace TorProduction.Addressables.Editor {
 		}
 	}
 
+	/// <summary>Provides the public, recoverable entry points for Addressables content builds.</summary>
 	public static class AddressablesBuildQueue {
+		/// <summary>Analyzes a request without starting a build or changing project state.</summary>
+		/// <param name="request">The request to validate.</param>
+		/// <returns>An immutable preflight result.</returns>
 		public static ContentBuildPreflight Analyze(ContentBuildRequest request) => CreateEngine().Analyze(request);
+		/// <summary>Starts a request after repeating its fail-closed preflight checks.</summary>
+		/// <param name="request">The request to execute.</param>
+		/// <returns>The build result or persisted resume state.</returns>
 		public static ContentBuildResult Enqueue(ContentBuildRequest request) => CreateEngine().Start(request);
+		/// <summary>Resumes a persisted build job after a domain reload or target switch.</summary>
+		/// <returns>The updated build result.</returns>
 		public static ContentBuildResult Resume() => CreateEngine().Resume();
+		/// <summary>Requests cancellation of the current package-owned build job.</summary>
+		/// <returns>The updated build result.</returns>
 		public static ContentBuildResult Cancel() => CreateEngine().RequestCancellation();
+		/// <summary>Attempts to restore the target active before the current job began.</summary>
+		/// <returns>The restoration result.</returns>
 		public static ContentBuildResult RestoreOriginalTarget() => CreateEngine().RestoreOriginalTarget();
+		/// <summary>Explicitly abandons the current job and archives its recovery record.</summary>
+		/// <returns>The abandon/reset result.</returns>
 		public static ContentBuildResult AbandonReset() => CreateEngine().AbandonReset();
+		/// <summary>Inspects current package-owned recovery state without mutating it.</summary>
+		/// <returns>The current recovery-state description.</returns>
 		public static ContentBuildRecoveryInfo InspectRecovery() => CreateEngine().InspectRecovery();
+		/// <summary>Validates the latest editor-compatible build receipt and artifacts.</summary>
+		/// <returns>The existing-build validation result.</returns>
 		public static ExistingBuildValidation ValidateExistingBuild() => ExistingBuildPlayModeService.Validate();
+		/// <summary>Validates and explicitly selects Addressables' built-in existing-build Play Mode data builder.</summary>
+		/// <param name="explicitlyConfirmed">Whether the caller explicitly confirmed the project-state change.</param>
+		/// <returns>The selection result and diagnostics.</returns>
 		public static ExistingBuildValidation SelectExistingBuild(bool explicitlyConfirmed) =>
 			ExistingBuildPlayModeService.Select(explicitlyConfirmed);
 

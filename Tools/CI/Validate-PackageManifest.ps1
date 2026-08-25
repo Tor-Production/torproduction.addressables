@@ -101,6 +101,10 @@ foreach ($relativePath in $requiredFiles) {
     }
 }
 
+if (Test-Path -LiteralPath (Join-Path $resolvedPackagePath 'Documentation~/filter.yml')) {
+    throw 'Documentation~/filter.yml is not permitted to suppress public API XML-documentation requirements.'
+}
+
 $changelog = Get-Content -Raw -LiteralPath (Join-Path $resolvedPackagePath 'CHANGELOG.md')
 $escapedVersion = [regex]::Escape([string]$manifest.version)
 if ($changelog -notmatch "(?m)^## \[$escapedVersion\] - \d{4}-\d{2}-\d{2}\s*$") {

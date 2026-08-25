@@ -3,7 +3,9 @@ using System.Linq;
 using UnityEngine;
 
 namespace TorProduction.Addressables.Editor {
+	/// <summary>Exposes group and scene Analyze, Apply, and recovery operations to Unity batchmode.</summary>
 	public static class AddressablesAutomationCli {
+		/// <summary>Analyzes the active configuration's group scope and logs structured JSON.</summary>
 		public static void AnalyzeGroups() {
 			RunAnalyzeGroups(AddressablesAutomation.AnalyzeActiveGroups, Debug.Log);
 		}
@@ -18,6 +20,7 @@ namespace TorProduction.Addressables.Editor {
 			}
 		}
 
+		/// <summary>Analyzes and explicitly applies the active configuration's group scope.</summary>
 		public static void ApplyGroups() {
 			RunApplyGroups(
 				AddressablesAutomation.AnalyzeActiveGroups,
@@ -42,10 +45,12 @@ namespace TorProduction.Addressables.Editor {
 			}
 		}
 
+		/// <summary>Recovers a pending group-synchronization snapshot.</summary>
 		public static void RecoverGroups() {
 			RunRecoverGroups(AddressablesAutomation.Recover, Debug.Log);
 		}
 
+		/// <summary>Analyzes the active configuration's scene scope and logs structured JSON.</summary>
 		public static void AnalyzeScenes() {
 			RunAnalyzeScenes(AddressablesAutomation.AnalyzeActiveScenes, Debug.Log);
 		}
@@ -56,6 +61,7 @@ namespace TorProduction.Addressables.Editor {
 			if (!plan.IsValid) throw new InvalidOperationException("Addressables scene analysis found blocking diagnostics.");
 		}
 
+		/// <summary>Analyzes and explicitly applies the active configuration's scene scope.</summary>
 		public static void ApplyScenes() {
 			RunApplyScenes(AddressablesAutomation.AnalyzeActiveScenes, AddressablesAutomation.Apply, Debug.Log);
 		}
@@ -72,6 +78,7 @@ namespace TorProduction.Addressables.Editor {
 			if (!report.Succeeded) throw new InvalidOperationException("Addressables scene Apply failed: " + string.Join(" | ", report.Failures));
 		}
 
+		/// <summary>Recovers a pending scene-synchronization snapshot.</summary>
 		public static void RecoverScenes() {
 			RunRecoverScenes(AddressablesAutomation.Recover, Debug.Log);
 		}

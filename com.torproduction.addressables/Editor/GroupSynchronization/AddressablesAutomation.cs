@@ -5,7 +5,12 @@ using UnityEditor;
 using UnityEditor.AddressableAssets;
 
 namespace TorProduction.Addressables.Editor {
+	/// <summary>Provides deterministic Analyze, explicit Apply, and recovery entry points.</summary>
 	public static class AddressablesAutomation {
+		/// <summary>Analyzes one supported scope without modifying project state.</summary>
+		/// <param name="config">The project-owned automation configuration.</param>
+		/// <param name="scope">Exactly <see cref="AutomationScope.Groups"/> or <see cref="AutomationScope.Scenes"/>.</param>
+		/// <returns>An immutable plan containing ordered operations and diagnostics.</returns>
 		public static AutomationPlan Analyze(
 			AddressablesAutomationConfig config,
 			AutomationScope scope) {
@@ -51,6 +56,9 @@ namespace TorProduction.Addressables.Editor {
 			return GroupSyncPlanner.Create(UnityGroupSyncDataSource.Capture(config, diagnostics), config);
 		}
 
+		/// <summary>Applies a previously analyzed plan after rejecting stale project state.</summary>
+		/// <param name="plan">The immutable plan returned by <see cref="Analyze"/>.</param>
+		/// <returns>A report containing completed operations, failures, and rollback state.</returns>
 		public static AutomationReport Apply(AutomationPlan plan) {
 			if (plan == null) {
 				return Failure(
@@ -129,6 +137,8 @@ namespace TorProduction.Addressables.Editor {
 				plan, new UnityGroupSyncMutationBackend(settings));
 		}
 
+		/// <summary>Attempts to restore the latest pending package-owned recovery snapshot.</summary>
+		/// <returns>The recovery report.</returns>
 		public static AutomationReport Recover() {
 			return GroupSyncRecovery.Recover();
 		}

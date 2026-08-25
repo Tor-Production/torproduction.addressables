@@ -18,6 +18,33 @@ $workflowRoot = Join-Path $root '.github/workflows'
     -ExpectedHostAddressablesVersion $ExpectedHostAddressablesVersion
 & (Join-Path $PSScriptRoot 'Validate-PackageManifest.ps1') -PackagePath $packageRoot
 
+$pvsScript = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot 'Run-PackageValidation.ps1')
+foreach ($requiredPvsGuard in @(
+    'PVP-20-1',
+    'Xmldoc Validation',
+    'FindMissingDocs.exe exited with status 1.',
+    "Unity.XmlDoc.Filter.FilterYaml:filter",
+    'Microsoft.DocAsCode.Metadata.ManagedReference.Roslyn, Version=2.56.6.0',
+    'c571657558566c4b652a52ef2130a64af462274feca0da234bc9bf6d6ab6729b',
+    '$sourceCheckerSha256 -ne $expectedCheckerSha256',
+    '$executedCheckerSha256 -ne $expectedCheckerSha256',
+    'SourceCheckerSha256 -ne $DirectResult.ExecutedCheckerSha256',
+    '$DirectResult.ExitCode -ne 0',
+    '$DirectResult.StdoutLength -ne 0',
+    '$DirectResult.StderrLength -ne 0',
+    '$pvsResult.ExitCode -ne 1',
+    '$failed.Count -ne 1',
+    'unmodifiedPvsSuitePassed',
+    'acceptedInfrastructureFallback'
+)) {
+    if (-not $pvsScript.Contains($requiredPvsGuard)) {
+        throw "The narrow PVS XML-documentation fallback guard is missing: $requiredPvsGuard"
+    }
+}
+if ($pvsScript -match '(?is)ValidationExceptions.*Xmldoc|Xmldoc.*ValidationExceptions') {
+    throw 'The PVS runner must not add or recommend an Xmldoc Validation exception.'
+}
+
 foreach ($obsoleteWorkflow in @('comment_automatic_rebase.yml', 'pr_assign_creator.yml')) {
     if (Test-Path -LiteralPath (Join-Path $workflowRoot $obsoleteWorkflow)) {
         throw "Obsolete write-capable workflow remains: $obsoleteWorkflow"

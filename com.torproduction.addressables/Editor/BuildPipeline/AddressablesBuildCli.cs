@@ -29,7 +29,9 @@ namespace TorProduction.Addressables.Editor.Cli {
 		public ExistingBuildValidation SelectExistingBuild(bool confirmed) => AddressablesBuildQueue.SelectExistingBuild(confirmed);
 	}
 
+	/// <summary>Exposes batchmode content-build and recovery operations through command-line arguments.</summary>
 	public static class AddressablesCli {
+		/// <summary>Executes the requested <c>-torAction</c> and throws when the action reports failure.</summary>
 		public static void Run() {
 			var exitCode = Run(Environment.GetCommandLineArgs(), new AddressablesBuildCliApi(), Debug.Log);
 			if (exitCode != 0) {

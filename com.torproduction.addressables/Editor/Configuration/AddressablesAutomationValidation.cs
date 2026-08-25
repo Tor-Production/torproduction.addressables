@@ -7,47 +7,85 @@ using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace TorProduction.Addressables.Editor {
+	/// <summary>Identifies the severity of a configuration diagnostic.</summary>
 	public enum ConfigurationDiagnosticSeverity {
+		/// <summary>Informational context that does not invalidate the configuration.</summary>
 		Info,
+		/// <summary>A non-blocking configuration concern.</summary>
 		Warning,
+		/// <summary>A configuration error that blocks the requested scope.</summary>
 		Error
 	}
 
+	/// <summary>Provides stable machine-readable configuration validation codes.</summary>
 	public enum ConfigurationDiagnosticCode {
+		/// <summary>No configuration asset was supplied.</summary>
 		ConfigurationMissing,
+		/// <summary>The configuration asset is itself included in Addressables content.</summary>
 		ConfigurationIsAddressable,
+		/// <summary>The requested automation scope is empty or unsupported.</summary>
 		ScopeInvalid,
+		/// <summary>The configuration requires an explicit schema migration.</summary>
 		ConfigSchemaMigrationRequired,
+		/// <summary>The configuration was written by a newer unsupported schema.</summary>
 		ConfigSchemaUnsupported,
+		/// <summary>The project has no Addressables settings.</summary>
 		AddressablesSettingsMissing,
+		/// <summary>A serialized rule collection is missing.</summary>
 		RuleCollectionMissing,
+		/// <summary>A serialized rule entry is missing.</summary>
 		RuleMissing,
+		/// <summary>A source-folder rule has no GUID.</summary>
 		SourceFolderGuidMissing,
+		/// <summary>A source-folder GUID does not resolve to an existing folder.</summary>
 		SourceFolderMissing,
+		/// <summary>A source folder is outside the host project's Assets folder.</summary>
 		SourceFolderOutsideAssets,
+		/// <summary>An excluded nested-folder entry has no GUID.</summary>
 		ExcludedFolderGuidMissing,
+		/// <summary>An excluded folder GUID does not resolve to an existing folder.</summary>
 		ExcludedFolderMissing,
+		/// <summary>An excluded folder is not nested below its rule's source folder.</summary>
 		ExcludedFolderOutsideSource,
+		/// <summary>An excluded folder GUID is repeated within a rule.</summary>
 		ExcludedFolderDuplicate,
+		/// <summary>No destination group identity or fallback name was provided.</summary>
 		DestinationGroupMissing,
+		/// <summary>The configured destination group does not exist.</summary>
 		DestinationGroupNotFound,
+		/// <summary>The persistent group GUID and stored display name disagree.</summary>
 		DestinationGroupNameMismatch,
+		/// <summary>The selected address policy is unsupported for the rule.</summary>
 		AddressPolicyInvalid,
+		/// <summary>The address prefix is not a normalized relative path.</summary>
 		AddressPrefixInvalid,
+		/// <summary>The selected existing-label policy is unsupported.</summary>
 		LabelPolicyInvalid,
+		/// <summary>A required label is empty.</summary>
 		LabelEmpty,
+		/// <summary>A required label is repeated within a rule.</summary>
 		LabelDuplicate,
+		/// <summary>A required Addressables label does not yet exist.</summary>
 		LabelNotFound,
+		/// <summary>A type-filter entry is empty.</summary>
 		TypeFilterEmpty,
+		/// <summary>A type filter is repeated within a rule.</summary>
 		TypeFilterDuplicate,
+		/// <summary>A type filter does not use an assembly-qualified name.</summary>
 		TypeFilterNotAssemblyQualified,
+		/// <summary>A type filter cannot be resolved in the current editor domain.</summary>
 		TypeFilterUnresolved,
+		/// <summary>A scene rule does not select a supported management mode.</summary>
 		SceneModeInvalid,
+		/// <summary>A local Build Settings scene rule unexpectedly specifies an Addressables group.</summary>
 		UnexpectedSceneGroup,
+		/// <summary>The configuration has no dependency-analysis settings.</summary>
 		DependencySettingsMissing,
+		/// <summary>Two source-folder rules claim overlapping content without an exclusion.</summary>
 		RuleOverlap
 	}
 
+	/// <summary>Describes one configuration validation finding.</summary>
 	public sealed class ConfigurationDiagnostic {
 		internal ConfigurationDiagnostic(
 			ConfigurationDiagnosticCode code,
@@ -60,16 +98,23 @@ namespace TorProduction.Addressables.Editor {
 			Message = message ?? string.Empty;
 		}
 
+		/// <summary>Gets the stable diagnostic code.</summary>
 		public ConfigurationDiagnosticCode Code { get; }
+		/// <summary>Gets the diagnostic severity.</summary>
 		public ConfigurationDiagnosticSeverity Severity { get; }
+		/// <summary>Gets the configuration field or rule location.</summary>
 		public string Location { get; }
+		/// <summary>Gets the actionable diagnostic message.</summary>
 		public string Message { get; }
 	}
 
+	/// <summary>Contains the ordered findings from fail-closed configuration validation.</summary>
 	public sealed class ConfigurationValidationReport {
 		private readonly List<ConfigurationDiagnostic> m_diagnostics = new List<ConfigurationDiagnostic>();
 
+		/// <summary>Gets the ordered immutable validation diagnostics.</summary>
 		public IReadOnlyList<ConfigurationDiagnostic> Diagnostics => m_diagnostics;
+		/// <summary>Gets whether validation produced no blocking errors.</summary>
 		public bool IsValid => !m_diagnostics.Exists(item =>
 			item.Severity == ConfigurationDiagnosticSeverity.Error);
 
@@ -173,11 +218,19 @@ namespace TorProduction.Addressables.Editor {
 		}
 	}
 
+	/// <summary>Validates automation configuration without modifying project state.</summary>
 	public static class AddressablesAutomationValidator {
+		/// <summary>Validates all supported scopes of a configuration.</summary>
+		/// <param name="config">The configuration to validate.</param>
+		/// <returns>The ordered validation report.</returns>
 		public static ConfigurationValidationReport Validate(AddressablesAutomationConfig config) {
 			return Validate(config, AutomationScope.All);
 		}
 
+		/// <summary>Validates only the requested configuration scopes.</summary>
+		/// <param name="config">The configuration to validate.</param>
+		/// <param name="scope">The scope or scope combination to validate.</param>
+		/// <returns>The ordered validation report.</returns>
 		public static ConfigurationValidationReport Validate(
 			AddressablesAutomationConfig config,
 			AutomationScope scope) {

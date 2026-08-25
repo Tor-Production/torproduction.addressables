@@ -3,10 +3,10 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Phase 7A owner-decision and PVS XML-documentation continuation active; Phase 7 remains incomplete
+- Implementation: Phase 7A owner-decision and PVS XML-documentation continuation complete at the authorized local boundary; Phase 7 remains incomplete
 - Latest completed phase: Phase 6 — package layout and API cleanup complete and verified
 - Next incomplete phase: Phase 7 — tests, documentation, CI, and release readiness
-- Current active batch: Phase 7A owner-decision/PVS continuation — add required public API XML documentation, establish the exact narrow validator fallback, record provenance decisions, and revalidate locally; stop before notice/license edits, hosted verification, tagging, release, or publication
+- Current active batch: Phase 7A owner-decision/PVS continuation complete — stopped before notice/license edits, hosted verification, tagging, release, or publication; separate authorization is required to continue
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-25`
@@ -256,7 +256,7 @@ All applicable PVS validations passed except the PVS 0.86.0-preview XML-document
 
 ### Phase 7A owner-decision and PVS continuation — 2026-08-25
 
-**Status:** local implementation and validation complete; staged review, focused commits, remote recheck, and authorized push remain. The batch is limited to public production API XML documentation, exact PVS evidence/fallback handling, owner-attestation and template-audit records, static guard hardening, and local revalidation. It must stop before `LICENSE.md`/`Third Party Notices.md` edits, a paid hosted run, version bump, verification or semantic tag, release, or publication.
+**Status:** complete at the authorized local boundary in implementation commit `3a78b467cc955e6874ad74067290f375f4e17faf`; Phase 7 remains incomplete. The batch is limited to public production API XML documentation, exact PVS evidence/fallback handling, owner-attestation and template-audit records, static guard hardening, and local revalidation. It stopped before `LICENSE.md`/`Third Party Notices.md` edits, a paid hosted run, version bump, verification or semantic tag, release, or publication.
 
 **Established evidence:** production `package.json` declares only `com.unity.addressables@2.7.6`; PVS `0.86.0-preview` is injected only into a disposable validation-host manifest. The normal Unity/PVS run, direct checker run, exact commands, exit codes, stdout, stderr, hashes, report, classification, and import log are preserved under ignored `artifacts/phase7a-pvs-xmldoc/final-pvs`. Direct `FindMissingDocs.exe` is clean (`0`, empty stdout/stderr); unmodified Unity/PVS is accurately recorded as exit `1` with only the exact known XML child-launcher fault and all other applicable validations successful. A classifier self-test accepts that exact evidence and rejects an extra PVS error, an additional failed validation, a different exception, a different checker path, a failed direct run, and non-empty direct output. Development-host EditMode passed `133/133` with zero failed/skipped/inconclusive and no configured failure-pattern hits. PowerShell, tracked JSON/asmdef, package/manifest, release-readiness, workflow/actionlint, inertness, and diff checks pass. The exact archive at ignored `artifacts/phase7a-pvs-xmldoc/archive/com.torproduction.addressables-0.1.0-preview.1.tgz` has SHA-256 `e1c7c43c85dc9b2a557b819369ebcfd9f2564819d810e5f7374d5cc011f8cfe4`; source/archive contents and metadata match, and its disposable Addressables `2.9.1` install passed `133/133`, removed cleanly, and remained inert.
 

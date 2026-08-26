@@ -25,7 +25,8 @@ if ($headingMatches.Count -ne 1) {
 
 $heading = $headingMatches[0]
 $bodyStart = $heading.Index + $heading.Length
-$nextHeading = [regex]::Match($changelog, '(?m)^## \[', $bodyStart)
+$nextHeadingRegex = [regex]::new('(?m)^## \[')
+$nextHeading = $nextHeadingRegex.Match($changelog, $bodyStart)
 $bodyEnd = if ($nextHeading.Success) { $nextHeading.Index } else { $changelog.Length }
 $body = $changelog.Substring($bodyStart, $bodyEnd - $bodyStart).Trim()
 if ([string]::IsNullOrWhiteSpace($body)) {

@@ -33,7 +33,14 @@ $expectedFileName = "$($manifest.name)-$($manifest.version).tgz"
 New-Item -ItemType Directory -Force -Path $packRoot, $extractRoot, $resolvedArtifactsPath | Out-Null
 
 try {
-    $packJson = & npm pack $resolvedPackagePath --json --pack-destination $packRoot
+    $nodeCommand = Get-Command node -ErrorAction Stop
+    $bundledNpmCli = Join-Path (Split-Path -Parent $nodeCommand.Source) 'node_modules/npm/bin/npm-cli.js'
+    if (Test-Path -LiteralPath $bundledNpmCli -PathType Leaf) {
+        $packJson = & $nodeCommand.Source $bundledNpmCli pack $resolvedPackagePath --json --pack-destination $packRoot
+    } else {
+        $npmCommand = Get-Command npm -ErrorAction Stop
+        $packJson = & $npmCommand.Source pack $resolvedPackagePath --json --pack-destination $packRoot
+    }
     if ($LASTEXITCODE -ne 0) {
         throw "npm pack failed with exit code $LASTEXITCODE."
     }

@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,7 +13,9 @@ permissions:
 jobs:
   release:
     name: Create draft pre-release
-    if: github.ref_type == 'tag'
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-preview.1') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -28,13 +31,17 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: refs/tags/v0.1.0-preview.1
 
       - name: Validate tag, signature, candidate, and hosted Unity run
         id: hosted-validation
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF_NAME -ne $env:EXPECTED_TAG) {
+          if ($env:GITHUB_EVENT_NAME -eq 'push' -and $env:GITHUB_REF_NAME -ne $env:EXPECTED_TAG) {
               throw "Only $($env:EXPECTED_TAG) is authorized; received $($env:GITHUB_REF_NAME)."
+          }
+          if ($env:GITHUB_EVENT_NAME -notin @('push', 'workflow_dispatch')) {
+              throw "Unsupported release event: $($env:GITHUB_EVENT_NAME)."
           }
           $tagRef = "refs/tags/$($env:EXPECTED_TAG)"
           $tagType = (git cat-file -t $tagRef).Trim()

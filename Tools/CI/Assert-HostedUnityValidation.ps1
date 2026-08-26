@@ -56,13 +56,12 @@ foreach ($requiredJob in $requiredJobs) {
 }
 
 if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_OUTPUT)) {
-    [IO.File]::AppendAllLines(
-        $env:GITHUB_OUTPUT,
-        @(
-            "unity_run_id=$($run.id)",
-            "unity_run_url=$($run.html_url)"
-        ),
-        [Text.UTF8Encoding]::new($false))
+    $outputLines = @(
+        "unity_run_id=$($run.id)",
+        "unity_run_url=$($run.html_url)"
+    )
+    $outputText = ($outputLines -join [Environment]::NewLine) + [Environment]::NewLine
+    [IO.File]::AppendAllText($env:GITHUB_OUTPUT, $outputText, [Text.UTF8Encoding]::new($false))
 }
 
 Write-Output "Verified hosted Unity compatibility run $($run.id): $($run.html_url)"

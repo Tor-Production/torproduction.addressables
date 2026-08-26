@@ -138,6 +138,9 @@ foreach ($requiredText in @(
     'environment: release',
     'contents: write',
     'actions: read',
+    "github.event_name == 'workflow_dispatch'",
+    "github.ref == 'refs/heads/main'",
+    'ref: refs/tags/v0.1.0-preview.1',
     'Assert-HostedUnityValidation.ps1',
     'New-PackageArchive.ps1',
     'Export-ReleaseNotes.ps1',
@@ -151,9 +154,9 @@ foreach ($requiredText in @(
         throw "Protected release workflow value is missing: $requiredText"
     }
 }
-if ($releaseWorkflow -notmatch "(?ms)^on:\s*\r?\n\s{2}push:\s*\r?\n\s{4}tags:\s*\r?\n\s{6}-\s*'v\*'\s*$" -or
-    $releaseWorkflow -match '(?m)^\s{2}(workflow_dispatch|pull_request|schedule|workflow_run):') {
-    throw 'The GitHub pre-release workflow must trigger only for pushed v* tags.'
+if ($releaseWorkflow -notmatch "(?ms)^on:\s*\r?\n\s{2}push:\s*\r?\n\s{4}tags:\s*\r?\n\s{6}-\s*'v\*'\s*\r?\n\s{2}workflow_dispatch:\s*$" -or
+    $releaseWorkflow -match '(?m)^\s{2}(pull_request|schedule|workflow_run):') {
+    throw 'The GitHub pre-release workflow must trigger only for pushed v* tags or protected manual recovery.'
 }
 if ($releaseWorkflow -notmatch '(?ms)^permissions:\s*\r?\n\s{2}contents:\s*read\s*\r?\n\s{2}actions:\s*read\s*$') {
     throw 'The release workflow must retain read-only top-level permissions.'
@@ -161,7 +164,7 @@ if ($releaseWorkflow -notmatch '(?ms)^permissions:\s*\r?\n\s{2}contents:\s*read\
 if ([regex]::Matches($releaseWorkflow, '(?m)^\s+contents:\s*write\s*$').Count -ne 1) {
     throw 'Exactly one protected release job may receive contents: write.'
 }
-if ($releaseWorkflow -match 'game-ci/unity-test-runner|unity_phase_zero\.yml\s*@|workflow_dispatch|npm\s+publish|openupm') {
+if ($releaseWorkflow -match 'game-ci/unity-test-runner|unity_phase_zero\.yml\s*@|gh\s+workflow\s+run|npm\s+publish|openupm') {
     throw 'The tag workflow must not run Unity, dispatch another workflow, or publish to a registry.'
 }
 

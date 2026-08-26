@@ -89,7 +89,6 @@ $requiredFiles = @(
     'Documentation~/TROUBLESHOOTING.md',
     'Documentation~/CONTRIBUTING.md',
     'Documentation~/RELEASE_PROCESS.md',
-    'Documentation~/PROVENANCE_AUDIT.md',
     'Documentation~/RELEASE_READINESS.md',
     'Documentation~/API_SURFACE.txt',
     'Documentation~/PHASE_6_BREAKING_CHANGES.md',

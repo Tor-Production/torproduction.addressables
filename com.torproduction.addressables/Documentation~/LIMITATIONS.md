@@ -11,4 +11,4 @@
 - Existing-build Play Mode selection requires a fresh exact receipt and user confirmation. The package does not ship a custom/copied Play Mode builder.
 - The package does not move source assets, reorganize prefabs, map game-specific numeric states, or recreate the removed project-specific migration tool.
 - Imported samples, generated Addressables content, consumer configuration assets, and project Addressables settings are host-owned and are not deleted on package removal.
-- A public release, registry publication, OpenUPM submission, version tag, and license change remain blocked by the release and provenance decisions documented in [Release process](RELEASE_PROCESS.md) and [Provenance audit](PROVENANCE_AUDIT.md).
+- `0.1.0-preview.1` is distributed only through its signed Git tag and GitHub pre-release. OpenUPM, npm, Unity Registry, Asset Store, and other registry publication are outside this release.

@@ -1,18 +1,20 @@
-# Intended release process
+# Release process
 
-This document describes the gate order; it does not authorize a release.
+The first public preview is `0.1.0-preview.1`. Its manifest version, changelog heading, archive filename, signed tag, and GitHub Release title must agree exactly.
 
-1. Freeze a reviewed package candidate without changing the real package version during dry-run validation.
-2. Pass repository static checks, manifest/metadata checks, API snapshot, EditMode tests, selected PlayMode tests, clean path install/removal, sample import/removal, archive creation/content comparison, archive install/removal, Package Validation Suite, and inertness/cleanliness checks.
-3. Confirm required hosted Unity lanes for Addressables `2.7.6` and `2.9.1`. Run the prepared latest experimental lane separately when authorized. Paid Unity jobs must be manual or an explicitly authorized release condition, never an ordinary commit/PR schedule.
-4. Record factual provenance and obtain owner/legal decisions for ownership, redistribution, relicensing authority, copyright lines, and required third-party notices. Apply only the approved license/notice changes and revalidate the resulting candidate.
-5. Select the release version, update `package.json` and `CHANGELOG.md` together, and regenerate the archive. Confirm archive filename, embedded manifest, changelog heading, metadata, file list, and SHA-256 are consistent.
-6. Review the staged diff, verify the remote branch has not advanced, commit, and rerun the final hosted matrix on the exact candidate commit.
-7. Only with separate explicit authorization, create the signed/annotated `v<version>` tag and GitHub Release with the validated archive/checksum and release notes.
-8. Registry publication and OpenUPM submission are separate explicitly authorized actions. Verify the published package by installing it into a clean project before announcing it.
+1. Apply the approved MIT license and minimal Stan’s Assets template notice without changing retained Unity `.meta` files or GUIDs.
+2. Sanitize repository-owned reachable history, preserving the Phase 0–6 boundary and verification tags. Review the rewritten range and push only with a validated force-with-lease.
+3. Pass repository static checks, manifest/metadata checks, actionlint, API/assembly snapshots, EditMode tests, selected PlayMode validation, clean path install/removal for Addressables `2.7.6` and `2.9.1`, sample import/removal, Package Validation Suite with the recorded fail-closed XML-documentation fallback, direct bundled `FindMissingDocs.exe`, archive source/file-list validation, archive installation/removal, and inertness/clean-worktree checks.
+4. Commit and push the exact release candidate. An ordinary branch push must not publish or start Unity validation.
+5. Dispatch the manual **Unity compatibility validation** workflow exactly once for that candidate. Both required Addressables jobs and their authoritative XML results must pass for the exact SHA.
+6. Create `phase-7-verified` on the hosted-tested candidate, confirm it triggers no workflow, then create and locally verify the cryptographically signed `v0.1.0-preview.1` tag on the same commit.
+7. Push only the signed semantic tag. It may trigger only the non-Unity GitHub pre-release workflow.
+8. The release job waits for approval in the protected `release` environment. It verifies GitHub’s tag signature, the exact successful manual Unity run and both jobs, version agreement, approved notice hashes, the deterministic `.tgz` and committed SHA-256, and release notes exported from this changelog.
+9. The workflow creates a draft GitHub pre-release with the archive, checksum, and release-notes assets. It never publishes to a registry.
+10. Install the package from the signed Git tag in a disposable Unity project. After compilation, tests, inert removal, asset, checksum, target-SHA, and pre-release checks pass, publish the draft as the GitHub pre-release.
 
 ## Publication safety
 
-The repository intentionally contains no ordinary-push publication path. Release-readiness workflows are validation-only. No script in this package calls `npm publish`, creates a GitHub Release/tag, or submits to a registry/OpenUPM. Credentials must not be present in validation jobs, and workflow permissions remain least privilege.
+Ordinary pushes and pull requests never publish. Paid Unity validation remains `workflow_dispatch` only. Pushing `phase-7-verified` triggers nothing. The release workflow accepts only `v0.1.0-preview.1`, has top-level read-only permissions, and grants `contents: write` only to its protected release-creation job.
 
-Phase-verification tags are engineering checkpoints and are not semantic version tags or public releases. Phase 7 cannot be marked complete until legal decisions, the final authorized hosted verification, candidate-version consistency, and the separately authorized release actions required by `ImplementationPlan.md` are complete.
+This release does not call `npm publish`, submit to OpenUPM, publish to Unity Registry or Asset Store, or use any other registry. Those actions remain separate future decisions.

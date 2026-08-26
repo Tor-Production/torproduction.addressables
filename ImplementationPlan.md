@@ -3,13 +3,13 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Phase 7A owner-decision and PVS XML-documentation continuation complete at the authorized local boundary; Phase 7 remains incomplete
+- Implementation: Phase 7 final candidate, protected release automation, and first public preview release in progress
 - Latest completed phase: Phase 6 — package layout and API cleanup complete and verified
 - Next incomplete phase: Phase 7 — tests, documentation, CI, and release readiness
-- Current active batch: Phase 7A owner-decision/PVS continuation complete — stopped before notice/license edits, hosted verification, tagging, release, or publication; separate authorization is required to continue
+- Current active batch: Phase 7 final release — approved notices, bounded history cleanup, protected tag workflow, exact-candidate validation, hosted verification, signed tags, and GitHub pre-release
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
-- Last updated: `2026-08-25`
+- Last updated: `2026-08-26`
 
 This document is the implementation source of truth. Every implementation context must read it before changing code. Work must proceed incrementally by phase and issue ID. After completing a batch, update this status and the relevant issue/phase progress before committing.
 
@@ -214,6 +214,16 @@ This protocol is the documented exception to the repository's general commit, ta
 - [x] Phase 5 — Build pipeline and existing-build Play Mode
 - [x] Phase 6 — Package layout and API cleanup
 - [ ] Phase 7 — Tests, documentation, CI, and release readiness
+
+### Phase 7 final release batch — 2026-08-26
+
+**Status:** in progress. The owner explicitly approved continued MIT distribution, the final notice wording, version `0.1.0-preview.1`, one final paid compatibility run, `phase-7-verified`, a cryptographically signed `v0.1.0-preview.1` tag, and a protected GitHub pre-release with the validated archive, checksum, and release notes. OpenUPM and every other registry remain excluded.
+
+**Signing preflight:** Git `2.45.1.windows.1` uses SSH signing with the owner’s ED25519 key `SHA256:MKXGquj6Pe5zW4vuEYEyLpPO0RbGHig/k6w0RHQ9D2E`. The public key is loaded in the Windows SSH agent and registered by GitHub as signing key `1136324`. A disposable annotated tag signed and verified locally with `Good "git" signature`. The repository remote is `git@github.com:Yurii-Tor/torproduction.addressables.git` and GitHub CLI is authenticated as `Yurii-Tor`.
+
+**Bounded history cleanup:** the verified Phase 6 evidence boundary `d9603c64200d8b4ecae653ebc23b04dc9c26df1a` scanned clean. The prohibited former-company text appeared only in the four unverified Phase 7A commits after that boundary. A complete pre-rewrite bundle is retained outside the repository at `C:\Users\morta\Documents\Projects\UnityProjects\tor-production-addressables-phase7a-pre-rewrite-20260826.bundle`. Only that four-commit segment was reconstructed: `dec2eed` → `d7f3bb6`, `67880d8` → `40b18f4`, `3a78b46` → `370a641`, and `2dee18b` → `0a375a6`. The complete range diff showed only the required neutral provenance wording changes. Existing Phase 0–6 tag objects and peeled targets were unchanged. Remote `main` was updated from exact expected SHA `2dee18b1c8ab9d4d8b4e160b1521b3005835d5cb` to `0a375a6cfe97bc5cfdf4fb84b6a68d986def7ccb` through validated `--force-with-lease`; no remote backup ref was created. One contaminated local Codex tree-capture ref was removed after validating its exact object. The resulting scan covered 10 local refs, 15 advertised remote refs, 49 commits, and 925 unique reachable objects, including paths, blob contents, commit metadata/messages, annotated-tag metadata/messages, and ref names; no prohibited match remains. GitHub may retain unreachable server objects until garbage collection, but no repository-owned reachable ref exposes them.
+
+**Release protection:** GitHub environment `release` (ID `20611718886`) requires manual approval by `Yurii-Tor`; its custom deployment policy allows only tag `v0.1.0-preview.1`. No existing environment, ruleset, or branch protection was weakened. The tag-only workflow and final local/hosted/release evidence remain to be completed below.
 
 ### Phase 7A non-legal release-readiness record — 2026-08-25
 

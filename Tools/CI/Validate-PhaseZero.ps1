@@ -38,10 +38,6 @@ function Test-ContainsFormerOwnerToken([byte[]]$Bytes, [byte[]]$Token) {
 $forbiddenTokenCodes = @(87, 104, 105, 109, 115, 121)
 $forbiddenToken = -join ($forbiddenTokenCodes | ForEach-Object { [char]$_ })
 $forbiddenTokenBytes = [Text.Encoding]::ASCII.GetBytes($forbiddenToken.ToLowerInvariant())
-$legalAuditPaths = @(
-    'ImplementationPlan.md',
-    'com.torproduction.addressables/Documentation~/PROVENANCE_AUDIT.md'
-)
 $trackedPaths = @(& git -C $root -c core.quotepath=false ls-files)
 if ($LASTEXITCODE -ne 0) {
     throw 'Unable to enumerate tracked files for the former-owner guard.'
@@ -52,8 +48,7 @@ foreach ($trackedPath in $trackedPaths) {
     }
     $fullTrackedPath = Join-Path $root $trackedPath
     if ((Test-Path -LiteralPath $fullTrackedPath -PathType Leaf) -and
-        (Test-ContainsFormerOwnerToken ([IO.File]::ReadAllBytes($fullTrackedPath)) $forbiddenTokenBytes) -and
-        $legalAuditPaths -notcontains $trackedPath.Replace('\', '/')) {
+        (Test-ContainsFormerOwnerToken ([IO.File]::ReadAllBytes($fullTrackedPath)) $forbiddenTokenBytes)) {
         throw "A tracked file contains the forbidden former-owner token: $trackedPath"
     }
 }

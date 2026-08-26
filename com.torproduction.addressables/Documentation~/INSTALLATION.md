@@ -6,7 +6,7 @@
 - Addressables `2.7.6` or a separately verified compatible version.
 - The package is editor-only; it does not add a production runtime assembly.
 
-The release-readiness matrix and its exact evidence are in [Compatibility](COMPATIBILITY.md). This repository has no authorized public version release yet, so install only from a reviewed local path, a produced validation archive, or an explicitly identified engineering commit/tag.
+The release-readiness matrix and its exact evidence are in [Compatibility](COMPATIBILITY.md). Before the signed preview tag is published, install only from a reviewed local path or produced validation archive.
 
 ## Install from disk
 
@@ -29,10 +29,10 @@ The repository script `Tools/CI/New-PackageArchive.ps1` creates a `.tgz` and SHA
 Unity supports a Git dependency with the package subfolder:
 
 ```text
-https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#<reviewed-ref>
+https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.1
 ```
 
-Use an exact reviewed commit or authorized release tag. Phase-verification tags are engineering evidence and are not public package releases.
+Use the signed semantic release tag after its GitHub pre-release is published. Phase-verification tags are engineering evidence and are not public package releases.
 
 ## First setup
 

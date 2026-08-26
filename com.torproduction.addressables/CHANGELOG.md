@@ -4,11 +4,7 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
-No post-preview product changes are currently recorded. Phase 7 release-readiness work does not authorize publication.
-
-## [0.1.0-preview.1] - 2026-08-25
-
-This preview version remains unpublished while the ownership, licensing, attribution, and final hosted-verification gates are unresolved.
+## [0.1.0-preview.1] - 2026-08-26
 
 ### Added
 
@@ -27,7 +23,7 @@ This preview version remains unpublished while the ownership, licensing, attribu
 - Group synchronization operates only on explicit rule-owned entries and preserves unrelated labels by default.
 - Legacy unique simple type names and the serialized `Lables` field migrate through explicit preview; ambiguous types remain blocking diagnostics.
 - Asset-load failures now block Apply because complete convergence cannot be proven.
-- Repository and package documentation now describe the implemented product and its unreleased status.
+- Repository and package documentation now describe the implemented product, compatibility evidence, and controlled preview-release process.
 - Numeric application-state mapping and its bundled sample were retired in favor of generic scene categories and labels.
 - Configuration schema 3 adds a generic duplicate-dependency destination group. Existing schema 0–2 assets require the explicit backup-first migration.
 

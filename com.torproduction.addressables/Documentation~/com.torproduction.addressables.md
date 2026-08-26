@@ -25,7 +25,8 @@ This editor-only package provides explicit configuration, deterministic Addressa
 - [Contributing](CONTRIBUTING.md)
 - [Intended release process](RELEASE_PROCESS.md)
 - [Release-readiness map](RELEASE_READINESS.md)
-- [Provenance and licensing audit](PROVENANCE_AUDIT.md)
+- [License](../LICENSE.md)
+- [Third-party notices](../Third%20Party%20Notices.md)
 - [Phase 6 breaking changes](PHASE_6_BREAKING_CHANGES.md)
 
-The package remains an unpublished preview. Release-readiness preparation does not authorize publication or resolve the preserved licensing/attribution questions.
+The `0.1.0-preview.1` candidate uses the protected release process documented here. The repository `ImplementationPlan.md` records the authoritative candidate, hosted verification, signed tag, and GitHub pre-release evidence as each gate completes.

@@ -13,7 +13,7 @@ Editor tooling for project-agnostic, previewable Addressables automation on Unit
 - Explicit Full, Content Update, Editor-Compatible, and deterministic Multi-Platform content builds with exact-target preflight, domain-reload recovery, preserved reports, cancellation, and built-in existing-build Play Mode selection guarded by freshness receipts.
 - Inert package import and configuration reads when setup is missing or invalid.
 
-The curated Basic Setup sample, package-layout checks, archive dry run, and release-readiness validation are available. Publication remains disabled pending the ownership/licensing decisions and final authorized hosted verification. The former project-specific prefab/interactable migration tool was removed rather than generalized inside the package.
+The curated Basic Setup sample, package-layout checks, archive validation, and release-readiness validation are available. The former project-specific prefab/interactable migration tool was removed rather than generalized inside the package.
 
 ## Development installation
 
@@ -33,7 +33,7 @@ The repository also supports Git dependencies with the package subfolder:
 https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#<verified-tag>
 ```
 
-There is no authorized public version release yet. Phase-verification tags record engineering evidence and are not package releases.
+Install from the signed semantic release tag after its GitHub pre-release is published. Phase-verification tags record engineering evidence and are not package releases.
 
 ## Use
 
@@ -50,6 +50,6 @@ For complete usage, start with `Documentation~/INSTALLATION.md`, `CONFIGURATION.
 
 The exact verification evidence is maintained in the repository `ImplementationPlan.md`.
 
-## License and provenance
+## License and attribution
 
-The existing license and attribution files are preserved. Public release remains blocked until ownership, redistribution rights, relicensing authority, and required attribution are confirmed by the owner. See `Documentation~/PROVENANCE_AUDIT.md` for verified facts and the exact unresolved questions.
+The package is MIT-licensed. `LICENSE.md` retains the Stan’s Assets template notice and adds the Tor Production copyright line; `Third Party Notices.md` contains the approved minimal template attribution.

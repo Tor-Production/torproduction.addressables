@@ -1,25 +1,23 @@
 # Release-readiness map
 
-Phase 7A covers non-legal, non-publishing preparation only. It does not complete Phase 7 or authorize a hosted paid run, license change, tag, GitHub Release, registry publication, or OpenUPM submission.
+The authorized first public preview is `0.1.0-preview.1`. The repository `ImplementationPlan.md` is the authoritative live evidence record; package contents describe the gates without claiming the release exists before publication.
 
-| Phase 7 requirement | Implementation/evidence | Phase 7A state |
-| --- | --- | --- |
-| EditMode regression coverage | Package test assembly plus `Tools/CI/Test-CleanInstall.ps1`; exact-count result artifacts | Implemented; local results recorded in `ImplementationPlan.md` |
-| Relevant PlayMode coverage | A marked disposable fixture builds a known Addressable, selects Unity's built-in packed Play Mode builder, loads the asset, verifies no package runtime production surface/components, removes the fixture, and rechecks inertness | Passed locally; exact result recorded in the plan |
-| Package Validation Suite | Disposable-only `Run-PackageValidation.ps1`, PVS `0.86.0-preview`, two-pass import, complete command/exit/stdout/stderr evidence, direct hash-identical bundled-checker gate, exported log/report, inertness assertion | All applicable PVS validations passed except the PVS 0.86.0-preview XML-documentation child-process launcher, which failed with the recorded upstream toolchain TypeLoadException. The same bundled FindMissingDocs checker was executed independently and confirmed that no public production APIs lack XML documentation. The unmodified suite exit remains accurately recorded as failed; no blanket exception or XML-doc suppression exists. |
-| Clean UPM path install/removal | Disposable project, two Addressables lanes, exact EditMode count, compilation-log scan, inertness before/after removal | Implemented; results recorded in the plan |
-| Sample import/removal | Marked clean-project lane imports the declared sample, validates GUID/config/scene/missing scripts, removes it, preserves a sentinel, and removes the package | Implemented; result recorded in the plan |
-| Archive creation/content validation | `Validate-PackageManifest.ps1` plus `New-PackageArchive.ps1`; source/archive file-list comparison, extracted validation, filename/version/manifest/changelog checks, SHA-256 | Current non-published archive passed; the non-self-referential checksum is recorded in repository `ImplementationPlan.md` |
-| Archive installation/removal | Archive-aware clean-install harness uses a local `.tgz` dependency and repeats tests/inertness/removal | Exact current archive passed `133/133` on Addressables `2.9.1`, then removed inertly |
-| Metadata consistency | Manifest/content validator checks name, SemVer, dependency, Unity line, author/repository, sample, current changelog heading, top-level allowlist, meta pairing/GUID uniqueness, prohibited content/links | Implemented |
-| Repository cleanliness/inertness | All generated projects, caches, logs, reports, and archives use system temp or ignored `artifacts`; `Assert-InertProject.ps1`; final `git status` | Implemented |
-| Required compatibility lanes | Manual hosted Unity matrix retains Addressables `2.7.6` and `2.9.1` | Preserved; not dispatched in Phase 7A |
-| Current compatibility lane | Separate manual experimental Unity `6000.0.82f1` / Addressables `2.11.2` workflow | Prepared, not yet verified, no schedule |
-| Workflow hardening | Immutable third-party SHAs, official Actions replacements, least privilege, paid Unity triggers restricted, local YAML/actionlint gate | Implemented; stable GameCI Node 20 exception documented until an upstream stable Node 24 release |
-| User documentation | Installation, compatibility, configuration, preview/Apply, recovery, groups, scenes, dependencies, builds, CLI, samples, limitations, troubleshooting, contribution, and intended release process | Implemented |
-| Provenance/licensing | `PROVENANCE_AUDIT.md` separates independent evidence from the owner's attestations, verifies the public Stan's Assets template/MIT source, and records a minimal notice recommendation; current notices are preserved | Owner answers recorded; actual notice edits deferred to separate authorization |
-| Candidate version/license/notices | Owner selected continued public MIT; proposed minimal lines preserve Stan's 2020 template notice and add `Copyright (c) 2026 Yurii Tor (Tor Production)` | Decision recorded; no real bump or license/notice change in Phase 7A |
-| Final hosted verification | Required paid Unity lanes on the exact final Phase 7 candidate | Technically prepared, but not yet the final candidate: apply/revalidate the separately authorized notice edits first, then separately authorize hosted execution |
-| Tag/release/publication | Semantic version tag, GitHub Release, registry/OpenUPM actions | Intentionally absent and unauthorized |
+| Requirement | Implementation or required evidence |
+| --- | --- |
+| EditMode and integration coverage | Deterministic package test suites plus development-host and disposable clean-project results |
+| Selected PlayMode coverage | A disposable known Addressable is built, selected through Addressables’ built-in packed Play Mode builder, loaded, verified, removed, and followed by inertness checks |
+| Clean UPM path install/removal | Addressables `2.7.6` and `2.9.1` lanes compile, pass exact test counts, remove the package, and preserve project state |
+| Sample import/removal | The declared Basic Setup sample imports through Unity Package Manager, validates its config/scene/GUIDs, removes cleanly, and preserves an unrelated sentinel |
+| Package Validation Suite | Official PVS `0.86.0-preview` runs in a disposable project; the unmodified XML launcher outcome remains accurately recorded, while the hash-identical bundled `FindMissingDocs.exe` must exit `0` with empty stdout/stderr |
+| Archive | `New-PackageArchive.ps1` validates the source, compares source/archive file lists, validates extraction, and writes the exact `.tgz` plus SHA-256 |
+| Archive installation/removal | The exact `.tgz` installs as a local UPM dependency, passes tests and inertness checks, then removes cleanly |
+| Metadata | Manifest, changelog, archive, checksum, release notes, tag, and GitHub Release agree on `0.1.0-preview.1` |
+| License and notices | MIT text and both approved copyright lines are present; the package-root notice contains only the approved minimal template attribution |
+| Required hosted lanes | One manual workflow run targets the exact candidate; Addressables `2.7.6` and `2.9.1` jobs both succeed and their XML artifacts independently verify zero failures, skips, and inconclusive tests |
+| Release protection | A protected GitHub environment named `release` requires manual approval; top-level workflow permissions are read-only and only the release job receives `contents: write` |
+| Signed tags | `phase-7-verified` and signed `v0.1.0-preview.1` peel to the exact hosted-tested candidate; GitHub marks the semantic tag signature Verified |
+| Tag installation | A disposable project installs from the signed Git URL, compiles, tests, removes inertly, and preserves host state |
+| GitHub pre-release | A verified draft carries the exact archive, checksum, and changelog-derived release notes; it is published only after tag-install smoke testing |
+| Registry scope | No npm, OpenUPM, Unity Registry, Asset Store, or other registry publication occurs |
 
-The authoritative execution status, exact commit/run IDs, and remaining blockers are maintained in the repository `ImplementationPlan.md`.
+The experimental Unity `6000.0.82f1` / Addressables `2.11.2` workflow and future Addressables `4.0.1` work are non-blocking future compatibility investigations.

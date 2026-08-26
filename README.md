@@ -33,14 +33,14 @@ pwsh ./Tools/CI/Test-CleanInstall.ps1 `
 
 Repeat with `2.9.1`. The paid Unity compatibility workflow is intentionally manual and does not run for ordinary branch pushes or pull requests.
 
-Phase 7A also provides `New-PackageArchive.ps1`, archive-aware clean installation, selected PlayMode validation, and disposable Package Validation Suite execution. Generated archives, reports, projects, and caches stay under ignored `artifacts/` or the system temporary directory.
+Phase 7 provides `New-PackageArchive.ps1`, archive-aware clean installation, selected PlayMode validation, disposable Package Validation Suite execution, and a protected tag-only GitHub pre-release workflow. Generated archives, reports, projects, and caches stay under ignored `artifacts/` or the system temporary directory.
 
 ## Installation status
 
-No version release is currently authorized. For development, use a local package reference. A future verified phase tag can be installed from:
+The authorized public preview candidate is `0.1.0-preview.1`. Until its signed release tag and GitHub pre-release have passed every recorded gate, use a local package reference. Once published, the supported Git URL is:
 
 ```text
-https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#<verified-tag>
+https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.1
 ```
 
 Do not treat phase-verification tags as public package releases.
@@ -49,7 +49,7 @@ Do not treat phase-verification tags as public package releases.
 
 - Import, settings reads, and unrelated asset imports must remain inert.
 - Mutating commands require an explicit valid configuration and a confirmed plan.
-- `ImplementationPlan.md` is the source of truth for phase status, known limitations, verification evidence, and legal/provenance blockers.
-- Package publication, a GitHub Release, and version tags remain disabled pending later implementation and explicit legal/release authorization.
+- `ImplementationPlan.md` is the source of truth for phase status, known limitations, and verification evidence.
+- The GitHub pre-release may be created only from the signed `v0.1.0-preview.1` tag after the exact candidate passes the manual compatibility run and protected-environment approval.
 
-See `com.torproduction.addressables/Documentation~/com.torproduction.addressables.md` for the complete documentation index and `PROVENANCE_AUDIT.md` for the unresolved ownership/licensing questions.
+See `com.torproduction.addressables/Documentation~/com.torproduction.addressables.md` for the complete package documentation index and `PROVENANCE_AUDIT.md` for the approved template-notice decision.

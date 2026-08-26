@@ -135,7 +135,8 @@ $releaseWorkflow = Get-Content -Raw -LiteralPath (Join-Path $workflowRoot 'relea
 foreach ($requiredText in @(
     "EXPECTED_TAG: $releaseTag",
     "EXPECTED_VERSION: $releaseVersion",
-    'environment: release',
+    'environment: ${{',
+    "'release-recovery' || 'release'",
     'contents: write',
     'actions: read',
     "github.event_name == 'workflow_dispatch'",

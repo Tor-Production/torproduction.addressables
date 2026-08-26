@@ -12,6 +12,20 @@ Set-StrictMode -Version Latest
 $root = (Resolve-Path -LiteralPath $RepositoryRoot).Path
 $packageRoot = Join-Path $root 'com.torproduction.addressables'
 $workflowRoot = Join-Path $root '.github/workflows'
+$releaseVersion = '0.1.0-preview.1'
+$releaseTag = "v$releaseVersion"
+$archiveName = "com.torproduction.addressables-$releaseVersion.tgz"
+
+function Get-NormalizedTextSha256([string]$Path) {
+    $text = (Get-Content -Raw -LiteralPath $Path).Replace("`r`n", "`n").Replace("`r", "`n")
+    $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        return -join ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') })
+    } finally {
+        $sha.Dispose()
+    }
+}
 
 & (Join-Path $PSScriptRoot 'Validate-PhaseZero.ps1') `
     -RepositoryRoot $root `
@@ -23,7 +37,7 @@ foreach ($requiredPvsGuard in @(
     'PVP-20-1',
     'Xmldoc Validation',
     'FindMissingDocs.exe exited with status 1.',
-    "Unity.XmlDoc.Filter.FilterYaml:filter",
+    'Unity.XmlDoc.Filter.FilterYaml:filter',
     'Microsoft.DocAsCode.Metadata.ManagedReference.Roslyn, Version=2.56.6.0',
     'c571657558566c4b652a52ef2130a64af462274feca0da234bc9bf6d6ab6729b',
     '$sourceCheckerSha256 -ne $expectedCheckerSha256',
@@ -52,7 +66,7 @@ foreach ($obsoleteWorkflow in @('comment_automatic_rebase.yml', 'pr_assign_creat
 }
 
 $workflowFiles = @(Get-ChildItem -File -LiteralPath $workflowRoot -Filter '*.yml')
-if ($workflowFiles.Count -ne 3) {
+if ($workflowFiles.Count -ne 4) {
     throw "Unexpected workflow count: $($workflowFiles.Count)"
 }
 foreach ($workflow in $workflowFiles) {
@@ -63,8 +77,8 @@ foreach ($workflow in $workflowFiles) {
     if ($contents -match '(?im)^\s{2}schedule:|^\s{2}workflow_run:') {
         throw "Recurring or chained workflow trigger is not authorized: $($workflow.Name)"
     }
-    if ($contents -match '(?im)contents:\s*write|packages:\s*write|id-token:\s*write|npm\s+publish|openupm|gh\s+release|create-release|softprops/action-gh-release') {
-        throw "Publication/write capability is not authorized in workflow: $($workflow.Name)"
+    if ($contents -match '(?im)packages:\s*write|id-token:\s*write|npm\s+publish|openupm|softprops/action-gh-release') {
+        throw "Registry or broad publication capability is not authorized: $($workflow.Name)"
     }
 
     foreach ($usesMatch in [regex]::Matches($contents, '(?m)^\s*-?\s*uses:\s*(?<action>[^\s#]+)')) {
@@ -80,6 +94,10 @@ foreach ($workflow in $workflowFiles) {
     if ($contents -match 'game-ci/unity-test-runner@' -and
         ($contents -match '(?m)^\s{2}(push|pull_request|schedule|workflow_run):')) {
         throw "Paid Unity workflow is not manual-only: $($workflow.Name)"
+    }
+    if ($workflow.Name -ne 'release_github_prerelease.yml' -and
+        ($contents -match '(?im)contents:\s*write|gh\s+release')) {
+        throw "Only the protected release workflow may write repository contents: $($workflow.Name)"
     }
 }
 
@@ -113,13 +131,75 @@ if ($semanticWorkflow -notmatch 'actions/github-script@3a2844b7e9c422d3c10d287c8
     throw 'The semantic-title workflow must use the reviewed official actions/github-script v9 pin.'
 }
 
-$license = Get-Content -Raw -LiteralPath (Join-Path $packageRoot 'LICENSE.md')
-if ($license -notmatch [regex]::Escape("Copyright (c) 2020 Stan's Assets")) {
-    throw 'The unresolved retained copyright notice changed without an approved legal decision.'
+$releaseWorkflow = Get-Content -Raw -LiteralPath (Join-Path $workflowRoot 'release_github_prerelease.yml')
+foreach ($requiredText in @(
+    "EXPECTED_TAG: $releaseTag",
+    "EXPECTED_VERSION: $releaseVersion",
+    'environment: release',
+    'contents: write',
+    'actions: read',
+    'Assert-HostedUnityValidation.ps1',
+    'New-PackageArchive.ps1',
+    'Export-ReleaseNotes.ps1',
+    'verification.verified',
+    'gh release create',
+    '--verify-tag',
+    '--draft',
+    '--prerelease'
+)) {
+    if (-not $releaseWorkflow.Contains($requiredText)) {
+        throw "Protected release workflow value is missing: $requiredText"
+    }
 }
-$notices = Get-Content -Raw -LiteralPath (Join-Path $packageRoot 'Third Party Notices.md')
-if ($notices -notmatch '(?i)provenance' -or $notices -notmatch '(?i)unresolved') {
-    throw 'Third Party Notices must retain the unresolved provenance warning until legal review.'
+if ($releaseWorkflow -notmatch "(?ms)^on:\s*\r?\n\s{2}push:\s*\r?\n\s{4}tags:\s*\r?\n\s{6}-\s*'v\*'\s*$" -or
+    $releaseWorkflow -match '(?m)^\s{2}(workflow_dispatch|pull_request|schedule|workflow_run):') {
+    throw 'The GitHub pre-release workflow must trigger only for pushed v* tags.'
+}
+if ($releaseWorkflow -notmatch '(?ms)^permissions:\s*\r?\n\s{2}contents:\s*read\s*\r?\n\s{2}actions:\s*read\s*$') {
+    throw 'The release workflow must retain read-only top-level permissions.'
+}
+if ([regex]::Matches($releaseWorkflow, '(?m)^\s+contents:\s*write\s*$').Count -ne 1) {
+    throw 'Exactly one protected release job may receive contents: write.'
+}
+if ($releaseWorkflow -match 'game-ci/unity-test-runner|unity_phase_zero\.yml\s*@|workflow_dispatch|npm\s+publish|openupm') {
+    throw 'The tag workflow must not run Unity, dispatch another workflow, or publish to a registry.'
 }
 
-Write-Output "Phase 7A release-readiness static validation passed for Addressables $ExpectedHostAddressablesVersion."
+$licensePath = Join-Path $packageRoot 'LICENSE.md'
+$noticePath = Join-Path $packageRoot 'Third Party Notices.md'
+$expectedLicenseSha256 = 'a14f690616e084b1cbae91979075c8e00f7a4bd84a09b311463c84b118ef4a19'
+$expectedNoticeSha256 = '97bf61cec1101d091824a5d2563e23620db6da6220a20b8218e4ed94b6b584c3'
+if ((Get-NormalizedTextSha256 $licensePath) -ne $expectedLicenseSha256) {
+    throw 'LICENSE.md differs from the approved complete MIT text and copyright lines.'
+}
+if ((Get-NormalizedTextSha256 $noticePath) -ne $expectedNoticeSha256) {
+    throw 'Third Party Notices.md differs from the approved minimal template attribution.'
+}
+if (Test-Path -LiteralPath (Join-Path $packageRoot 'Documentation~/Third Party Notices.md')) {
+    throw 'The duplicate Documentation~ third-party notice must not exist.'
+}
+if (Test-Path -LiteralPath (Join-Path $packageRoot 'Documentation~/PROVENANCE_AUDIT.md')) {
+    throw 'Private provenance narrative must not be distributed inside the UPM package.'
+}
+
+$changelog = Get-Content -Raw -LiteralPath (Join-Path $packageRoot 'CHANGELOG.md')
+if ($changelog -notmatch "(?m)^## \[$([regex]::Escape($releaseVersion))\] - 2026-08-26\s*$") {
+    throw "CHANGELOG.md must contain the actual $releaseVersion release date."
+}
+$unreleasedMatch = [regex]::Match(
+    $changelog,
+    "(?ms)^## \[Unreleased\]\s*\r?\n(?<body>.*?)(?=^## \[$([regex]::Escape($releaseVersion))\])")
+if (-not $unreleasedMatch.Success -or -not [string]::IsNullOrWhiteSpace($unreleasedMatch.Groups['body'].Value)) {
+    throw 'CHANGELOG.md must retain an empty [Unreleased] section.'
+}
+
+$checksumPath = Join-Path $root "Release/$archiveName.sha256"
+if (-not (Test-Path -LiteralPath $checksumPath -PathType Leaf)) {
+    throw "Committed release checksum is missing: Release/$archiveName.sha256"
+}
+$checksumLine = (Get-Content -Raw -LiteralPath $checksumPath).Trim()
+if ($checksumLine -notmatch "^[0-9a-f]{64}  $([regex]::Escape($archiveName))$") {
+    throw 'Committed release checksum has an invalid filename or SHA-256 format.'
+}
+
+Write-Output "Phase 7 release-readiness static validation passed for Addressables $ExpectedHostAddressablesVersion."

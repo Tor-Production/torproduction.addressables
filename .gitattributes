@@ -1,0 +1,11 @@
+*.asmdef text eol=lf
+*.asset text eol=lf
+*.cs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.meta text eol=lf
+*.ps1 text eol=lf
+*.txt text eol=lf
+*.unity text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf

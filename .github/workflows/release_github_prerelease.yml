@@ -1,0 +1,108 @@
+name: GitHub pre-release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  release:
+    name: Create draft pre-release
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      actions: read
+    env:
+      EXPECTED_TAG: v0.1.0-preview.1
+      EXPECTED_VERSION: 0.1.0-preview.1
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out signed release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag, signature, candidate, and hosted Unity run
+        id: hosted-validation
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_NAME -ne $env:EXPECTED_TAG) {
+              throw "Only $($env:EXPECTED_TAG) is authorized; received $($env:GITHUB_REF_NAME)."
+          }
+          $tagRef = "refs/tags/$($env:EXPECTED_TAG)"
+          $tagType = (git cat-file -t $tagRef).Trim()
+          if ($tagType -ne 'tag') {
+              throw 'The release tag must be an annotated, cryptographically signed tag object.'
+          }
+          $tagCommit = (git rev-parse "$tagRef^{}").Trim()
+          $checkedOutCommit = (git rev-parse HEAD).Trim()
+          if ($tagCommit -ne $checkedOutCommit) {
+              throw "Release tag peels to $tagCommit but checkout resolved to $checkedOutCommit."
+          }
+          $manifest = Get-Content -Raw ./com.torproduction.addressables/package.json | ConvertFrom-Json
+          if ($manifest.version -ne $env:EXPECTED_VERSION) {
+              throw "Manifest version $($manifest.version) does not match $($env:EXPECTED_VERSION)."
+          }
+          $tagRefResponse = gh api "repos/$($env:GITHUB_REPOSITORY)/git/ref/tags/$($env:EXPECTED_TAG)" | ConvertFrom-Json
+          if ($tagRefResponse.object.type -ne 'tag') {
+              throw 'GitHub does not expose the release ref as an annotated tag object.'
+          }
+          $tagObject = gh api "repos/$($env:GITHUB_REPOSITORY)/git/tags/$($tagRefResponse.object.sha)" | ConvertFrom-Json
+          if (-not $tagObject.verification.verified) {
+              throw "GitHub did not verify the release-tag signature: $($tagObject.verification.reason)"
+          }
+          ./Tools/CI/Validate-ReleaseReadiness.ps1 -ExpectedHostAddressablesVersion 2.7.6
+          ./Tools/CI/Assert-HostedUnityValidation.ps1 `
+              -Repository $env:GITHUB_REPOSITORY `
+              -CommitSha $tagCommit
+
+      - name: Build and verify release assets
+        shell: pwsh
+        run: |
+          $assetRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts/release'
+          ./Tools/CI/New-PackageArchive.ps1 `
+              -PackagePath ./com.torproduction.addressables `
+              -ArtifactsPath $assetRoot
+          ./Tools/CI/Export-ReleaseNotes.ps1 `
+              -ChangelogPath ./com.torproduction.addressables/CHANGELOG.md `
+              -Version $env:EXPECTED_VERSION `
+              -OutputPath (Join-Path $assetRoot "$($env:EXPECTED_TAG)-release-notes.md")
+          $archiveName = "com.torproduction.addressables-$($env:EXPECTED_VERSION).tgz"
+          $actualChecksum = (Get-Content -Raw (Join-Path $assetRoot "$archiveName.sha256")).Trim()
+          $expectedChecksum = (Get-Content -Raw "./Release/$archiveName.sha256").Trim()
+          if ($actualChecksum -ne $expectedChecksum) {
+              throw "Release archive checksum differs from the locally validated candidate."
+          }
+
+      - name: Create protected draft GitHub pre-release
+        shell: pwsh
+        run: |
+          gh release view $env:EXPECTED_TAG --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+              throw "A GitHub Release already exists for $($env:EXPECTED_TAG)."
+          }
+          $assetRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts/release'
+          $archiveName = "com.torproduction.addressables-$($env:EXPECTED_VERSION).tgz"
+          $archivePath = Join-Path $assetRoot $archiveName
+          $checksumPath = "$archivePath.sha256"
+          $notesPath = Join-Path $assetRoot "$($env:EXPECTED_TAG)-release-notes.md"
+          gh release create $env:EXPECTED_TAG `
+              $archivePath `
+              $checksumPath `
+              $notesPath `
+              --repo $env:GITHUB_REPOSITORY `
+              --verify-tag `
+              --title $env:EXPECTED_TAG `
+              --notes-file $notesPath `
+              --draft `
+              --prerelease
+          if ($LASTEXITCODE -ne 0) {
+              throw 'GitHub draft pre-release creation failed.'
+          }

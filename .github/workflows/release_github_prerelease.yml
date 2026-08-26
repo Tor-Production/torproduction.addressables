@@ -33,6 +33,16 @@ jobs:
           fetch-depth: 0
           ref: refs/tags/v0.1.0-preview.1
 
+      - name: Check out pinned release recovery helper
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: d573808cef21c39f0689a017a05edb0260b6d13a
+          path: .release-recovery
+          sparse-checkout: Tools/CI/Assert-HostedUnityValidation.ps1
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Validate tag, signature, candidate, and hosted Unity run
         id: hosted-validation
         shell: pwsh
@@ -66,7 +76,11 @@ jobs:
               throw "GitHub did not verify the release-tag signature: $($tagObject.verification.reason)"
           }
           ./Tools/CI/Validate-ReleaseReadiness.ps1 -ExpectedHostAddressablesVersion 2.7.6
-          ./Tools/CI/Assert-HostedUnityValidation.ps1 `
+          $hostedValidationScript = './Tools/CI/Assert-HostedUnityValidation.ps1'
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+              $hostedValidationScript = './.release-recovery/Tools/CI/Assert-HostedUnityValidation.ps1'
+          }
+          & $hostedValidationScript `
               -Repository $env:GITHUB_REPOSITORY `
               -CommitSha $tagCommit
 

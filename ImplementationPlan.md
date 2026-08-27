@@ -3,10 +3,10 @@
 ## Plan status
 
 - Planning: Complete
-- Implementation: Phase 7 Preview 3 automated and manual release-quality gates verified; separate explicit publication authorization remains
-- Latest completed phase: Phase 6 — package layout and API cleanup complete and verified
-- Next incomplete phase: Phase 7 — tests, documentation, CI, and release readiness
-- Current active batch: Phase 7 Preview 3 final authorization gate — preserve Preview 2 and Preview 3 drafts/tags and publish only after the owner says exactly `Publish v0.1.0-preview\.3`
+- Implementation: Complete through Phase 7; Preview 3 is publicly available as the verified GitHub pre-release, with all registry publication excluded
+- Latest completed phase: Phase 7 — tests, documentation, CI, release readiness, manual validation, and authorized GitHub pre-release publication complete
+- Next incomplete phase: None — enter maintenance only under a separately authorized scope
+- Current active batch: Phase 7 closed — preserve all immutable tags and Preview 2's unpublished draft; no npm, OpenUPM, Unity Registry, Asset Store, or other registry publication is authorized
 - Maintenance starting `main`: `d4516c8f6178b73ec7af3d54ec7cad7f8549e325`
 - Source baseline: `ccce9423b7d1f64b76431759052ef5b945e99334`
 - Last updated: `2026-08-27`
@@ -273,7 +273,7 @@ The owner's failed manual archive attempt used GitHub's automatic whole-reposito
 
 **Removal-harness confirmation:** `Test-CleanInstall.ps1` runs the marked `PlayModeFixtureRunner.Cleanup` before removal; that test-only cleanup clears the disposable default settings pointer and deletes only the fixture-created `Assets/AddressableAssetsData`, known fixture asset, packed StreamingAssets data, and ServerData. The Basic Setup workflow probe restores pre-existing Addressables settings and Build Settings or deletes only default settings it created in the disposable project, and restores/removes only its package project-settings record. When `-ImportSample` is active, `Remove-ImportedSample` deletes the copied versioned Basic Setup folder and empty sample parents, verifies the unrelated sentinel hashes, and rechecks inertness before `Test-CleanInstall.ps1` removes `com.torproduction.addressables` from the manifest. Package removal is then compiled and followed by another inertness and sentinel check. These bounded test-fixture cleanups do not authorize production code to delete host-owned data.
 
-**Final publication disposition:** the Preview 3 draft body/manual checklist now states that imported samples require separate removal, a transitive-only Addressables dependency can be removed automatically with this package, users who want to retain Addressables must add it directly before package removal, and `AddressableAssetsData` is host-owned and never deleted automatically. The signed candidate, semantic and verification tags, archive, checksum, attached release assets, hosted evidence, and Preview 2 draft remain unchanged. Every automated and manual Preview 3 release-quality prerequisite is satisfied. The only unsatisfied gate is the deliberately separate publication authorization: do not publish until the owner says exactly `Publish v0.1.0-preview\.3`. npm, OpenUPM, Unity Registry, Asset Store, and every other registry remain unauthorized.
+**Final publication disposition:** the Preview 3 release body/manual checklist states that imported samples require separate removal, a transitive-only Addressables dependency can be removed automatically with this package, users who want to retain Addressables must add it directly before package removal, and `AddressableAssetsData` is host-owned and never deleted automatically. The owner supplied the exact separate authorization `Publish v0.1.0-preview\.3` on `2026-08-27`. GitHub pre-release ID `377688077` was published at `2026-08-27T12:10:42Z` as [`v0.1.0-preview.3`](https://github.com/Tor-Production/torproduction.addressables/releases/tag/v0.1.0-preview.3), with `draft=false`, `prerelease=true`, exact target `4db569212015776c26e323c622a466166434637d`, and the same three recorded asset IDs, sizes, and digests. Signed semantic tag `v0.1.0-preview.3`, verification tag `phase-7-preview-3-verified`, archive/checksum bytes, hosted evidence, and exact environment policy remain unchanged. Preview 2 release ID `377569798` remains an unpublished draft and its tags/assets were not changed. Publication dispatched no additional paid Unity matrix. Phase 7 is complete. npm, OpenUPM, Unity Registry, Asset Store, and every other registry remain unauthorized and unpublished.
 
 ### Phase 7A non-legal release-readiness record — 2026-08-25
 

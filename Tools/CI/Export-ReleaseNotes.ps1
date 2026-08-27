@@ -43,7 +43,7 @@ $installNotes = @"
 ## Install in Unity
 
 - Download the attached ``$archiveName``, then choose **Package Manager → + → Add package from tarball…**.
-- Or choose **Add package from git URL…** and enter ``https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v$Version``.
+- Or choose **Add package from git URL…** and enter ``https://github.com/Tor-Production/torproduction.addressables.git?path=/com.torproduction.addressables#v$Version``.
 
 > Do not use GitHub's automatically generated **Source code (zip)** or **Source code (tar.gz)** downloads. They contain the whole repository and are not UPM package tarballs.
 "@

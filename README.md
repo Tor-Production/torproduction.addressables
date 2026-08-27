@@ -40,7 +40,7 @@ Phase 7 provides `New-PackageArchive.ps1`, archive-aware clean installation, sel
 The authorized public preview candidate is `0.1.0-preview.3`. Until its signed release tag and GitHub pre-release have passed every recorded gate, use a local package reference. Once published, the supported Git URL is:
 
 ```text
-https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.3
+https://github.com/Tor-Production/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.3
 ```
 
 Do not treat phase-verification tags as public package releases.

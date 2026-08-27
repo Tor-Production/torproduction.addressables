@@ -42,7 +42,7 @@ if ($manifest.author.name -ne 'Tor Production') {
     throw "Unexpected package author metadata: $($manifest.author.name)"
 }
 if ($manifest.repository.type -ne 'git' -or
-    $manifest.repository.url -ne 'git+https://github.com/Yurii-Tor/torproduction.addressables.git') {
+    $manifest.repository.url -ne 'git+https://github.com/Tor-Production/torproduction.addressables.git') {
     throw 'Package repository metadata does not match the configured repository.'
 }
 

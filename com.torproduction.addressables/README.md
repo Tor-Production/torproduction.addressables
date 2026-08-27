@@ -30,7 +30,7 @@ Add the local package folder through Unity Package Manager, or reference it from
 The repository also supports Git dependencies with the package subfolder:
 
 ```text
-https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#<verified-tag>
+https://github.com/Tor-Production/torproduction.addressables.git?path=/com.torproduction.addressables#<verified-tag>
 ```
 
 Install from the signed semantic release tag after its GitHub pre-release is published. Phase-verification tags record engineering evidence and are not package releases.

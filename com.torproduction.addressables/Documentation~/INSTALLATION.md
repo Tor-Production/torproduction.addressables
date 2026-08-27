@@ -31,7 +31,7 @@ Do not use GitHub's automatically generated **Source code (zip)** or **Source co
 Unity supports a Git dependency with the package subfolder:
 
 ```text
-https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.3
+https://github.com/Tor-Production/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.3
 ```
 
 Use the signed semantic release tag only after its exact draft asset has passed the owner's manual clean-project gate and the GitHub pre-release is explicitly published. Phase-verification tags are engineering evidence and are not public package releases.

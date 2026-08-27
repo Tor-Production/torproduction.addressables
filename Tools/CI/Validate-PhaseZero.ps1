@@ -68,7 +68,7 @@ if ($packageManifest.unity -ne '6000.0') {
 if ($packageManifest.dependencies.'com.unity.addressables' -ne '2.7.6') {
     throw 'The package must retain Addressables 2.7.6 as its minimum dependency.'
 }
-if ($packageManifest.repository.url -ne 'git+https://github.com/Yurii-Tor/torproduction.addressables.git') {
+if ($packageManifest.repository.url -ne 'git+https://github.com/Tor-Production/torproduction.addressables.git') {
     throw 'The package repository URL does not match the configured GitHub repository.'
 }
 if (@($packageManifest.samples).Count -ne 1 -or

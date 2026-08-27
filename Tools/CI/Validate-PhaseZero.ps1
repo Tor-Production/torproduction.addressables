@@ -59,7 +59,7 @@ $hostManifest = Get-Content -Raw -LiteralPath (Join-Path $projectRoot 'Packages/
 if ($packageManifest.name -ne 'com.torproduction.addressables') {
     throw "Unexpected package name: $($packageManifest.name)"
 }
-if ($packageManifest.version -ne '0.1.0-preview.1') {
+if ($packageManifest.version -ne '0.1.0-preview.2') {
     throw "Unexpected package version: $($packageManifest.version)"
 }
 if ($packageManifest.unity -ne '6000.0') {
@@ -264,6 +264,9 @@ if (-not (Test-Path -LiteralPath (Join-Path $packageRoot 'Documentation~/API_SUR
 }
 
 $metaGuids = @{}
+if (Test-Path -LiteralPath (Join-Path $packageRoot 'Samples~.meta')) {
+    throw 'The hidden package sample root Samples~ must not have a .meta file.'
+}
 $packageItems = Get-ChildItem -Recurse -Force -LiteralPath $packageRoot
 foreach ($item in $packageItems) {
     $relativePath = $item.FullName.Substring($packageRoot.Length).TrimStart('\', '/')
@@ -273,7 +276,8 @@ foreach ($item in $packageItems) {
     }
 
     if ($item.PSIsContainer) {
-        if (-not (Test-Path -LiteralPath ($item.FullName + '.meta'))) {
+        $isHiddenSamplesRoot = $relativePath -eq 'Samples~'
+        if (-not $isHiddenSamplesRoot -and -not (Test-Path -LiteralPath ($item.FullName + '.meta'))) {
             throw "Unity folder is missing a .meta file: $relativePath"
         }
         continue

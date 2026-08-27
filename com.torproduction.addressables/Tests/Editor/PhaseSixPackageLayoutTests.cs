@@ -23,7 +23,7 @@ namespace TorProduction.Addressables.Editor.Tests {
 		private const string PackageName = "com.torproduction.addressables";
 		private const string ProductionAssemblyName = "TorProduction.Addressables.Editor";
 		private const string ImportedSampleRoot =
-			"Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.1/Basic Setup";
+			"Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.2/Basic Setup";
 
 		[Test]
 		public void ProductionAssemblyGraph_IsExactlyOneEditorAssembly() {
@@ -162,8 +162,24 @@ namespace TorProduction.Addressables.Editor.Tests {
 			StringAssert.Contains("\"path\": \"Samples~/BasicSetup\"", manifest);
 			StringAssert.Contains("explicit Addressables automation workflow", manifest);
 			var samplesExcluded = Environment.GetCommandLineArgs().Contains("-torSamplesExcluded");
+			Assert.That(File.Exists(Path.Combine(packageRoot, "Samples~.meta")), Is.False,
+				"Unity hidden Samples~ package roots must not have a root .meta file.");
 			Assert.That(Directory.Exists(Path.Combine(packageRoot, "Samples~", "BasicSetup")),
 				Is.EqualTo(!samplesExcluded));
+			if (!samplesExcluded) {
+				var expectedSampleMetaGuids = new Dictionary<string, string> {
+					{ "Samples~/BasicSetup.meta", "5b845519cd81497bb6f04d2de1c78896" },
+					{ "Samples~/BasicSetup/Editor.meta", "c375d01d382c4434bc92d5a759950184" },
+					{ "Samples~/BasicSetup/Editor/BasicSetupAddressablesAutomationConfig.asset.meta", "bd9739a730454e63ba1e6ad90844123a" },
+					{ "Samples~/BasicSetup/Scenes.meta", "4f42b69c201bcba42a0e7d976c56bd93" },
+					{ "Samples~/BasicSetup/Scenes/SampleScene.unity.meta", "b6072c6f7b9037d4f8bc0963f8916ca2" }
+				};
+				foreach (var expected in expectedSampleMetaGuids) {
+					var metaPath = Path.Combine(packageRoot, expected.Key);
+					Assert.That(File.Exists(metaPath), Is.True, expected.Key);
+					StringAssert.Contains($"guid: {expected.Value}", File.ReadAllText(metaPath), expected.Key);
+				}
+			}
 			Assert.That(Directory.Exists(Path.Combine(packageRoot, "Samples")), Is.False);
 		}
 
@@ -194,7 +210,7 @@ namespace TorProduction.Addressables.Editor.Tests {
 				Assert.Pass("The imported-sample assertions run only in the marked disposable-project lane.");
 			}
 
-			var samples = Sample.FindByPackage(PackageName, "0.1.0-preview.1");
+			var samples = Sample.FindByPackage(PackageName, "0.1.0-preview.2");
 			var matchingSamples = samples.Where(item => item.displayName == "Basic Setup").ToArray();
 			Assert.That(matchingSamples.Length, Is.EqualTo(1));
 			var sample = matchingSamples[0];

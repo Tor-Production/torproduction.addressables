@@ -29,4 +29,4 @@ This editor-only package provides explicit configuration, deterministic Addressa
 - [Third-party notices](../Third%20Party%20Notices.md)
 - [Phase 6 breaking changes](PHASE_6_BREAKING_CHANGES.md)
 
-The `0.1.0-preview.1` candidate uses the protected release process documented here. The repository `ImplementationPlan.md` records the authoritative candidate, hosted verification, signed tag, and GitHub pre-release evidence as each gate completes.
+The `0.1.0-preview.2` candidate uses the protected release process documented here. The repository `ImplementationPlan.md` records the authoritative candidate, hosted verification, signed tag, and GitHub pre-release evidence as each gate completes.

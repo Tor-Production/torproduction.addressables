@@ -14,7 +14,7 @@ jobs:
   release:
     name: Create draft pre-release
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-preview.1') ||
+      (github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-preview.2') ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'workflow_dispatch' && 'release-recovery' || 'release' }}
@@ -22,8 +22,8 @@ jobs:
       contents: write
       actions: read
     env:
-      EXPECTED_TAG: v0.1.0-preview.1
-      EXPECTED_VERSION: 0.1.0-preview.1
+      EXPECTED_TAG: v0.1.0-preview.2
+      EXPECTED_VERSION: 0.1.0-preview.2
       GH_TOKEN: ${{ github.token }}
 
     steps:
@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: refs/tags/v0.1.0-preview.1
+          ref: refs/tags/v0.1.0-preview.2
 
       - name: Check out pinned release recovery helper
         if: github.event_name == 'workflow_dispatch'

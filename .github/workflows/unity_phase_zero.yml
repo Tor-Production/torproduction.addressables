@@ -65,6 +65,13 @@ jobs:
           testMode: editmode
           artifactsPath: artifacts/editmode-${{ matrix.addressables }}
 
+      - name: Confirm hidden sample root produced no metadata warning
+        if: always()
+        shell: pwsh
+        run: >-
+          ./Tools/CI/Assert-NoSamplesTildeMetaWarning.ps1
+          -LogPath ./artifacts/editmode-${{ matrix.addressables }}/editmode.log
+
       - name: Confirm package import remained inert
         if: always()
         shell: pwsh

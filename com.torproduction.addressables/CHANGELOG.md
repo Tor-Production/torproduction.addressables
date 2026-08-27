@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [0.1.0-preview.2] - 2026-08-27
+
+### Fixed
+
+- Removed the root `Samples~.meta` so Unity keeps the optional package sample hidden without recreating the folder or logging a metadata warning; all metadata and GUIDs inside `Samples~/BasicSetup` remain unchanged.
+- Added release gates that reject the exact hidden-sample metadata warning across path, archive, Git-tag, sample-import, PVS, and hosted validation logs.
+
 ## [0.1.0-preview.1] - 2026-08-26
 
 ### Added

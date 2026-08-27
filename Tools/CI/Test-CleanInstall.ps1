@@ -53,7 +53,7 @@ $playModeCleanupLogPath = Join-Path $temporaryArtifactsPath "playmode-cleanup-$A
 $removalLogPath = Join-Path $temporaryArtifactsPath "removal-$AddressablesVersion.log"
 $sampleRemovalLogPath = Join-Path $temporaryArtifactsPath "sample-removal-$AddressablesVersion.log"
 $importedSampleRoot = Join-Path $temporaryProjectPath `
-    'Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.1/Basic Setup'
+    'Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.2/Basic Setup'
 $unrelatedSentinelPath = Join-Path $temporaryProjectPath 'Assets/PhaseSixUnrelatedState.txt'
 $unrelatedSentinelMetaPath = $unrelatedSentinelPath + '.meta'
 
@@ -216,10 +216,8 @@ try {
 
     if ($ExcludeSamples) {
         $samplesPath = Join-Path $temporaryPackagePath 'Samples~'
-        $samplesMetaPath = Join-Path $temporaryPackagePath 'Samples~.meta'
         Assert-TemporaryPath $samplesPath
         Remove-Item -Recurse -Force -LiteralPath $samplesPath
-        Remove-Item -Force -LiteralPath $samplesMetaPath
     }
 
     & (Join-Path $PSScriptRoot 'Set-AddressablesVersion.ps1') `
@@ -270,6 +268,7 @@ try {
     if (-not (Test-Path -LiteralPath $resultsPath)) {
         throw 'Unity did not produce EditMode test results.'
     }
+    & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') -LogPath $logPath
 
     [xml]$results = Get-Content -Raw -LiteralPath $resultsPath
     $testRun = $results.'test-run'
@@ -312,6 +311,7 @@ try {
         if (-not (Test-Path -LiteralPath $playModePrepareLogPath)) {
             throw 'Unity did not produce a PlayMode fixture-setup log file.'
         }
+        & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') -LogPath $playModePrepareLogPath
         Copy-Item -Force -LiteralPath $playModePrepareLogPath -Destination $resolvedArtifactsPath
         if ($playModePrepareProcess.ExitCode -ne 0) {
             throw "Unity exited with code $($playModePrepareProcess.ExitCode) during PlayMode fixture setup. See $resolvedArtifactsPath"
@@ -350,6 +350,7 @@ try {
         if (-not (Test-Path -LiteralPath $playModeResultsPath)) {
             throw 'Unity did not produce PlayMode test results.'
         }
+        & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') -LogPath $playModeLogPath
 
         [xml]$playModeResults = Get-Content -Raw -LiteralPath $playModeResultsPath
         $playModeRun = $playModeResults.'test-run'
@@ -382,6 +383,7 @@ try {
         if (-not (Test-Path -LiteralPath $playModeCleanupLogPath)) {
             throw 'Unity did not produce a PlayMode fixture-cleanup log file.'
         }
+        & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') -LogPath $playModeCleanupLogPath
         Copy-Item -Force -LiteralPath $playModeCleanupLogPath -Destination $resolvedArtifactsPath
         if ($playModeCleanupProcess.ExitCode -ne 0) {
             throw "Unity exited with code $($playModeCleanupProcess.ExitCode) during PlayMode fixture cleanup. See $resolvedArtifactsPath"
@@ -413,6 +415,7 @@ try {
         if (-not (Test-Path -LiteralPath $sampleRemovalLogPath)) {
             throw 'Unity did not produce a sample-removal log file.'
         }
+        & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') -LogPath $sampleRemovalLogPath
         Copy-Item -Force -LiteralPath $sampleRemovalLogPath -Destination $resolvedArtifactsPath
         if ($sampleRemovalProcess.ExitCode -ne 0) {
             throw "Unity exited with code $($sampleRemovalProcess.ExitCode) after sample removal. See $resolvedArtifactsPath"
@@ -452,6 +455,7 @@ try {
     if (-not (Test-Path -LiteralPath $removalLogPath)) {
         throw 'Unity did not produce a package-removal log file.'
     }
+    & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') -LogPath $removalLogPath
     Copy-Item -Force -LiteralPath $removalLogPath -Destination $resolvedArtifactsPath
 
     if ($removalProcess.ExitCode -ne 0) {

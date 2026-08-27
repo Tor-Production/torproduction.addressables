@@ -460,6 +460,7 @@ try {
     if ($importResult.ExitCode -ne 0) {
         throw "Package Validation Suite project import exited with code $($importResult.ExitCode)."
     }
+    & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') -LogPath $importLogPath
     $importFailures = Select-String -LiteralPath $importLogPath -Pattern $importFailurePattern
     if ($importFailures) {
         throw 'Package Validation Suite import log contains a compilation/import failure.'
@@ -495,6 +496,7 @@ try {
     if (-not (Test-Path -LiteralPath $logPath)) {
         throw 'Unity did not produce a Package Validation Suite log.'
     }
+    & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') -LogPath $logPath
     if (-not (Test-Path -LiteralPath $reportPath)) {
         throw 'Package Validation Suite did not produce an exported report.'
     }

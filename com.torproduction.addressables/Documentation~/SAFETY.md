@@ -1,6 +1,6 @@
 # Addressables Automation safety notice
 
-This notice applies to `0.1.0-preview.1` while the production workflows are being rebuilt.
+This notice applies to `0.1.0-preview.2` while the production workflows are being rebuilt.
 
 - Installing or importing the package does not create configuration files, Addressables settings, groups, labels, or Build Settings entries.
 - Setup is explicit under **Project Settings > Tor Production > Addressables Automation**. Opening the provider and reading configuration do not create or repair files.

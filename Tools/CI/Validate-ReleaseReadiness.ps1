@@ -12,7 +12,7 @@ Set-StrictMode -Version Latest
 $root = (Resolve-Path -LiteralPath $RepositoryRoot).Path
 $packageRoot = Join-Path $root 'com.torproduction.addressables'
 $workflowRoot = Join-Path $root '.github/workflows'
-$releaseVersion = '0.1.0-preview.1'
+$releaseVersion = '0.1.0-preview.2'
 $releaseTag = "v$releaseVersion"
 $archiveName = "com.torproduction.addressables-$releaseVersion.tgz"
 
@@ -106,6 +106,7 @@ foreach ($requiredText in @(
     'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
     'game-ci/unity-test-runner@0ff419b913a3630032cbe0de48a0099b5a9f0ed9',
     'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a',
+    'Assert-NoSamplesTildeMetaWarning.ps1',
     '2.7.6',
     '2.9.1',
     '6000.0.78f1'
@@ -141,7 +142,7 @@ foreach ($requiredText in @(
     'actions: read',
     "github.event_name == 'workflow_dispatch'",
     "github.ref == 'refs/heads/main'",
-    'ref: refs/tags/v0.1.0-preview.1',
+    'ref: refs/tags/v0.1.0-preview.2',
     'ref: d573808cef21c39f0689a017a05edb0260b6d13a',
     'path: .release-recovery',
     'sparse-checkout: Tools/CI/Assert-HostedUnityValidation.ps1',
@@ -174,6 +175,18 @@ if ($releaseWorkflow -match 'game-ci/unity-test-runner|unity_phase_zero\.yml\s*@
     throw 'The tag workflow must not run Unity, dispatch another workflow, or publish to a registry.'
 }
 
+$releaseNotesExporter = Get-Content -Raw -LiteralPath (Join-Path $root 'Tools/CI/Export-ReleaseNotes.ps1')
+foreach ($requiredText in @(
+    'Add package from tarball',
+    'Source code (zip)',
+    'Source code (tar.gz)',
+    '?path=/com.torproduction.addressables#v$Version'
+)) {
+    if (-not $releaseNotesExporter.Contains($requiredText)) {
+        throw "Release-note installation warning is missing: $requiredText"
+    }
+}
+
 $licensePath = Join-Path $packageRoot 'LICENSE.md'
 $noticePath = Join-Path $packageRoot 'Third Party Notices.md'
 $expectedLicenseSha256 = 'a14f690616e084b1cbae91979075c8e00f7a4bd84a09b311463c84b118ef4a19'
@@ -192,7 +205,7 @@ if (Test-Path -LiteralPath (Join-Path $packageRoot 'Documentation~/PROVENANCE_AU
 }
 
 $changelog = Get-Content -Raw -LiteralPath (Join-Path $packageRoot 'CHANGELOG.md')
-if ($changelog -notmatch "(?m)^## \[$([regex]::Escape($releaseVersion))\] - 2026-08-26\s*$") {
+if ($changelog -notmatch "(?m)^## \[$([regex]::Escape($releaseVersion))\] - 2026-08-27\s*$") {
     throw "CHANGELOG.md must contain the actual $releaseVersion release date."
 }
 $unreleasedMatch = [regex]::Match(

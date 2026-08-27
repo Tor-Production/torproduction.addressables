@@ -73,8 +73,13 @@ $requiredFiles = @(
     'Editor/TorProduction.Addressables.Editor.asmdef',
     'Tests/Editor/TorProduction.Addressables.Editor.Tests.asmdef',
     'Tests/Runtime/TorProduction.Addressables.PlayMode.Tests.asmdef',
+    'Samples~/BasicSetup.meta',
+    'Samples~/BasicSetup/Editor.meta',
     'Samples~/BasicSetup/Editor/BasicSetupAddressablesAutomationConfig.asset',
+    'Samples~/BasicSetup/Editor/BasicSetupAddressablesAutomationConfig.asset.meta',
+    'Samples~/BasicSetup/Scenes.meta',
     'Samples~/BasicSetup/Scenes/SampleScene.unity',
+    'Samples~/BasicSetup/Scenes/SampleScene.unity.meta',
     'Documentation~/com.torproduction.addressables.md',
     'Documentation~/INSTALLATION.md',
     'Documentation~/COMPATIBILITY.md',
@@ -116,7 +121,7 @@ $allowedTopLevel = @(
     'Editor', 'Editor.meta',
     'LICENSE.md', 'LICENSE.md.meta',
     'README.md', 'README.md.meta',
-    'Samples~', 'Samples~.meta',
+    'Samples~',
     'Tests', 'Tests.meta',
     'Third Party Notices.md', 'Third Party Notices.md.meta',
     'ValidationExceptions.json', 'ValidationExceptions.json.meta',
@@ -126,6 +131,10 @@ foreach ($item in Get-ChildItem -Force -LiteralPath $resolvedPackagePath) {
     if ($allowedTopLevel -notcontains $item.Name) {
         throw "Forbidden or unexpected package-root item: $($item.Name)"
     }
+}
+
+if (Test-Path -LiteralPath (Join-Path $resolvedPackagePath 'Samples~.meta')) {
+    throw 'The hidden package sample root Samples~ must not have a .meta file; Unity recreates the hidden folder and logs a warning.'
 }
 
 $forbiddenDirectoryNames = @('Library', 'Temp', 'Logs', 'artifacts', '.git', '.github')
@@ -159,7 +168,8 @@ foreach ($item in Get-ChildItem -Recurse -Force -LiteralPath $resolvedPackagePat
         continue
     }
     if ($item.PSIsContainer) {
-        if (-not (Test-Path -LiteralPath ($item.FullName + '.meta'))) {
+        $isHiddenSamplesRoot = $relativePath -eq 'Samples~'
+        if (-not $isHiddenSamplesRoot -and -not (Test-Path -LiteralPath ($item.FullName + '.meta'))) {
             throw "Unity folder is missing its .meta file: $relativePath"
         }
         continue

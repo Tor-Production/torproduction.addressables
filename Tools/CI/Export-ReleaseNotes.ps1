@@ -38,6 +38,15 @@ $outputDirectory = Split-Path -Parent $resolvedOutput
 if (-not [string]::IsNullOrWhiteSpace($outputDirectory)) {
     New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 }
-$releaseNotes = "# v$Version`n`n$body`n"
+$archiveName = "com.torproduction.addressables-$Version.tgz"
+$installNotes = @"
+## Install in Unity
+
+- Download the attached ``$archiveName``, then choose **Package Manager → + → Add package from tarball…**.
+- Or choose **Add package from git URL…** and enter ``https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v$Version``.
+
+> Do not use GitHub's automatically generated **Source code (zip)** or **Source code (tar.gz)** downloads. They contain the whole repository and are not UPM package tarballs.
+"@
+$releaseNotes = "$($installNotes.Trim())`n`n# v$Version`n`n$body`n"
 [IO.File]::WriteAllText($resolvedOutput, $releaseNotes, [Text.UTF8Encoding]::new($false))
 Write-Output "Exported release notes for $Version ($($heading.Groups['date'].Value)): $resolvedOutput"

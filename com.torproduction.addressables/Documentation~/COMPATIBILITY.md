@@ -7,7 +7,7 @@
 | `6000.0.78f1` | `2.7.6` | Verified Phase 6 minimum lane | Hosted run `32689916114`, 133/133 EditMode tests |
 | `6000.0.78f1` | `2.9.1` | Verified Phase 6 compatibility lane | Hosted run `32689916114`, 133/133 EditMode tests |
 
-The Phase 6 implementation evidence is `bf147de69b1bb9f2afb4ca76450027056e4682b4`, recorded by `phase-6-verified^{}`. The exact `0.1.0-preview.1` release candidate must pass a fresh manual hosted verification before its signed tag is created; the repository `ImplementationPlan.md` records that final evidence.
+The Phase 6 implementation evidence is `bf147de69b1bb9f2afb4ca76450027056e4682b4`, recorded by `phase-6-verified^{}`. The exact `0.1.0-preview.2` release candidate must pass a fresh manual hosted verification before its signed tag is created; the repository `ImplementationPlan.md` records that final evidence.
 
 The declared production dependency remains exact `2.7.6`, making `2.7.6` the supported minimum rather than excluding it. The verified claim is deliberately limited to the two rows above; versions between or beyond them are not claimed merely because Unity can resolve a consumer override. The owner requested a future `4.0.1` compatibility investigation when that version is intentionally prepared and tested; it is not a current support claim or workflow lane.
 

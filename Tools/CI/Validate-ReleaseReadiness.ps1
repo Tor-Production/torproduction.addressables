@@ -187,6 +187,18 @@ foreach ($requiredText in @(
     }
 }
 
+$archiveBuilder = Get-Content -Raw -LiteralPath (Join-Path $root 'Tools/CI/New-PackageArchive.ps1')
+foreach ($requiredText in @(
+    'canonicalPackageRoot',
+    'canonicalTextExtensions',
+    'ConvertTo-CanonicalLineEndings',
+    'Archive file bytes differ from the canonical package source'
+)) {
+    if (-not $archiveBuilder.Contains($requiredText)) {
+        throw "Deterministic archive normalization is missing: $requiredText"
+    }
+}
+
 $licensePath = Join-Path $packageRoot 'LICENSE.md'
 $noticePath = Join-Path $packageRoot 'Third Party Notices.md'
 $expectedLicenseSha256 = 'a14f690616e084b1cbae91979075c8e00f7a4bd84a09b311463c84b118ef4a19'

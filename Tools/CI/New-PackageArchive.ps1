@@ -14,8 +14,27 @@ $resolvedPackagePath = (Resolve-Path -LiteralPath $PackagePath).Path
 $resolvedArtifactsPath = [IO.Path]::GetFullPath($ArtifactsPath)
 $temporaryBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\', '/')
 $temporaryRoot = Join-Path $temporaryBase ("TorProductionAddressablesArchive-" + [Guid]::NewGuid().ToString('N'))
+$canonicalPackageRoot = Join-Path $temporaryRoot 'package-source'
 $packRoot = Join-Path $temporaryRoot 'pack'
 $extractRoot = Join-Path $temporaryRoot 'extract'
+
+$canonicalTextExtensions = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::OrdinalIgnoreCase)
+foreach ($extension in @(
+    '.asmdef',
+    '.asset',
+    '.cs',
+    '.json',
+    '.md',
+    '.meta',
+    '.ps1',
+    '.txt',
+    '.unity',
+    '.yaml',
+    '.yml'
+)) {
+    [void]$canonicalTextExtensions.Add($extension)
+}
 
 function Assert-TemporaryPath([string]$Path) {
     $fullPath = [IO.Path]::GetFullPath($Path)
@@ -26,20 +45,48 @@ function Assert-TemporaryPath([string]$Path) {
     }
 }
 
+function ConvertTo-CanonicalLineEndings([string]$Path) {
+    [byte[]]$bytes = [IO.File]::ReadAllBytes($Path)
+    $normalized = [IO.MemoryStream]::new($bytes.Length)
+    try {
+        for ($index = 0; $index -lt $bytes.Length; $index++) {
+            if ($bytes[$index] -eq 13) {
+                if ($index + 1 -lt $bytes.Length -and $bytes[$index + 1] -eq 10) {
+                    $index++
+                }
+                $normalized.WriteByte(10)
+                continue
+            }
+            $normalized.WriteByte($bytes[$index])
+        }
+        [IO.File]::WriteAllBytes($Path, $normalized.ToArray())
+    } finally {
+        $normalized.Dispose()
+    }
+}
+
 & (Join-Path $PSScriptRoot 'Validate-PackageManifest.ps1') -PackagePath $resolvedPackagePath
 
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $resolvedPackagePath 'package.json') | ConvertFrom-Json
 $expectedFileName = "$($manifest.name)-$($manifest.version).tgz"
-New-Item -ItemType Directory -Force -Path $packRoot, $extractRoot, $resolvedArtifactsPath | Out-Null
+New-Item -ItemType Directory -Force -Path `
+    $canonicalPackageRoot, $packRoot, $extractRoot, $resolvedArtifactsPath | Out-Null
 
 try {
+    Get-ChildItem -Force -LiteralPath $resolvedPackagePath |
+        Copy-Item -Recurse -Force -Destination $canonicalPackageRoot
+    Get-ChildItem -Recurse -Force -File -LiteralPath $canonicalPackageRoot |
+        Where-Object { $canonicalTextExtensions.Contains($_.Extension) } |
+        ForEach-Object { ConvertTo-CanonicalLineEndings $_.FullName }
+    & (Join-Path $PSScriptRoot 'Validate-PackageManifest.ps1') -PackagePath $canonicalPackageRoot
+
     $nodeCommand = Get-Command node -ErrorAction Stop
     $bundledNpmCli = Join-Path (Split-Path -Parent $nodeCommand.Source) 'node_modules/npm/bin/npm-cli.js'
     if (Test-Path -LiteralPath $bundledNpmCli -PathType Leaf) {
-        $packJson = & $nodeCommand.Source $bundledNpmCli pack $resolvedPackagePath --json --pack-destination $packRoot
+        $packJson = & $nodeCommand.Source $bundledNpmCli pack $canonicalPackageRoot --json --pack-destination $packRoot
     } else {
         $npmCommand = Get-Command npm -ErrorAction Stop
-        $packJson = & $npmCommand.Source pack $resolvedPackagePath --json --pack-destination $packRoot
+        $packJson = & $npmCommand.Source pack $canonicalPackageRoot --json --pack-destination $packRoot
     }
     if ($LASTEXITCODE -ne 0) {
         throw "npm pack failed with exit code $LASTEXITCODE."
@@ -90,6 +137,15 @@ try {
         ConvertFrom-Json
     if ($extractedManifest.name -ne $manifest.name -or $extractedManifest.version -ne $manifest.version) {
         throw 'Extracted archive metadata does not match the source manifest.'
+    }
+    foreach ($relativePath in $archiveFiles) {
+        $canonicalPath = Join-Path $canonicalPackageRoot $relativePath
+        $extractedPath = Join-Path $extractedPackagePath $relativePath
+        $canonicalHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $canonicalPath).Hash
+        $extractedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $extractedPath).Hash
+        if ($canonicalHash -ne $extractedHash) {
+            throw "Archive file bytes differ from the canonical package source: $relativePath"
+        }
     }
 
     $archivePath = Join-Path $resolvedArtifactsPath $archiveName

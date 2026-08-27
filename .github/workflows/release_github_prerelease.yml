@@ -3,7 +3,7 @@ name: GitHub pre-release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v0.1.0-preview.3'
   workflow_dispatch:
 
 permissions:
@@ -14,7 +14,7 @@ jobs:
   release:
     name: Create draft pre-release
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-preview.2') ||
+      (github.event_name == 'push' && github.ref == 'refs/tags/v0.1.0-preview.3') ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'workflow_dispatch' && 'release-recovery' || 'release' }}
@@ -22,8 +22,8 @@ jobs:
       contents: write
       actions: read
     env:
-      EXPECTED_TAG: v0.1.0-preview.2
-      EXPECTED_VERSION: 0.1.0-preview.2
+      EXPECTED_TAG: v0.1.0-preview.3
+      EXPECTED_VERSION: 0.1.0-preview.3
       GH_TOKEN: ${{ github.token }}
 
     steps:
@@ -31,21 +31,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: refs/tags/v0.1.0-preview.2
-
-      - name: Check out pinned release recovery tools
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: 4b19ae00ddb6b78ba6376a1f406ff7c4125ff0c8
-          path: .release-recovery
-          sparse-checkout: |
-            Tools/CI/Assert-HostedUnityValidation.ps1
-            Tools/CI/New-PackageArchive.ps1
-            Tools/CI/Validate-PackageManifest.ps1
-            Release/com.torproduction.addressables-0.1.0-preview.2.tgz.sha256
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
+          ref: refs/tags/v0.1.0-preview.3
 
       - name: Validate tag, signature, candidate, and hosted Unity run
         id: hosted-validation
@@ -80,11 +66,7 @@ jobs:
               throw "GitHub did not verify the release-tag signature: $($tagObject.verification.reason)"
           }
           ./Tools/CI/Validate-ReleaseReadiness.ps1 -ExpectedHostAddressablesVersion 2.7.6
-          $hostedValidationScript = './Tools/CI/Assert-HostedUnityValidation.ps1'
-          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
-              $hostedValidationScript = './.release-recovery/Tools/CI/Assert-HostedUnityValidation.ps1'
-          }
-          & $hostedValidationScript `
+          ./Tools/CI/Assert-HostedUnityValidation.ps1 `
               -Repository $env:GITHUB_REPOSITORY `
               -CommitSha $tagCommit
 
@@ -92,13 +74,8 @@ jobs:
         shell: pwsh
         run: |
           $assetRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts/release'
-          $archiveScript = './Tools/CI/New-PackageArchive.ps1'
           $expectedChecksumPath = "./Release/com.torproduction.addressables-$($env:EXPECTED_VERSION).tgz.sha256"
-          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
-              $archiveScript = './.release-recovery/Tools/CI/New-PackageArchive.ps1'
-              $expectedChecksumPath = "./.release-recovery/Release/com.torproduction.addressables-$($env:EXPECTED_VERSION).tgz.sha256"
-          }
-          & $archiveScript `
+          ./Tools/CI/New-PackageArchive.ps1 `
               -PackagePath ./com.torproduction.addressables `
               -ArtifactsPath $assetRoot
           ./Tools/CI/Export-ReleaseNotes.ps1 `

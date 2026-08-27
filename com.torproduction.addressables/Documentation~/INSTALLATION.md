@@ -22,7 +22,7 @@ In Unity Package Manager choose **+ > Install package from disk...** and select 
 
 ## Install the package archive
 
-Download the attached `com.torproduction.addressables-0.1.0-preview.2.tgz`, then choose **Package Manager > + > Add package from tarball...**. Verify its SHA-256 against the attached checksum file. Before publication, the same archive is available only from the protected draft release or local release evidence.
+Download the attached `com.torproduction.addressables-0.1.0-preview.3.tgz`, then choose **Package Manager > + > Add package from tarball...**. Verify its SHA-256 against the attached checksum file. Before publication, the same archive is available only from the protected draft release or local release evidence.
 
 Do not use GitHub's automatically generated **Source code (zip)** or **Source code (tar.gz)** downloads. They contain the whole repository, so their archive root has no UPM `package.json` and Unity cannot install them as package tarballs.
 
@@ -31,7 +31,7 @@ Do not use GitHub's automatically generated **Source code (zip)** or **Source co
 Unity supports a Git dependency with the package subfolder:
 
 ```text
-https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.2
+https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.3
 ```
 
 Use the signed semantic release tag only after its exact draft asset has passed the owner's manual clean-project gate and the GitHub pre-release is explicitly published. Phase-verification tags are engineering evidence and are not public package releases.

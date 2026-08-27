@@ -499,6 +499,60 @@ namespace TorProduction.Addressables.Editor.Tests {
 		}
 
 		[Test]
+		public void Validator_CategoryDuplicate_PointsToVisibleRequiredLabelField() {
+			var config = ScriptableObject.CreateInstance<AddressablesAutomationConfig>();
+			try {
+				config.ReplaceWithCurrentSchema(
+					Array.Empty<GroupSyncRule>(),
+					new[] {
+						new SceneFolderRule(
+							"scene-folder",
+							Array.Empty<string>(),
+							SceneFolderMode.LocalBuildSettings,
+							string.Empty,
+							string.Empty,
+							"basic-setup",
+							string.Empty,
+							SceneAddressPolicy.RelativePath,
+							new[] { "basic-setup" })
+					});
+				var resolver = new FakeAssetResolver();
+				resolver.Paths["scene-folder"] = "Assets/Scenes";
+				resolver.Folders.Add("Assets/Scenes");
+				var addressables = new FakeAddressablesSettingsView { Exists = true };
+				addressables.Labels.Add("basic-setup");
+
+				var report = AddressablesAutomationValidator.Validate(
+					config,
+					resolver,
+					addressables,
+					AutomationScope.Scenes);
+
+				var duplicate = report.Diagnostics.Single(item =>
+					item.Code == ConfigurationDiagnosticCode.LabelDuplicate);
+				Assert.That(report.IsValid, Is.False, "Duplicate implicit and explicit labels remain fail-closed.");
+				Assert.That(duplicate.Location, Is.EqualTo("Scenes[0].RequiredLabels[0]"));
+				StringAssert.Contains("Category Label", duplicate.Message);
+				Assert.That(duplicate.Location, Does.Not.Contain(".Labels["));
+
+				var categoryField = typeof(SceneFolderRule).GetField(
+					"m_category",
+					System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+				Assert.That(categoryField, Is.Not.Null);
+				Assert.That(
+					categoryField.GetCustomAttributes(typeof(InspectorNameAttribute), false)
+						.Cast<InspectorNameAttribute>().Single().displayName,
+					Is.EqualTo("Category Label"));
+				StringAssert.Contains(
+					"implicitly",
+					categoryField.GetCustomAttributes(typeof(TooltipAttribute), false)
+						.Cast<TooltipAttribute>().Single().tooltip);
+			} finally {
+				UnityEngine.Object.DestroyImmediate(config);
+			}
+		}
+
+		[Test]
 		public void Validator_ReportsInvalidTypesAndOverlapsWithoutChangingConfig() {
 			var config = ScriptableObject.CreateInstance<AddressablesAutomationConfig>();
 			try {

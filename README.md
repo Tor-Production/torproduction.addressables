@@ -37,10 +37,10 @@ Phase 7 provides `New-PackageArchive.ps1`, archive-aware clean installation, sel
 
 ## Installation status
 
-The authorized public preview candidate is `0.1.0-preview.2`. Until its signed release tag and GitHub pre-release have passed every recorded gate, use a local package reference. Once published, the supported Git URL is:
+The authorized public preview candidate is `0.1.0-preview.3`. Until its signed release tag and GitHub pre-release have passed every recorded gate, use a local package reference. Once published, the supported Git URL is:
 
 ```text
-https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.2
+https://github.com/Yurii-Tor/torproduction.addressables.git?path=/com.torproduction.addressables#v0.1.0-preview.3
 ```
 
 Do not treat phase-verification tags as public package releases.
@@ -50,6 +50,6 @@ Do not treat phase-verification tags as public package releases.
 - Import, settings reads, and unrelated asset imports must remain inert.
 - Mutating commands require an explicit valid configuration and a confirmed plan.
 - `ImplementationPlan.md` is the source of truth for phase status, known limitations, and verification evidence.
-- The GitHub pre-release may be created only from the signed `v0.1.0-preview.2` tag after the exact candidate passes the manual compatibility run and protected-environment approval.
+- The GitHub pre-release may be created only from the signed `v0.1.0-preview.3` tag after the exact candidate passes the manual compatibility run and protected-environment approval.
 
 See `com.torproduction.addressables/Documentation~/com.torproduction.addressables.md` for the complete package documentation index and `PROVENANCE_AUDIT.md` for the approved template-notice decision.

@@ -18,11 +18,13 @@ param(
     [string]$PackageGitUrl,
 
     [ValidateRange(1, 10000)]
-    [int]$ExpectedEditModeTestCount = 133,
+    [int]$ExpectedEditModeTestCount = 134,
 
     [switch]$ExcludeSamples,
 
     [switch]$ImportSample,
+
+    [switch]$ValidateBasicSetupWorkflow,
 
     [switch]$RunPlayMode
 )
@@ -52,13 +54,19 @@ $playModePrepareLogPath = Join-Path $temporaryArtifactsPath "playmode-prepare-$A
 $playModeCleanupLogPath = Join-Path $temporaryArtifactsPath "playmode-cleanup-$AddressablesVersion.log"
 $removalLogPath = Join-Path $temporaryArtifactsPath "removal-$AddressablesVersion.log"
 $sampleRemovalLogPath = Join-Path $temporaryArtifactsPath "sample-removal-$AddressablesVersion.log"
+$basicSetupWorkflowLogPath = Join-Path $temporaryArtifactsPath "basic-setup-workflow-$AddressablesVersion.log"
+$basicSetupProbePath = Join-Path $temporaryProjectPath 'Assets/Editor/BasicSetupWorkflowProbe.cs'
+$basicSetupProbeMetaPath = $basicSetupProbePath + '.meta'
 $importedSampleRoot = Join-Path $temporaryProjectPath `
-    'Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.2/Basic Setup'
+    'Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.3/Basic Setup'
 $unrelatedSentinelPath = Join-Path $temporaryProjectPath 'Assets/PhaseSixUnrelatedState.txt'
 $unrelatedSentinelMetaPath = $unrelatedSentinelPath + '.meta'
 
 if ($ExcludeSamples -and $ImportSample) {
     throw 'ExcludeSamples and ImportSample are mutually exclusive.'
+}
+if ($ValidateBasicSetupWorkflow -and -not $ImportSample) {
+    throw 'ValidateBasicSetupWorkflow requires ImportSample.'
 }
 if ($ExcludeSamples -and $resolvedPackageArchivePath) {
     throw 'ExcludeSamples is available only for package-path validation, not immutable archive validation.'
@@ -172,6 +180,7 @@ foreach ($artifactName in @(
     "playmode-$AddressablesVersion.xml",
     "playmode-prepare-$AddressablesVersion.log",
     "playmode-cleanup-$AddressablesVersion.log",
+    "basic-setup-workflow-$AddressablesVersion.log",
     "sample-removal-$AddressablesVersion.log",
     "removal-$AddressablesVersion.log")) {
     $previousArtifactPath = Join-Path $resolvedArtifactsPath $artifactName
@@ -198,6 +207,13 @@ try {
         (Join-Path $sourceProjectPath 'ProjectSettings/ProjectVersion.txt'), `
         (Join-Path $sourceProjectPath 'ProjectSettings/VersionControlSettings.asset') `
         -Destination (Join-Path $temporaryProjectPath 'ProjectSettings')
+
+    if ($ValidateBasicSetupWorkflow) {
+        $probeDirectory = Join-Path $temporaryProjectPath 'Assets/Editor'
+        New-Item -ItemType Directory -Force -Path $probeDirectory | Out-Null
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'BasicSetupWorkflowProbe.cs') `
+            -Destination $basicSetupProbePath
+    }
 
     if ($resolvedPackageArchivePath -or -not [string]::IsNullOrWhiteSpace($PackageGitUrl)) {
         $manifestPath = Join-Path $temporaryProjectPath 'Packages/manifest.json'
@@ -287,6 +303,47 @@ try {
     $failures = Select-String -LiteralPath $logPath -Pattern $failurePattern
     if ($failures) {
         throw "Unity log contains a compilation/import failure. See $resolvedArtifactsPath"
+    }
+
+    if ($ValidateBasicSetupWorkflow) {
+        $packageVersion = (Get-Content -Raw -LiteralPath `
+            (Join-Path $resolvedPackagePath 'package.json') | ConvertFrom-Json).version
+        $basicSetupWorkflowArguments = @(
+            '-batchmode',
+            '-nographics',
+            '-quit',
+            '-projectPath', $temporaryProjectPath,
+            '-executeMethod', 'TorProduction.Addressables.CI.BasicSetupWorkflowProbe.Run',
+            '-torExpectedPackageVersion', $packageVersion,
+            '-logFile', $basicSetupWorkflowLogPath
+        )
+        $startProcessParameters.ArgumentList = $basicSetupWorkflowArguments
+        $basicSetupWorkflowProcess = Start-Process @startProcessParameters
+        Wait-Process -Id $basicSetupWorkflowProcess.Id
+        $basicSetupWorkflowProcess.Refresh()
+
+        if (-not (Test-Path -LiteralPath $basicSetupWorkflowLogPath)) {
+            throw 'Unity did not produce a Basic Setup workflow log file.'
+        }
+        & (Join-Path $PSScriptRoot 'Assert-NoSamplesTildeMetaWarning.ps1') `
+            -LogPath $basicSetupWorkflowLogPath
+        Copy-Item -Force -LiteralPath $basicSetupWorkflowLogPath -Destination $resolvedArtifactsPath
+        if ($basicSetupWorkflowProcess.ExitCode -ne 0) {
+            throw "Basic Setup activation/Analyze/Apply validation exited with code $($basicSetupWorkflowProcess.ExitCode). See $resolvedArtifactsPath"
+        }
+        $basicSetupWorkflowFailures = Select-String `
+            -LiteralPath $basicSetupWorkflowLogPath -Pattern $failurePattern
+        if ($basicSetupWorkflowFailures) {
+            throw "Unity log contains a Basic Setup workflow failure. See $resolvedArtifactsPath"
+        }
+        & (Join-Path $PSScriptRoot 'Assert-InertProject.ps1') -ProjectPath $temporaryProjectPath
+
+        foreach ($probeArtifact in @($basicSetupProbePath, $basicSetupProbeMetaPath)) {
+            Assert-TemporaryPath $probeArtifact
+            if (Test-Path -LiteralPath $probeArtifact) {
+                Remove-Item -Force -LiteralPath $probeArtifact
+            }
+        }
     }
 
     if ($RunPlayMode) {
@@ -473,7 +530,11 @@ try {
         throw "Unity log contains a package-removal failure. See $resolvedArtifactsPath"
     }
 
-    $sampleResult = if ($ImportSample) { ', sample import/removal passed' } elseif ($ExcludeSamples) { ', Samples~ absent' } else { '' }
+    $sampleResult = if ($ValidateBasicSetupWorkflow) {
+        ', Basic Setup activation/Analyze/Apply/convergence and sample import/removal passed'
+    } elseif ($ImportSample) {
+        ', sample import/removal passed'
+    } elseif ($ExcludeSamples) { ', Samples~ absent' } else { '' }
     $playModeResult = if ($RunPlayMode) { ', PlayMode 1/1 passed' } else { '' }
     $installKind = if ($resolvedPackageArchivePath) {
         'archive'

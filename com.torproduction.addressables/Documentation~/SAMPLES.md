@@ -6,7 +6,7 @@ Import **Basic Setup** from the package's Samples tab in Unity Package Manager. 
 Assets/Samples/Tor Production Addressables Toolpack/<package-version>/Basic Setup
 ```
 
-The sample contains an editor-only `AddressablesAutomationConfig` and one empty scene. Its scene rule demonstrates GUID-based folder ownership, a `Basic Setup Scenes` destination group, relative-path addressing, and the `basic-setup` label. It contains no runtime scripts or sample assembly and does not select itself automatically.
+The sample contains an editor-only `AddressablesAutomationConfig` and one empty scene. Its scene rule demonstrates GUID-based folder ownership, a `Basic Setup Scenes` destination group, relative-path addressing, and `basic-setup` as its Category Label. Category Label is assigned implicitly to every matched scene, so the sample intentionally leaves Required Labels empty; use Required Labels only for additional labels. It contains no runtime scripts or sample assembly and does not select itself automatically.
 
 After import:
 

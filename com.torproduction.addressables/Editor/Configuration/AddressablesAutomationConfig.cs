@@ -124,10 +124,15 @@ namespace TorProduction.Addressables.Editor {
 		[SerializeField] private SceneFolderMode m_mode;
 		[SerializeField] private string m_destinationGroupGuid = string.Empty;
 		[SerializeField] private string m_destinationGroupName = string.Empty;
-		[SerializeField] private string m_category = string.Empty;
+		[SerializeField]
+		[InspectorName("Category Label")]
+		[Tooltip("The Addressables label implicitly assigned to every matching scene. Do not repeat it in Required Labels.")]
+		private string m_category = string.Empty;
 		[SerializeField] private string m_addressPrefix = string.Empty;
 		[SerializeField] private SceneAddressPolicy m_addressPolicy = SceneAddressPolicy.RelativePath;
-		[SerializeField] private string[] m_requiredLabels = Array.Empty<string>();
+		[SerializeField]
+		[Tooltip("Additional Addressables labels assigned to every matching scene. The Category Label is already included implicitly.")]
+		private string[] m_requiredLabels = Array.Empty<string>();
 
 		/// <summary>Gets the stable GUID of the source scene folder.</summary>
 		public string SourceFolderGuid => m_sourceFolderGuid;

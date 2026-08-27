@@ -23,8 +23,7 @@ MonoBehaviour:
     m_category: basic-setup
     m_addressPrefix: basic-setup
     m_addressPolicy: 0
-    m_requiredLabels:
-    - basic-setup
+    m_requiredLabels: []
   m_managedScenes: []
   m_dependencySettings:
     m_destinationGroupGuid:

@@ -59,7 +59,7 @@ $hostManifest = Get-Content -Raw -LiteralPath (Join-Path $projectRoot 'Packages/
 if ($packageManifest.name -ne 'com.torproduction.addressables') {
     throw "Unexpected package name: $($packageManifest.name)"
 }
-if ($packageManifest.version -ne '0.1.0-preview.2') {
+if ($packageManifest.version -ne '0.1.0-preview.3') {
     throw "Unexpected package version: $($packageManifest.version)"
 }
 if ($packageManifest.unity -ne '6000.0') {

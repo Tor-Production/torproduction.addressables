@@ -23,7 +23,7 @@ namespace TorProduction.Addressables.Editor.Tests {
 		private const string PackageName = "com.torproduction.addressables";
 		private const string ProductionAssemblyName = "TorProduction.Addressables.Editor";
 		private const string ImportedSampleRoot =
-			"Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.2/Basic Setup";
+			"Assets/Samples/Tor Production Addressables Toolpack/0.1.0-preview.3/Basic Setup";
 
 		[Test]
 		public void ProductionAssemblyGraph_IsExactlyOneEditorAssembly() {
@@ -210,7 +210,7 @@ namespace TorProduction.Addressables.Editor.Tests {
 				Assert.Pass("The imported-sample assertions run only in the marked disposable-project lane.");
 			}
 
-			var samples = Sample.FindByPackage(PackageName, "0.1.0-preview.2");
+			var samples = Sample.FindByPackage(PackageName, "0.1.0-preview.3");
 			var matchingSamples = samples.Where(item => item.displayName == "Basic Setup").ToArray();
 			Assert.That(matchingSamples.Length, Is.EqualTo(1));
 			var sample = matchingSamples[0];
@@ -228,7 +228,8 @@ namespace TorProduction.Addressables.Editor.Tests {
 			Assert.That(config.SchemaVersion, Is.EqualTo(AddressablesAutomationConfig.CurrentSchemaVersion));
 			Assert.That(config.SceneRules.Count, Is.EqualTo(1));
 			Assert.That(config.SceneRules[0].DestinationGroupName, Is.EqualTo("Basic Setup Scenes"));
-			Assert.That(config.SceneRules[0].RequiredLabels, Is.EqualTo(new[] { "basic-setup" }));
+			Assert.That(config.SceneRules[0].Category, Is.EqualTo("basic-setup"));
+			Assert.That(config.SceneRules[0].RequiredLabels, Is.Empty);
 			Assert.That(AssetDatabase.AssetPathToGUID(sceneFolderPath),
 				Is.EqualTo("4f42b69c201bcba42a0e7d976c56bd93"));
 			Assert.That(config.SceneRules[0].SourceFolderGuid,

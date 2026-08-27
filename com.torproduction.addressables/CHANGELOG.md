@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [0.1.0-preview.3] - 2026-08-27
+
+### Fixed
+
+- Corrected the shipped Basic Setup sample so its `basic-setup` Category Label is not repeated in Required Labels, allowing validation, Scene Analyze, Apply, and convergence to complete.
+- Made the Inspector describe Category as an implicitly applied Category Label and made duplicate diagnostics point to the visible Required Labels field while retaining fail-closed validation.
+- Added a clean-project regression that imports the actual sample, creates default Addressables settings, activates the configuration, validates expected pre-Apply warnings, verifies the required group/schema/label/scene plan, applies it, proves convergence, and checks inert sample/package removal.
+
 ## [0.1.0-preview.2] - 2026-08-27
 
 ### Fixed

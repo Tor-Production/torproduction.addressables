@@ -12,7 +12,7 @@ Set-StrictMode -Version Latest
 $root = (Resolve-Path -LiteralPath $RepositoryRoot).Path
 $packageRoot = Join-Path $root 'com.torproduction.addressables'
 $workflowRoot = Join-Path $root '.github/workflows'
-$releaseVersion = '0.1.0-preview.2'
+$releaseVersion = '0.1.0-preview.3'
 $releaseTag = "v$releaseVersion"
 $archiveName = "com.torproduction.addressables-$releaseVersion.tgz"
 
@@ -142,16 +142,7 @@ foreach ($requiredText in @(
     'actions: read',
     "github.event_name == 'workflow_dispatch'",
     "github.ref == 'refs/heads/main'",
-    'ref: refs/tags/v0.1.0-preview.2',
-    'ref: 4b19ae00ddb6b78ba6376a1f406ff7c4125ff0c8',
-    'path: .release-recovery',
-    'sparse-checkout: |',
-    'Tools/CI/Validate-PackageManifest.ps1',
-    'Release/com.torproduction.addressables-0.1.0-preview.2.tgz.sha256',
-    'persist-credentials: false',
-    './.release-recovery/Tools/CI/Assert-HostedUnityValidation.ps1',
-    './.release-recovery/Tools/CI/New-PackageArchive.ps1',
-    './.release-recovery/Release/com.torproduction.addressables-$($env:EXPECTED_VERSION).tgz.sha256',
+    'ref: refs/tags/v0.1.0-preview.3',
     'Assert-HostedUnityValidation.ps1',
     'New-PackageArchive.ps1',
     'Export-ReleaseNotes.ps1',
@@ -165,7 +156,7 @@ foreach ($requiredText in @(
         throw "Protected release workflow value is missing: $requiredText"
     }
 }
-if ($releaseWorkflow -notmatch "(?ms)^on:\s*\r?\n\s{2}push:\s*\r?\n\s{4}tags:\s*\r?\n\s{6}-\s*'v\*'\s*\r?\n\s{2}workflow_dispatch:\s*$" -or
+if ($releaseWorkflow -notmatch "(?ms)^on:\s*\r?\n\s{2}push:\s*\r?\n\s{4}tags:\s*\r?\n\s{6}-\s*'v0\.1\.0-preview\.3'\s*\r?\n\s{2}workflow_dispatch:\s*$" -or
     $releaseWorkflow -match '(?m)^\s{2}(pull_request|schedule|workflow_run):') {
     throw 'The GitHub pre-release workflow must trigger only for pushed v* tags or protected manual recovery.'
 }

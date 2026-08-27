@@ -371,7 +371,11 @@ namespace TorProduction.Addressables.Editor {
 					location,
 					addressables,
 					report);
-				ValidateLabels(rule.SerializedRequiredLabels, location, addressables, report);
+				ValidateLabels(
+					rule.SerializedRequiredLabels,
+					$"{location}.RequiredLabels",
+					addressables,
+					report);
 				ValidateTypes(rule.SerializedTypeFilters, location, resolver, report);
 			}
 		}
@@ -412,12 +416,17 @@ namespace TorProduction.Addressables.Editor {
 					folders);
 				ValidateSceneAddressPolicy(rule.AddressPolicy, location, report);
 				ValidateAddressPrefix(rule.AddressPrefix, location, report);
-				var sceneLabels = (rule.SerializedRequiredLabels ?? Array.Empty<string>())
-					.Concat(string.IsNullOrWhiteSpace(rule.Category)
-						? Array.Empty<string>()
-						: new[] { rule.Category })
-					.ToArray();
-				ValidateLabels(sceneLabels, location, addressables, report);
+				ValidateLabels(
+					rule.SerializedRequiredLabels,
+					$"{location}.RequiredLabels",
+					addressables,
+					report,
+					rule.Category);
+				ValidateCategoryLabel(
+					rule.Category,
+					$"{location}.Category",
+					addressables,
+					report);
 
 				if (!Enum.IsDefined(typeof(SceneFolderMode), rule.Mode) ||
 				    rule.Mode == SceneFolderMode.Unspecified) {
@@ -704,7 +713,8 @@ namespace TorProduction.Addressables.Editor {
 			string[] labels,
 			string location,
 			IAddressablesSettingsView addressables,
-			ConfigurationValidationReport report) {
+			ConfigurationValidationReport report,
+			string categoryLabel = null) {
 			if (labels == null) {
 				return;
 			}
@@ -716,8 +726,18 @@ namespace TorProduction.Addressables.Editor {
 					report.Add(
 						ConfigurationDiagnosticCode.LabelEmpty,
 						ConfigurationDiagnosticSeverity.Error,
-						$"{location}.Labels[{index}]",
+						$"{location}[{index}]",
 						"Remove the empty label or enter a non-empty label name.");
+					continue;
+				}
+
+				if (!string.IsNullOrWhiteSpace(categoryLabel) &&
+				    string.Equals(label, categoryLabel, StringComparison.Ordinal)) {
+					report.Add(
+						ConfigurationDiagnosticCode.LabelDuplicate,
+						ConfigurationDiagnosticSeverity.Error,
+						$"{location}[{index}]",
+						$"Required label '{label}' duplicates the Category Label, which is already applied implicitly. Remove it from Required Labels or change the Category Label.");
 					continue;
 				}
 
@@ -725,7 +745,7 @@ namespace TorProduction.Addressables.Editor {
 					report.Add(
 						ConfigurationDiagnosticCode.LabelDuplicate,
 						ConfigurationDiagnosticSeverity.Error,
-						$"{location}.Labels[{index}]",
+						$"{location}[{index}]",
 						$"Label '{label}' is duplicated in this rule.");
 					continue;
 				}
@@ -734,9 +754,27 @@ namespace TorProduction.Addressables.Editor {
 					report.Add(
 						ConfigurationDiagnosticCode.LabelNotFound,
 						ConfigurationDiagnosticSeverity.Warning,
-						$"{location}.Labels[{index}]",
+						$"{location}[{index}]",
 						$"Addressables label '{label}' does not exist; a later Apply phase must create it explicitly.");
 				}
+			}
+		}
+
+		private static void ValidateCategoryLabel(
+			string categoryLabel,
+			string location,
+			IAddressablesSettingsView addressables,
+			ConfigurationValidationReport report) {
+			if (string.IsNullOrWhiteSpace(categoryLabel)) {
+				return;
+			}
+
+			if (addressables.Exists && !addressables.HasLabel(categoryLabel)) {
+				report.Add(
+					ConfigurationDiagnosticCode.LabelNotFound,
+					ConfigurationDiagnosticSeverity.Warning,
+					location,
+					$"Category Label '{categoryLabel}' does not exist; a later Apply phase must create it explicitly.");
 			}
 		}
 

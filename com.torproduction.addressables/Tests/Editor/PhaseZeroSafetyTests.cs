@@ -110,7 +110,7 @@ namespace TorProduction.Addressables.Editor.Tests {
 			var manifest = File.ReadAllText(manifestPath);
 
 			Assert.That(ReadManifestString(manifest, "name"), Is.EqualTo("com.torproduction.addressables"));
-			Assert.That(ReadManifestString(manifest, "version"), Is.EqualTo("0.1.0-preview.2"));
+			Assert.That(ReadManifestString(manifest, "version"), Is.EqualTo("0.1.0-preview.3"));
 			Assert.That(ReadManifestString(manifest, "unity"), Is.EqualTo("6000.0"));
 			StringAssert.Contains("\"com.unity.addressables\": \"2.7.6\"", manifest);
 			StringAssert.DoesNotContain("com.stansassets.foundation", manifest);

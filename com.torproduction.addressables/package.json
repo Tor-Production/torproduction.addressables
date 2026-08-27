@@ -1,7 +1,7 @@
 {
   "name": "com.torproduction.addressables",
   "displayName": "Tor Production Addressables Toolpack",
-  "version": "0.1.0-preview.2",
+  "version": "0.1.0-preview.3",
   "unity": "6000.0",
   "description": "Previewable, recoverable editor automation for Addressables groups, scenes, dependencies, and content builds.",
   "dependencies": {

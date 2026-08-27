@@ -15,6 +15,8 @@ param(
 
     [string]$PackageArchivePath,
 
+    [string]$PackageGitUrl,
+
     [ValidateRange(1, 10000)]
     [int]$ExpectedEditModeTestCount = 133,
 
@@ -60,6 +62,16 @@ if ($ExcludeSamples -and $ImportSample) {
 }
 if ($ExcludeSamples -and $resolvedPackageArchivePath) {
     throw 'ExcludeSamples is available only for package-path validation, not immutable archive validation.'
+}
+if ($resolvedPackageArchivePath -and -not [string]::IsNullOrWhiteSpace($PackageGitUrl)) {
+    throw 'PackageArchivePath and PackageGitUrl are mutually exclusive.'
+}
+if ($ExcludeSamples -and -not [string]::IsNullOrWhiteSpace($PackageGitUrl)) {
+    throw 'ExcludeSamples is available only for package-path validation, not immutable Git-tag validation.'
+}
+if (-not [string]::IsNullOrWhiteSpace($PackageGitUrl) -and
+    $PackageGitUrl -notmatch '^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\.git\?path=/[^#]+#[A-Za-z0-9_.-]+$') {
+    throw "PackageGitUrl must be a pinned GitHub HTTPS UPM path reference: $PackageGitUrl"
 }
 
 function Assert-TemporaryPath([string]$Path) {
@@ -172,7 +184,7 @@ try {
     if ($resolvedPackageArchivePath) {
         $temporaryArchivePath = Join-Path $temporaryRoot (Split-Path -Leaf $resolvedPackageArchivePath)
         Copy-Item -LiteralPath $resolvedPackageArchivePath -Destination $temporaryArchivePath
-    } else {
+    } elseif ([string]::IsNullOrWhiteSpace($PackageGitUrl)) {
         Copy-Item -Recurse -LiteralPath $resolvedPackagePath -Destination $temporaryPackagePath
     }
     Copy-Item -LiteralPath `
@@ -187,11 +199,15 @@ try {
         (Join-Path $sourceProjectPath 'ProjectSettings/VersionControlSettings.asset') `
         -Destination (Join-Path $temporaryProjectPath 'ProjectSettings')
 
-    if ($resolvedPackageArchivePath) {
+    if ($resolvedPackageArchivePath -or -not [string]::IsNullOrWhiteSpace($PackageGitUrl)) {
         $manifestPath = Join-Path $temporaryProjectPath 'Packages/manifest.json'
         $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
-        $archiveReference = 'file:' + $temporaryArchivePath.Replace('\', '/')
-        $manifest.dependencies.'com.torproduction.addressables' = $archiveReference
+        $packageReference = if ($resolvedPackageArchivePath) {
+            'file:' + $temporaryArchivePath.Replace('\', '/')
+        } else {
+            $PackageGitUrl
+        }
+        $manifest.dependencies.'com.torproduction.addressables' = $packageReference
         [IO.File]::WriteAllText(
             $manifestPath,
             ($manifest | ConvertTo-Json -Depth 20) + [Environment]::NewLine,
@@ -455,7 +471,13 @@ try {
 
     $sampleResult = if ($ImportSample) { ', sample import/removal passed' } elseif ($ExcludeSamples) { ', Samples~ absent' } else { '' }
     $playModeResult = if ($RunPlayMode) { ', PlayMode 1/1 passed' } else { '' }
-    $installKind = if ($resolvedPackageArchivePath) { 'archive' } else { 'path' }
+    $installKind = if ($resolvedPackageArchivePath) {
+        'archive'
+    } elseif (-not [string]::IsNullOrWhiteSpace($PackageGitUrl)) {
+        'Git tag'
+    } else {
+        'path'
+    }
     Write-Output "Clean-install and removal ($installKind) Addressables $AddressablesVersion passed: total=$($testRun.total), passed=$($testRun.passed)$playModeResult$sampleResult"
 } finally {
     Remove-TemporaryRoot

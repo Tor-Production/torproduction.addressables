@@ -1,14 +1,9 @@
 # Contributing
 
-Changes must preserve inert package import, explicit validated mutation, deterministic plans, recovery data, Unity assembly boundaries, and existing `.meta` GUIDs.
+Before changing the repository, read [AGENTS.md](AGENTS.md) and [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md), then use the task-specific route in [docs/README.md](docs/README.md). The completed [ImplementationPlan.md](ImplementationPlan.md) is historical evidence, not a live backlog or mandatory prerequisite.
 
-Before editing, read `AGENTS.md` and `ImplementationPlan.md`. Keep work tied to the active phase and issue IDs, preserve unrelated worktree changes, and update the plan after completing an implementation batch.
+Changes must preserve inert package import, explicit validated mutation, deterministic plans, recovery data, Unity assembly boundaries, existing `.meta` GUIDs, and unrelated project state. Keep work project-agnostic and scoped to the current task or issue.
 
-Before proposing a change:
+Follow [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for branch/worktree practice and reproducible validation. Report checks that were not run; never infer success from an unavailable result.
 
-- Run `pwsh ./Tools/CI/Validate-PhaseZero.ps1`.
-- Run the relevant EditMode and clean-install lanes for Addressables `2.7.6` and `2.9.1`.
-- Confirm package import and removal remain inert.
-- Report checks that were not run; do not infer or claim unavailable results.
-
-Do not publish the package, create a GitHub Release, create a version tag, change licensing, or remove attribution without the separate authorizations recorded in the plan.
+Current provenance and notice decisions are recorded in [PROVENANCE_AUDIT.md](PROVENANCE_AUDIT.md). Do not publish, create or alter release/version tags, change licensing or attribution, or modify GitHub Release state without separate explicit authorization.

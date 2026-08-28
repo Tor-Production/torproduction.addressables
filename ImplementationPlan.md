@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This completed plan is retained as historical implementation and release evidence. It is not the current project-state authority, a live backlog, or mandatory context. Read [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md) for current status, [docs/DECISIONS.md](docs/DECISIONS.md) for decisions verified against released evidence, and [PROVENANCE_AUDIT.md](PROVENANCE_AUDIT.md) for the current provenance and notice decision. Statements below that call this plan the source of truth, describe unresolved licensing, or show an active phase are superseded historical records; the original body is otherwise preserved.
+
 # Tor Production Addressables — Production UPM Engineering Plan
 
 ## Plan status

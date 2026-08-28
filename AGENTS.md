@@ -18,6 +18,8 @@
 
 ## Working practice
 
+- At the start of every substantive repository task, generated prompt, or implementation plan, use `$codex-project-workflow:project-context-optimizer` when the `codex-project-workflow` plugin is available and provide its compact **Codex setup** recommendation. At handoff, state whether the next action should continue in the same task or start a new one. If its context-debt audit confirms reorganization is required, treat the dedicated, user-authorized reorganization task as a prerequisite to later feature work. Plugin installation and the non-blocking fallback are documented in `.agents/CODEX_WORKFLOW.md`.
+- This repository is post-release. For every repository-changing implementation task, use `$codex-project-workflow:release-git-flow` when the plugin is available: keep `main` release-only, use `develop` as the integration base, work in an isolated task branch or worktree, validate the exact change, and finish with a pull request to the appropriate target. Read-only work does not require a branch or pull request. If the plugin is unavailable, follow these embedded rules directly rather than blocking the task. This workflow governs authorized work but does not itself authorize commits, pushes, merges, tags, releases, or publication.
 - Inspect `git status` before editing. Preserve unrelated user changes and never overwrite or reformat them as collateral work.
 - Make focused, incremental changes tied to the active phase and stable issue IDs. Stop at the scope boundary defined by the current task and `ImplementationPlan.md`.
 - Validate changes with the relevant static checks, Unity compilation, and EditMode or PlayMode tests. Never claim an unavailable or unexecuted check passed; report exactly what could not be run and why.

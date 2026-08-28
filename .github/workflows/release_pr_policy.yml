@@ -1,0 +1,43 @@
+name: Release PR policy
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  release-pr-policy:
+    name: release-pr-policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release pull request source
+        shell: bash
+        env:
+          BASE_REPOSITORY: ${{ github.repository }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$HEAD_REPOSITORY" != "$BASE_REPOSITORY" ]]; then
+            echo "::error::Release pull requests must originate from this repository."
+            exit 1
+          fi
+
+          case "$HEAD_REF" in
+            release/*|hotfix/*|codex/release/*|codex/hotfix/*)
+              ;;
+            *)
+              echo "::error::Pull requests to main must use a release/* or hotfix/* branch."
+              exit 1
+              ;;
+          esac
